@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 // --- POST MODEL ---
-const PostSchema = new mongoose.Schema(
+const PostSchema = new Schema(
   {
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -16,7 +17,7 @@ const PostSchema = new mongoose.Schema(
 );
 
 // --- COMMENT MODEL ---
-const CommentSchema = new mongoose.Schema(
+const CommentSchema = new Schema(
   {
     post_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -36,7 +37,7 @@ const CommentSchema = new mongoose.Schema(
 );
 
 // --- LIKE MODEL ---
-const LikeSchema = new mongoose.Schema(
+const LikeSchema = new Schema(
   {
     post_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -59,6 +60,11 @@ function updateTimestamp(next) {
   this.set({ updatedAt: Date.now() });
   next();
 }
+
+PostSchema.index({ createdAt: -1 });
+CommentSchema.index({ post_id: 1, createdAt: -1 });
+LikeSchema.index({ post_id: 1 });
+LikeSchema.index({ user_id: 1, post_id: 1 }, { unique: true });
 
 const schemas = [PostSchema, CommentSchema, LikeSchema];
 
