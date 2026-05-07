@@ -1,0 +1,101 @@
+﻿{
+  "status": {
+    "VALID": "Valid",
+    "EXPIRING_SOON": "Expiring Soon",
+    "EXPIRED": "Expired"
+  },
+  "cycleUnit": {
+    "MONTH": "Month(s)",
+    "QUARTER": "Quarter(s)",
+    "YEAR": "Year(s)"
+  },
+  "overview": {
+    "total": "Total Equipment",
+    "valid": "Valid",
+    "expiringSoon": "Expiring Soon",
+    "expired": "Expired"
+  },
+  "section": {
+    "overview": "Fire Safety Overview",
+    "equipmentList": "Equipment List",
+    "equipmentEmpty": "No fire safety equipment found",
+    "expiringSoon": "Expiring Soon",
+    "expired": "Overdue",
+    "history": "Inspection History",
+    "historyEmpty": "No inspection history yet"
+  },
+  "page": {
+    "title": "Fire Safety"
+  },
+  "filters": {
+    "search": "Search equipment...",
+    "type": "Filter by type",
+    "allTypes": "All Types",
+    "status": "Filter by status",
+    "allStatuses": "All Statuses"
+  },
+  "detail": {
+    "floor": "Floor",
+    "latestInspection": "Last Inspected",
+    "nextInspection": "Next Inspection",
+    "daysUntilDue": "Days Until Due",
+    "cycle": "Inspection Cycle",
+    "overdue": "days overdue",
+    "remaining": "days remaining",
+    "confirmedBy": "Confirmed by",
+    "certificate": "Certificate",
+    "viewCertificate": "View Certificate"
+  },
+  "form": {
+    "building": "Building",
+    "selectBuilding": "Select Building",
+    "createTitle": "Add Fire Safety Equipment",
+    "editTitle": "Edit Fire Safety Equipment",
+    "confirmTitle": "Confirm Inspection",
+    "name": "Equipment Name",
+    "namePlaceholder": "e.g. Fire Extinguisher - B1",
+    "equipmentType": "Equipment Type",
+    "equipmentTypePlaceholder": "e.g. Extinguisher, Sprinkler, Alarm",
+    "floorNumber": "Floor",
+    "areaName": "Area",
+    "areaNamePlaceholder": "e.g. Lobby, Parking",
+    "cycleValue": "Cycle",
+    "cycleUnit": "Unit",
+    "selectUnit": "Select unit",
+    "nextInspectionDate": "Next Inspection Date",
+    "inspectionDate": "Inspection Date",
+    "certificateUrl": "Certificate URL",
+    "note": "Note",
+    "notePlaceholder": "Optional note",
+    "required": "This field is required"
+  },
+  "actions": {
+    "addEquipment": "Add Equipment",
+    "confirmInspection": "Confirm Inspection",
+    "edit": "Edit",
+    "delete": "Delete",
+    "export": "Export Report",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "create": "Create",
+    "update": "Update"
+  },
+  "tree": {
+    "noBuildings": "No buildings found",
+    "noFloors": "No floors found",
+    "floorLabel": "floors",
+    "equipmentLabel": "equipment",
+    "unknownFloor": "Unknown Floor"
+  },
+  "messages": {
+    "createSuccess": "Equipment created",
+    "createError": "Failed to create equipment",
+    "updateSuccess": "Equipment updated",
+    "updateError": "Failed to update equipment",
+    "deleteSuccess": "Equipment deleted",
+    "deleteError": "Failed to delete equipment",
+    "confirmSuccess": "Inspection confirmed",
+    "confirmError": "Failed to confirm inspection",
+    "exportError": "Failed to export report"
+  }
+}

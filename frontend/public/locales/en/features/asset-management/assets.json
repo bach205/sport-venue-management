@@ -1,0 +1,154 @@
+﻿{
+  "title": "Asset Management",
+  "description": "Manage building assets, equipment, and maintenance schedules",
+  "list": {
+    "title": "Asset List",
+    "empty": "No assets found. Add an asset to get started."
+  },
+  "stats": {
+    "total": "Total Assets",
+    "active": "Active",
+    "inactive": "Inactive",
+    "expiredWarranty": "Warranty Expired"
+  },
+  "filter": {
+    "title": "Filter",
+    "searchPlaceholder": "Search by name or code...",
+    "building": "Building",
+    "allBuildings": "All Buildings",
+    "assetType": "Asset Type",
+    "allTypes": "All Types",
+    "status": "Status",
+    "allStatuses": "All Statuses",
+    "ownershipScope": "Ownership",
+    "allOwnership": "All Ownership"
+  },
+  "table": {
+    "assetCode": "Code",
+    "name": "Asset Name",
+    "assetType": "Type",
+    "ownershipScope": "Ownership",
+    "building": "Building",
+    "location": "Location",
+    "floor": "Floor",
+    "status": "Status",
+    "installedAt": "Installed",
+    "warrantyUntil": "Warranty Until",
+    "createdAt": "Created"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "ownershipScope": {
+    "COMMON": "Common",
+    "PRIVATE": "Private"
+  },
+  "assetType": {
+    "ELEVATOR": "Elevator",
+    "FIRE_SUPPRESSION": "Fire Suppression",
+    "HVAC": "HVAC",
+    "ELECTRICAL": "Electrical",
+    "PLUMBING": "Plumbing",
+    "SECURITY_CAMERA": "Security Camera",
+    "GENERATOR": "Generator",
+    "PUMP": "Pump",
+    "LIGHTING": "Lighting",
+    "DOOR": "Door",
+    "GATE": "Gate",
+    "OTHER": "Other"
+  },
+  "form": {
+    "createTitle": "Add Asset",
+    "editTitle": "Edit Asset",
+    "building": "Building",
+    "selectBuilding": "Select building",
+    "ownershipScope": "Ownership Type",
+    "unit": "Unit",
+    "unitPlaceholder": "e.g. A-101",
+    "assetCode": "Asset Code",
+    "name": "Asset Name",
+    "namePlaceholder": "e.g. Passenger Elevator 1",
+    "assetType": "Asset Type",
+    "selectAssetType": "Select type",
+    "location": "Location",
+    "locationPlaceholder": "e.g. Lobby, Floor 2",
+    "roomType": "Room Type",
+    "brand": "Brand",
+    "model": "Model",
+    "serialNumber": "Serial Number",
+    "description": "Description",
+    "descriptionPlaceholder": "Additional notes about the asset",
+    "active": "Active",
+    "installedAt": "Installation Date",
+    "warrantyUntil": "Warranty Until"
+  },
+  "detail": {
+    "title": "Asset Details",
+    "tabs": {
+      "overview": "Overview",
+      "maintenance": "Maintenance",
+      "checklist": "Checklist",
+      "fire": "Fire Safety",
+      "work": "Work Orders"
+    },
+    "location": "Location",
+    "classification": "Classification",
+    "deviceInfo": "Device Information",
+    "dates": "Dates",
+    "maintenancePlaceholder": "Maintenance schedules will appear here (Guide 2)",
+    "checklistPlaceholder": "Technical checklists will appear here (Guide 4)",
+    "firePlaceholder": "Fire safety data will appear here (Guide 5)"
+  },
+  "actions": {
+    "create": "Add Asset",
+    "update": "Save Changes",
+    "view": "View",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "import": "Import Excel",
+    "export": "Export",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "import": {
+    "title": "Import Assets from Excel",
+    "building": "Building",
+    "file": "Upload File",
+    "dropzone": "Click to select .xlsx or .csv file",
+    "downloadTemplate": "Download Template",
+    "submit": "Import"
+  },
+  "delete": {
+    "title": "Delete Asset",
+    "message": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+  },
+  "validation": {
+    "required": "This field is required"
+  },
+  "messages": {
+    "createSuccess": "Asset created successfully",
+    "createError": "Failed to create asset",
+    "updateSuccess": "Asset updated successfully",
+    "updateError": "Failed to update asset",
+    "deleteSuccess": "Asset deleted successfully",
+    "deleteError": "Failed to delete asset",
+    "exportSuccess": "Export completed",
+    "exportError": "Export failed",
+    "importError": "Import failed"
+  },
+  "tree": {
+    "noBuildings": "No buildings found",
+    "floorLabel": "floor(s)",
+    "unitLabel": "unit(s)",
+    "assetLabel": "asset(s)",
+    "floor": "Floor {{floor}}",
+    "commonArea": "Common Area",
+    "noFloors": "No assets in this building yet",
+    "unitAssetsTitle": "Assets in {{unit}}",
+    "noUnitAssets": "No assets found in this unit",
+    "viewAssets": "View assets",
+    "addAssetToBuilding": "Add asset to building",
+    "addAssetToFloor": "Add asset to floor {{floor}}"
+  }
+}

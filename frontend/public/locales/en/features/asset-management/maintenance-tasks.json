@@ -1,0 +1,151 @@
+﻿{
+  "workStatus": {
+    "PENDING": "Pending",
+    "ASSIGNED": "Assigned",
+    "IN_PROGRESS": "In Progress",
+    "PENDING_ACCEPTANCE": "Pending Acceptance",
+    "ACCEPTED": "Accepted",
+    "REJECTED": "Rejected",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "paymentStatus": {
+    "UNPAID": "Unpaid",
+    "AWAITING_PAYMENT": "Awaiting Payment",
+    "PAID": "Paid",
+    "NOT_REQUIRED": "Not Required"
+  },
+  "acceptanceStatus": {
+    "PENDING": "Pending",
+    "ACCEPTED": "Accepted",
+    "REJECTED": "Rejected"
+  },
+  "maintenanceType": {
+    "PREVENTIVE": "Preventive",
+    "CORRECTIVE": "Corrective",
+    "EMERGENCY": "Emergency",
+    "ROUTINE": "Routine",
+    "INSPECTION": "Inspection"
+  },
+  "sla": {
+    "normal": "On Track",
+    "soon": "Due Soon",
+    "overdue": "Overdue"
+  },
+  "section": {
+    "info": "Information",
+    "progress": "Progress",
+    "parts": "Parts & Costs",
+    "media": "Evidence & Media",
+    "report": "Work Report",
+    "payment": "Payment & Acceptance",
+    "works": "Maintenance Work",
+    "worksEmpty": "No maintenance work found"
+  },
+  "detail": {
+    "currentStatus": "Current Status",
+    "progressLog": "Progress Log",
+    "parts": "Parts",
+    "partsEmpty": "No parts added",
+    "media": "Media",
+    "mediaEmpty": "No media uploaded",
+    "mediaItem": "Media item",
+    "paymentStatus": "Payment Status",
+    "invoiceId": "Invoice ID",
+    "acceptedBy": "Accepted By",
+    "acceptedAt": "Accepted At",
+    "info": {
+      "description": "Description",
+      "assignedTo": "Assigned To",
+      "dueDate": "Due Date",
+      "createdAt": "Created At"
+    },
+    "report": {
+      "title": "Maintenance Work Report",
+      "asset": "Asset",
+      "type": "Type",
+      "description": "Description",
+      "assignedTo": "Assigned To",
+      "startedAt": "Started At",
+      "completedAt": "Completed At",
+      "acceptance": "Acceptance",
+      "acceptedBy": "Accepted By"
+    }
+  },
+  "parts": {
+    "name": "Part Name",
+    "qty": "Qty",
+    "unit": "Unit",
+    "unitPrice": "Unit Price",
+    "total": "Total",
+    "note": "Note"
+  },
+  "cost": {
+    "labor": "Labor Cost",
+    "material": "Material Cost",
+    "other": "Other Cost",
+    "total": "Grand Total"
+  },
+  "form": {
+    "createTitle": "Create Maintenance Work",
+    "editTitle": "Edit Maintenance Work",
+    "maintenanceType": "Maintenance Type",
+    "description": "Description",
+    "dueDate": "Due Date",
+    "assignedTo": "Assigned To",
+    "selectType": "Select type",
+    "descriptionPlaceholder": "Describe the maintenance work...",
+    "assignedToPlaceholder": "Enter technician ID or name",
+    "progressPlaceholder": "Describe what was done...",
+    "acceptNote": "Note (optional)",
+    "rejectReason": "Reason for rejection",
+    "required": "This field is required"
+  },
+  "actions": {
+    "create": "New Work",
+    "update": "Update",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "add": "Add",
+    "start": "Start Work",
+    "addProgress": "Add Progress Note",
+    "complete": "Mark Complete",
+    "accept": "Accept",
+    "reject": "Reject",
+    "generateInvoice": "Generate Invoice",
+    "addPart": "Add Part",
+    "upload": "Upload File"
+  },
+  "filters": {
+    "search": "Search work...",
+    "allStatuses": "All Statuses",
+    "allTypes": "All Types"
+  },
+  "dashboard": {
+    "title": "Maintenance Work",
+    "totalOpen": "Open Tasks",
+    "overdue": "Overdue",
+    "pendingAcceptance": "Pending Acceptance",
+    "totalCost": "Total Cost"
+  },
+  "work": {
+    "dueOn": "Due"
+  },
+  "messages": {
+    "createSuccess": "Work record created",
+    "createError": "Failed to create work record",
+    "updateSuccess": "Updated successfully",
+    "updateError": "Update failed",
+    "progressAdded": "Progress note added",
+    "partAdded": "Part added",
+    "partDeleted": "Part removed",
+    "partError": "Part operation failed",
+    "mediaUploaded": "File uploaded",
+    "mediaDeleted": "File removed",
+    "mediaError": "Media operation failed",
+    "acceptSuccess": "Work accepted",
+    "rejectSuccess": "Work rejected",
+    "invoiceGenerated": "Invoice generation requested",
+    "invoiceError": "Invoice generation failed"
+  }
+}

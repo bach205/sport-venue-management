@@ -1,0 +1,41 @@
+﻿{
+    "title":  "Notifications",
+    "list":  {
+                 "title":  "Notifications List",
+                 "empty":  "No Notifications data available"
+             },
+    "detail":  {
+                   "title":  "Notifications Detail"
+               },
+    "form":  {
+                 "createTitle":  "Create Notifications",
+                 "editTitle":  "Edit Notifications"
+             },
+    "table":  {
+                  "title":  "Notifications Table"
+              },
+    "filter":  {
+                   "title":  "Filter Notifications",
+                   "searchPlaceholder":  "Search Notifications"
+               },
+    "actions":  {
+                    "create":  "Create",
+                    "update":  "Update",
+                    "view":  "View",
+                    "delete":  "Delete"
+                },
+    "messages":  {
+                     "createSuccess":  "Created successfully",
+                     "updateSuccess":  "Updated successfully",
+                     "deleteSuccess":  "Deleted successfully",
+                     "loadError":  "Failed to load data"
+                 },
+    "fields":  {
+                   "id":  "ID",
+                   "name":  "Name",
+                   "code":  "Code",
+                   "status":  "Status",
+                   "createdAt":  "Created at",
+                   "updatedAt":  "Updated at"
+               }
+}

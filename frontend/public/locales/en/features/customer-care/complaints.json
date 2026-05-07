@@ -1,0 +1,41 @@
+﻿{
+    "title":  "Complaints",
+    "list":  {
+                 "title":  "Complaints List",
+                 "empty":  "No Complaints data available"
+             },
+    "detail":  {
+                   "title":  "Complaints Detail"
+               },
+    "form":  {
+                 "createTitle":  "Create Complaints",
+                 "editTitle":  "Edit Complaints"
+             },
+    "table":  {
+                  "title":  "Complaints Table"
+              },
+    "filter":  {
+                   "title":  "Filter Complaints",
+                   "searchPlaceholder":  "Search Complaints"
+               },
+    "actions":  {
+                    "create":  "Create",
+                    "update":  "Update",
+                    "view":  "View",
+                    "delete":  "Delete"
+                },
+    "messages":  {
+                     "createSuccess":  "Created successfully",
+                     "updateSuccess":  "Updated successfully",
+                     "deleteSuccess":  "Deleted successfully",
+                     "loadError":  "Failed to load data"
+                 },
+    "fields":  {
+                   "id":  "ID",
+                   "name":  "Name",
+                   "code":  "Code",
+                   "status":  "Status",
+                   "createdAt":  "Created at",
+                   "updatedAt":  "Updated at"
+               }
+}

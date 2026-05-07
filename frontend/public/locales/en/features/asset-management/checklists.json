@@ -1,0 +1,140 @@
+﻿{
+  "checklistStatus": {
+    "PENDING": "Pending",
+    "ASSIGNED": "Assigned",
+    "IN_PROGRESS": "In Progress",
+    "COMPLETED": "Completed",
+    "OVERDUE": "Overdue",
+    "CANCELLED": "Cancelled",
+    "PENDING_REVIEW": "Pending Review"
+  },
+  "itemStatus": {
+    "TODO": "To Do",
+    "DOING": "Doing",
+    "DONE": "Done",
+    "APPROVE": "Approved",
+    "NOT_APPROVE": "Not Approved"
+  },
+  "frequencyUnit": {
+    "DAILY": "Daily",
+    "WEEKLY": "Weekly",
+    "MONTHLY": "Monthly",
+    "QUARTERLY": "Quarterly",
+    "YEARLY": "Yearly"
+  },
+  "section": {
+    "assignments": "Checklist Assignments",
+    "assignmentsEmpty": "No checklist assignments",
+    "assetChecklistsEmpty": "No checklists assigned to this asset",
+    "myChecklists": "My Checklists",
+    "myChecklistsEmpty": "No checklists assigned to you for this asset",
+    "report": "Checklist Report",
+    "templates": "Checklist Templates",
+    "templatesEmpty": "No templates yet"
+  },
+  "page": {
+    "title": "Technical Checklists"
+  },
+  "filters": {
+    "search": "Search by template, asset or assignee...",
+    "status": "Filter by status",
+    "allStatuses": "All Statuses"
+  },
+  "list": {
+    "dueOn": "Due"
+  },
+  "form": {
+    "createTemplate": "Create Template",
+    "editTemplate": "Edit Template",
+    "assignChecklist": "Assign Checklist",
+    "editAssignment": "Edit Assignment",
+    "name": "Template Name",
+    "namePlaceholder": "e.g. Monthly Electrical Inspection",
+    "checklistType": "Checklist Type",
+    "checklistTypePlaceholder": "e.g. ELECTRICAL, MECHANICAL",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description",
+    "frequencyValue": "Frequency",
+    "frequencyUnit": "Unit",
+    "selectUnit": "Select unit",
+    "template": "Template",
+    "selectTemplate": "Select a template",
+    "assignedTo": "Assign To",
+    "assignedToPlaceholder": "Technician ID or username",
+    "dueDate": "Due Date",
+    "required": "This field is required",
+    "items": "Checklist Items",
+    "addItem": "Add Item",
+    "editItem": "Edit Item",
+    "itemName": "Item Name",
+    "itemNamePlaceholder": "e.g. Check oil level",
+    "noItems": "No items added yet",
+    "saveItem": "Save"
+  },
+  "item": {
+    "uncategorized": "General",
+    "needsRepairHint": "This item requires attention. Consider creating a maintenance work order.",
+    "notApprovedHint": "This item was not approved. Please review and redo."
+  },
+  "detail": {
+    "assignedTo": "Assigned To",
+    "startedAt": "Started",
+    "completedAt": "Completed",
+    "noItems": "No checklist items found"
+  },
+  "report": {
+    "title": "Report",
+    "total": "Total",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "overdue": "Overdue",
+    "completionRate": "Completion Rate",
+    "from": "From date",
+    "to": "To date",
+    "apply": "Apply"
+  },
+  "template": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "items": "items"
+  },
+  "actions": {
+    "assign": "Assign",
+    "createTemplate": "New Template",
+    "editAssignment": "Edit Assignment",
+    "deleteAssignment": "Delete Assignment",
+    "complete": "Mark Complete",
+    "uploadMedia": "Upload",
+    "createWork": "Create Work Order",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update"
+  },
+  "messages": {
+    "assignSuccess": "Checklist assigned successfully",
+    "assignError": "Failed to assign checklist",
+    "assignmentUpdated": "Assignment updated",
+    "assignmentUpdateError": "Failed to update assignment",
+    "assignmentDeleted": "Assignment deleted",
+    "assignmentDeleteError": "Failed to delete assignment",
+    "templateCreated": "Template created",
+    "templateCreateError": "Failed to create template",
+    "templateUpdated": "Template updated",
+    "templateUpdateError": "Failed to update template",
+    "templateDeleted": "Template deleted",
+    "templateDeleteError": "Failed to delete template",
+    "completed": "Checklist marked as completed",
+    "completeError": "Failed to complete checklist",
+    "itemUpdated": "Item saved",
+    "itemError": "Failed to save item",
+    "mediaUploaded": "File uploaded",
+    "mediaError": "Failed to upload file"
+  },
+  "confirm": {
+    "deleteAssignment": "Delete this assignment?",
+    "deleteAssignmentDesc": "This action cannot be undone.",
+    "deleteTemplate": "Delete this template?",
+    "deleteTemplateDesc": "This will permanently remove the template.",
+    "confirmBtn": "Delete"
+  }
+}

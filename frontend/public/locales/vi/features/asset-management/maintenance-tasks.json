@@ -1,0 +1,151 @@
+﻿{
+  "workStatus": {
+    "PENDING": "Chờ xử lý",
+    "ASSIGNED": "Đã phân công",
+    "IN_PROGRESS": "Đang thực hiện",
+    "PENDING_ACCEPTANCE": "Chờ nghiệm thu",
+    "ACCEPTED": "Đã nghiệm thu",
+    "REJECTED": "Từ chối",
+    "COMPLETED": "Hoàn thành",
+    "CANCELLED": "Đã hủy"
+  },
+  "paymentStatus": {
+    "UNPAID": "Chưa thanh toán",
+    "AWAITING_PAYMENT": "Chờ thanh toán",
+    "PAID": "Đã thanh toán",
+    "NOT_REQUIRED": "Không cần thanh toán"
+  },
+  "acceptanceStatus": {
+    "PENDING": "Chờ duyệt",
+    "ACCEPTED": "Đã chấp thuận",
+    "REJECTED": "Từ chối"
+  },
+  "maintenanceType": {
+    "PREVENTIVE": "Bảo trì phòng ngừa",
+    "CORRECTIVE": "Sửa chữa khắc phục",
+    "EMERGENCY": "Khẩn cấp",
+    "ROUTINE": "Định kỳ",
+    "INSPECTION": "Kiểm tra"
+  },
+  "sla": {
+    "normal": "Đúng hạn",
+    "soon": "Sắp đến hạn",
+    "overdue": "Quá hạn"
+  },
+  "section": {
+    "info": "Thông tin",
+    "progress": "Tiến độ",
+    "parts": "Vật tư & Chi phí",
+    "media": "Ảnh chứng cứ",
+    "report": "Biên bản công tác",
+    "payment": "Thanh toán & Nghiệm thu",
+    "works": "Công việc bảo trì",
+    "worksEmpty": "Chưa có công việc nào"
+  },
+  "detail": {
+    "currentStatus": "Trạng thái hiện tại",
+    "progressLog": "Nhật ký tiến độ",
+    "parts": "Vật tư",
+    "partsEmpty": "Chưa có vật tư",
+    "media": "Tài liệu đính kèm",
+    "mediaEmpty": "Chưa có tài liệu",
+    "mediaItem": "File",
+    "paymentStatus": "Trạng thái thanh toán",
+    "invoiceId": "Mã hóa đơn",
+    "acceptedBy": "Người nghiệm thu",
+    "acceptedAt": "Thời gian nghiệm thu",
+    "info": {
+      "description": "Mô tả",
+      "assignedTo": "Kỹ thuật viên",
+      "dueDate": "Hạn xử lý",
+      "createdAt": "Ngày tạo"
+    },
+    "report": {
+      "title": "Biên bản công tác bảo trì",
+      "asset": "Thiết bị",
+      "type": "Loại bảo trì",
+      "description": "Mô tả",
+      "assignedTo": "Kỹ thuật viên",
+      "startedAt": "Bắt đầu",
+      "completedAt": "Hoàn thành",
+      "acceptance": "Nghiệm thu",
+      "acceptedBy": "Người nghiệm thu"
+    }
+  },
+  "parts": {
+    "name": "Tên vật tư",
+    "qty": "Số lượng",
+    "unit": "Đơn vị",
+    "unitPrice": "Đơn giá",
+    "total": "Thành tiền",
+    "note": "Ghi chú"
+  },
+  "cost": {
+    "labor": "Nhân công",
+    "material": "Vật tư",
+    "other": "Chi phí khác",
+    "total": "Tổng chi phí"
+  },
+  "form": {
+    "createTitle": "Tạo công việc bảo trì",
+    "editTitle": "Chỉnh sửa công việc",
+    "maintenanceType": "Loại bảo trì",
+    "description": "Mô tả",
+    "dueDate": "Hạn xử lý",
+    "assignedTo": "Phân công cho",
+    "selectType": "Chọn loại",
+    "descriptionPlaceholder": "Mô tả công việc...",
+    "assignedToPlaceholder": "Mã nhân viên hoặc tên",
+    "progressPlaceholder": "Mô tả công việc đã thực hiện...",
+    "acceptNote": "Ghi chú (tùy chọn)",
+    "rejectReason": "Lý do từ chối",
+    "required": "Trường này bắt buộc"
+  },
+  "actions": {
+    "create": "Tạo mới",
+    "update": "Cập nhật",
+    "cancel": "Hủy",
+    "submit": "Xác nhận",
+    "add": "Thêm",
+    "start": "Bắt đầu thực hiện",
+    "addProgress": "Thêm cập nhật tiến độ",
+    "complete": "Hoàn thành",
+    "accept": "Nghiệm thu",
+    "reject": "Từ chối",
+    "generateInvoice": "Tạo hóa đơn",
+    "addPart": "Thêm vật tư",
+    "upload": "Tải lên"
+  },
+  "filters": {
+    "search": "Tìm kiếm...",
+    "allStatuses": "Tất cả trạng thái",
+    "allTypes": "Tất cả loại"
+  },
+  "dashboard": {
+    "title": "Quản lý công tác bảo trì",
+    "totalOpen": "Chưa hoàn thành",
+    "overdue": "Quá hạn",
+    "pendingAcceptance": "Chờ nghiệm thu",
+    "totalCost": "Tổng chi phí"
+  },
+  "work": {
+    "dueOn": "Hạn"
+  },
+  "messages": {
+    "createSuccess": "Tạo công việc thành công",
+    "createError": "Tạo công việc thất bại",
+    "updateSuccess": "Cập nhật thành công",
+    "updateError": "Cập nhật thất bại",
+    "progressAdded": "Đã thêm cập nhật tiến độ",
+    "partAdded": "Đã thêm vật tư",
+    "partDeleted": "Đã xóa vật tư",
+    "partError": "Thao tác vật tư thất bại",
+    "mediaUploaded": "Đã tải lên tài liệu",
+    "mediaDeleted": "Đã xóa tài liệu",
+    "mediaError": "Thao tác tài liệu thất bại",
+    "acceptSuccess": "Đã nghiệm thu công việc",
+    "rejectSuccess": "Đã từ chối công việc",
+    "invoiceGenerated": "Đã yêu cầu tạo hóa đơn",
+    "invoiceError": "Tạo hóa đơn thất bại"
+  }
+}

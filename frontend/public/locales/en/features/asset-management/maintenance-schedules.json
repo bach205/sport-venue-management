@@ -1,0 +1,85 @@
+﻿{
+  "maintenanceType": {
+    "PREVENTIVE": "Preventive",
+    "CORRECTIVE": "Corrective",
+    "INSPECTION": "Inspection",
+    "CALIBRATION": "Calibration",
+    "CLEANING": "Cleaning",
+    "OTHER": "Other"
+  },
+  "recordStatus": {
+    "PENDING": "Pending",
+    "IN_PROGRESS": "In Progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "urgency": {
+    "overdue": "Overdue",
+    "soon": "Due Soon",
+    "normal": "Normal"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "section": {
+    "schedules": "Maintenance Schedules",
+    "schedulesEmpty": "No maintenance schedules. Create one to get started.",
+    "upcoming": "Upcoming Work",
+    "upcomingEmpty": "No upcoming maintenance in this schedule.",
+    "history": "Maintenance History",
+    "historyEmpty": "No maintenance records for this asset."
+  },
+  "schedule": {
+    "every": "Every {{count}} days",
+    "nextOn": "Next:",
+    "assignedTo": "Assigned to"
+  },
+  "form": {
+    "createTitle": "Create Maintenance Schedule",
+    "editTitle": "Edit Maintenance Schedule",
+    "name": "Schedule Name",
+    "namePlaceholder": "e.g. Monthly elevator inspection",
+    "maintenanceType": "Maintenance Type",
+    "selectType": "Select type",
+    "intervalDays": "Interval (days)",
+    "startDate": "Start Date",
+    "assignedTo": "Assigned To (user ID)",
+    "assignedToPlaceholder": "e.g. user-id-123",
+    "description": "Description",
+    "descriptionPlaceholder": "Details about this maintenance schedule",
+    "required": "This field is required"
+  },
+  "actions": {
+    "create": "Create Schedule",
+    "update": "Save Changes",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "dashboard": {
+    "title": "Maintenance Dashboard",
+    "description": "Overview of upcoming and overdue maintenance work",
+    "overdue": "Overdue",
+    "soonIn7": "Due in 7 Days",
+    "totalUpcoming": "Total Upcoming",
+    "overdueList": "Overdue",
+    "soonList": "Due This Week",
+    "myTasks": "My Tasks",
+    "noTasks": "No tasks assigned to you.",
+    "today": "Today",
+    "upcomingGroup": "Upcoming",
+    "overdueGroup": "Overdue"
+  },
+  "messages": {
+    "createSuccess": "Schedule created successfully",
+    "createError": "Failed to create schedule",
+    "updateSuccess": "Schedule updated successfully",
+    "updateError": "Failed to update schedule",
+    "deleteSuccess": "Schedule deleted successfully",
+    "deleteError": "Failed to delete schedule",
+    "toggleError": "Failed to toggle schedule status"
+  }
+}

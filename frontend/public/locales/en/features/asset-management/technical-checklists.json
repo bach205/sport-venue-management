@@ -1,0 +1,41 @@
+﻿{
+    "title":  "Technical Checklists",
+    "list":  {
+                 "title":  "Technical Checklists List",
+                 "empty":  "No Technical Checklists data available"
+             },
+    "detail":  {
+                   "title":  "Technical Checklists Detail"
+               },
+    "form":  {
+                 "createTitle":  "Create Technical Checklists",
+                 "editTitle":  "Edit Technical Checklists"
+             },
+    "table":  {
+                  "title":  "Technical Checklists Table"
+              },
+    "filter":  {
+                   "title":  "Filter Technical Checklists",
+                   "searchPlaceholder":  "Search Technical Checklists"
+               },
+    "actions":  {
+                    "create":  "Create",
+                    "update":  "Update",
+                    "view":  "View",
+                    "delete":  "Delete"
+                },
+    "messages":  {
+                     "createSuccess":  "Created successfully",
+                     "updateSuccess":  "Updated successfully",
+                     "deleteSuccess":  "Deleted successfully",
+                     "loadError":  "Failed to load data"
+                 },
+    "fields":  {
+                   "id":  "ID",
+                   "name":  "Name",
+                   "code":  "Code",
+                   "status":  "Status",
+                   "createdAt":  "Created at",
+                   "updatedAt":  "Updated at"
+               }
+}

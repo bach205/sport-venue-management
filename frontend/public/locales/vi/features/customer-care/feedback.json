@@ -1,0 +1,41 @@
+﻿{
+    "title":  "Phản hồi",
+    "list":  {
+                 "title":  "Danh sách Phản hồi",
+                 "empty":  "Chưa có dữ liệu Phản hồi"
+             },
+    "detail":  {
+                   "title":  "Chi tiết Phản hồi"
+               },
+    "form":  {
+                 "createTitle":  "Tạo Phản hồi",
+                 "editTitle":  "Cập nhật Phản hồi"
+             },
+    "table":  {
+                  "title":  "Bảng Phản hồi"
+              },
+    "filter":  {
+                   "title":  "Lọc Phản hồi",
+                   "searchPlaceholder":  "Tìm kiếm Phản hồi"
+               },
+    "actions":  {
+                    "create":  "Tạo mới",
+                    "update":  "Cập nhật",
+                    "view":  "Xem",
+                    "delete":  "Xóa"
+                },
+    "messages":  {
+                     "createSuccess":  "Tạo mới thành công",
+                     "updateSuccess":  "Cập nhật thành công",
+                     "deleteSuccess":  "Xóa thành công",
+                     "loadError":  "Không tải được dữ liệu"
+                 },
+    "fields":  {
+                   "id":  "ID",
+                   "name":  "Tên",
+                   "code":  "Mã",
+                   "status":  "Trạng thái",
+                   "createdAt":  "Ngày tạo",
+                   "updatedAt":  "Ngày cập nhật"
+               }
+}

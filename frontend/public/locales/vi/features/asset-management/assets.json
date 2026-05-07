@@ -1,0 +1,154 @@
+﻿{
+  "title": "Quản lý Tài sản",
+  "description": "Quản lý tài sản, thiết bị và lịch bảo trì trong tòa nhà",
+  "list": {
+    "title": "Danh sách tài sản",
+    "empty": "Chưa có tài sản nào. Hãy thêm tài sản để bắt đầu."
+  },
+  "stats": {
+    "total": "Tổng tài sản",
+    "active": "Đang hoạt động",
+    "inactive": "Ngừng hoạt động",
+    "expiredWarranty": "Hết bảo hành"
+  },
+  "filter": {
+    "title": "Bộ lọc",
+    "searchPlaceholder": "Tìm theo tên hoặc mã...",
+    "building": "Tòa nhà",
+    "allBuildings": "Tất cả tòa nhà",
+    "assetType": "Loại tài sản",
+    "allTypes": "Tất cả loại",
+    "status": "Trạng thái",
+    "allStatuses": "Tất cả trạng thái",
+    "ownershipScope": "Loại sở hữu",
+    "allOwnership": "Tất cả"
+  },
+  "table": {
+    "assetCode": "Mã tài sản",
+    "name": "Tên tài sản",
+    "assetType": "Loại",
+    "ownershipScope": "Sở hữu",
+    "building": "Tòa nhà",
+    "location": "Vị trí",
+    "floor": "Tầng",
+    "status": "Trạng thái",
+    "installedAt": "Ngày lắp đặt",
+    "warrantyUntil": "Hạn bảo hành",
+    "createdAt": "Ngày tạo"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Ngừng hoạt động"
+  },
+  "ownershipScope": {
+    "COMMON": "Tài sản chung",
+    "PRIVATE": "Tài sản riêng"
+  },
+  "assetType": {
+    "ELEVATOR": "Thang máy",
+    "FIRE_SUPPRESSION": "PCCC",
+    "HVAC": "Điều hòa / Thông gió",
+    "ELECTRICAL": "Điện",
+    "PLUMBING": "Cấp thoát nước",
+    "SECURITY_CAMERA": "Camera an ninh",
+    "GENERATOR": "Máy phát điện",
+    "PUMP": "Bơm",
+    "LIGHTING": "Đèn chiếu sáng",
+    "DOOR": "Cửa",
+    "GATE": "Cổng",
+    "OTHER": "Khác"
+  },
+  "form": {
+    "createTitle": "Thêm tài sản",
+    "editTitle": "Chỉnh sửa tài sản",
+    "building": "Tòa nhà",
+    "selectBuilding": "Chọn tòa nhà",
+    "ownershipScope": "Loại sở hữu",
+    "unit": "Căn / Phòng",
+    "unitPlaceholder": "Ví dụ: A-101",
+    "assetCode": "Mã tài sản",
+    "name": "Tên tài sản",
+    "namePlaceholder": "Ví dụ: Thang máy hành khách 1",
+    "assetType": "Loại tài sản",
+    "selectAssetType": "Chọn loại",
+    "location": "Vị trí lắp đặt",
+    "locationPlaceholder": "Ví dụ: Sảnh tầng 1, Tầng 2",
+    "roomType": "Loại phòng",
+    "brand": "Thương hiệu",
+    "model": "Model",
+    "serialNumber": "Số serial",
+    "description": "Mô tả",
+    "descriptionPlaceholder": "Ghi chú thêm về tài sản",
+    "active": "Đang hoạt động",
+    "installedAt": "Ngày lắp đặt",
+    "warrantyUntil": "Hạn bảo hành"
+  },
+  "detail": {
+    "title": "Chi tiết tài sản",
+    "tabs": {
+      "overview": "Tổng quan",
+      "maintenance": "Bảo trì",
+      "checklist": "Checklist",
+      "fire": "PCCC",
+      "work": "Cong viec"
+    },
+    "location": "Vị trí",
+    "classification": "Phân loại",
+    "deviceInfo": "Thông tin thiết bị",
+    "dates": "Ngày tháng",
+    "maintenancePlaceholder": "Lịch bảo trì sẽ hiển thị ở đây (Guide 2)",
+    "checklistPlaceholder": "Checklist kỹ thuật sẽ hiển thị ở đây (Guide 4)",
+    "firePlaceholder": "Dữ liệu PCCC sẽ hiển thị ở đây (Guide 5)"
+  },
+  "actions": {
+    "create": "Thêm tài sản",
+    "update": "Lưu thay đổi",
+    "view": "Xem",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "import": "Import Excel",
+    "export": "Xuất danh sách",
+    "deactivate": "Vô hiệu hóa",
+    "activate": "Kích hoạt"
+  },
+  "import": {
+    "title": "Import tài sản từ Excel",
+    "building": "Tòa nhà",
+    "file": "Tải lên file",
+    "dropzone": "Click để chọn file .xlsx hoặc .csv",
+    "downloadTemplate": "Tải file mẫu",
+    "submit": "Import"
+  },
+  "delete": {
+    "title": "Xóa tài sản",
+    "message": "Bạn có chắc chắn muốn xóa \"{{name}}\"? Hành động này không thể hoàn tác."
+  },
+  "validation": {
+    "required": "Trường này là bắt buộc"
+  },
+  "messages": {
+    "createSuccess": "Tạo tài sản thành công",
+    "createError": "Tạo tài sản thất bại",
+    "updateSuccess": "Cập nhật tài sản thành công",
+    "updateError": "Cập nhật tài sản thất bại",
+    "deleteSuccess": "Xóa tài sản thành công",
+    "deleteError": "Xóa tài sản thất bại",
+    "exportSuccess": "Xuất danh sách thành công",
+    "exportError": "Xuất danh sách thất bại",
+    "importError": "Import thất bại"
+  },
+  "tree": {
+    "noBuildings": "Không có tòa nhà nào",
+    "floorLabel": "tầng",
+    "unitLabel": "căn hộ",
+    "assetLabel": "tài sản",
+    "floor": "Tầng {{floor}}",
+    "commonArea": "Khu vực chung",
+    "noFloors": "Tòa nhà chưa có tài sản",
+    "unitAssetsTitle": "Thiết bị trong {{unit}}",
+    "noUnitAssets": "Chưa có thiết bị trong khu vực này",
+    "viewAssets": "Xem thiết bị",
+    "addAssetToBuilding": "Thêm tài sản vào tòa nhà",
+    "addAssetToFloor": "Thêm tài sản cho tầng {{floor}}"
+  }
+}

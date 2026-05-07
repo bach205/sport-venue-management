@@ -1,0 +1,140 @@
+﻿{
+  "checklistStatus": {
+    "PENDING": "Chờ xử lý",
+    "ASSIGNED": "Đã phân công",
+    "IN_PROGRESS": "Đang thực hiện",
+    "COMPLETED": "Hoàn thành",
+    "OVERDUE": "Quá hạn",
+    "CANCELLED": "Đã hủy",
+    "PENDING_REVIEW": "Chờ duyệt"
+  },
+  "itemStatus": {
+    "TODO": "Chưa làm",
+    "DOING": "Đang thực hiện",
+    "DONE": "Đã hoàn thành",
+    "APPROVE": "Đã duyệt",
+    "NOT_APPROVE": "Không duyệt"
+  },
+  "frequencyUnit": {
+    "DAILY": "Ngày",
+    "WEEKLY": "Tuần",
+    "MONTHLY": "Tháng",
+    "QUARTERLY": "Quý",
+    "YEARLY": "Năm"
+  },
+  "section": {
+    "assignments": "Phân công kiểm tra",
+    "assignmentsEmpty": "Chưa có phân công nào",
+    "assetChecklistsEmpty": "Chưa có checklist nào cho tài sản này",
+    "myChecklists": "Checklist của tôi",
+    "myChecklistsEmpty": "Không có checklist nào được phân công cho bạn tại tài sản này",
+    "report": "Báo cáo checklist",
+    "templates": "Mẫu checklist",
+    "templatesEmpty": "Chưa có mẫu nào"
+  },
+  "page": {
+    "title": "Kiểm tra kỹ thuật"
+  },
+  "filters": {
+    "search": "Tìm kiếm theo mẫu, tài sản hoặc kỹ thuật viên...",
+    "status": "Lọc theo trạng thái",
+    "allStatuses": "Tất cả trạng thái"
+  },
+  "list": {
+    "dueOn": "Hạn"
+  },
+  "form": {
+    "createTemplate": "Tạo mẫu kiểm tra",
+    "editTemplate": "Chỉnh sửa mẫu kiểm tra",
+    "assignChecklist": "Phân công kiểm tra",
+    "editAssignment": "Chỉnh sửa phân công",
+    "name": "Tên mẫu kiểm tra",
+    "namePlaceholder": "Ví dụ: Kiểm tra điện hàng tháng",
+    "checklistType": "Loại kiểm tra",
+    "checklistTypePlaceholder": "Ví dụ: ĐIỆN, CƠ KHÍ",
+    "description": "Mô tả",
+    "descriptionPlaceholder": "Mô tả tùy chọn",
+    "frequencyValue": "Tần suất",
+    "frequencyUnit": "Đơn vị",
+    "selectUnit": "Chọn đơn vị",
+    "template": "Mẫu kiểm tra",
+    "selectTemplate": "Chọn mẫu kiểm tra",
+    "assignedTo": "Phân công cho",
+    "assignedToPlaceholder": "ID hoặc tên kỹ thuật viên",
+    "dueDate": "Hạn hoàn thành",
+    "required": "Trường này là bắt buộc",
+    "items": "Các hạng mục kiểm tra",
+    "addItem": "Thêm hạng mục",
+    "editItem": "Sửa hạng mục",
+    "itemName": "Tên hạng mục",
+    "itemNamePlaceholder": "VD: Kiểm tra mức dầu",
+    "noItems": "Chưa có hạng mục nào",
+    "saveItem": "Lưu"
+  },
+  "item": {
+    "uncategorized": "Chung",
+    "needsRepairHint": "Hạng mục này cần xử lý. Hãy tạo công tác bảo trì.",
+    "notApprovedHint": "Hạng mục này không được duyệt. Vui lòng kiểm tra và làm lại."
+  },
+  "detail": {
+    "assignedTo": "Phân công cho",
+    "startedAt": "Bắt đầu",
+    "completedAt": "Hoàn thành",
+    "noItems": "Không có hạng mục nào"
+  },
+  "report": {
+    "title": "Báo cáo",
+    "total": "Tổng số",
+    "completed": "Hoàn thành",
+    "inProgress": "Đang thực hiện",
+    "overdue": "Quá hạn",
+    "completionRate": "Tỉ lệ hoàn thành",
+    "from": "Từ ngày",
+    "to": "Đến ngày",
+    "apply": "Áp dụng"
+  },
+  "template": {
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "items": "hạng mục"
+  },
+  "actions": {
+    "assign": "Phân công",
+    "createTemplate": "Tạo mẫu mới",
+    "editAssignment": "Sửa phân công",
+    "deleteAssignment": "Xóa phân công",
+    "complete": "Hoàn thành",
+    "uploadMedia": "Tải lên",
+    "createWork": "Tạo công tác",
+    "cancel": "Hủy",
+    "create": "Tạo mới",
+    "update": "Cập nhật"
+  },
+  "messages": {
+    "assignSuccess": "Phân công kiểm tra thành công",
+    "assignError": "Lỗi khi phân công kiểm tra",
+    "assignmentUpdated": "Đã cập nhật phân công",
+    "assignmentUpdateError": "Lỗi khi cập nhật phân công",
+    "assignmentDeleted": "Đã xóa phân công",
+    "assignmentDeleteError": "Lỗi khi xóa phân công",
+    "templateCreated": "Đã tạo mẫu kiểm tra",
+    "templateCreateError": "Lỗi khi tạo mẫu kiểm tra",
+    "templateUpdated": "Đã cập nhật mẫu kiểm tra",
+    "templateUpdateError": "Lỗi khi cập nhật mẫu kiểm tra",
+    "templateDeleted": "Đã xóa mẫu kiểm tra",
+    "templateDeleteError": "Lỗi khi xóa mẫu kiểm tra",
+    "completed": "Đã hoàn thành kiểm tra",
+    "completeError": "Lỗi khi hoàn thành kiểm tra",
+    "itemUpdated": "Đã lưu hạng mục",
+    "itemError": "Lỗi khi lưu hạng mục",
+    "mediaUploaded": "Đã tải lên file",
+    "mediaError": "Lỗi khi tải lên file"
+  },
+  "confirm": {
+    "deleteAssignment": "Xóa phân công này?",
+    "deleteAssignmentDesc": "Hành động này không thể hoàn tác.",
+    "deleteTemplate": "Xóa mẫu kiểm tra này?",
+    "deleteTemplateDesc": "Mẫu kiểm tra sẽ bị xóa vĩnh viễn.",
+    "confirmBtn": "Xóa"
+  }
+}

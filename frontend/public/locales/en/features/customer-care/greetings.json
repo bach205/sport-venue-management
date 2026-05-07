@@ -1,0 +1,41 @@
+﻿{
+    "title":  "Greetings",
+    "list":  {
+                 "title":  "Greetings List",
+                 "empty":  "No Greetings data available"
+             },
+    "detail":  {
+                   "title":  "Greetings Detail"
+               },
+    "form":  {
+                 "createTitle":  "Create Greetings",
+                 "editTitle":  "Edit Greetings"
+             },
+    "table":  {
+                  "title":  "Greetings Table"
+              },
+    "filter":  {
+                   "title":  "Filter Greetings",
+                   "searchPlaceholder":  "Search Greetings"
+               },
+    "actions":  {
+                    "create":  "Create",
+                    "update":  "Update",
+                    "view":  "View",
+                    "delete":  "Delete"
+                },
+    "messages":  {
+                     "createSuccess":  "Created successfully",
+                     "updateSuccess":  "Updated successfully",
+                     "deleteSuccess":  "Deleted successfully",
+                     "loadError":  "Failed to load data"
+                 },
+    "fields":  {
+                   "id":  "ID",
+                   "name":  "Name",
+                   "code":  "Code",
+                   "status":  "Status",
+                   "createdAt":  "Created at",
+                   "updatedAt":  "Updated at"
+               }
+}

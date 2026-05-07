@@ -1,0 +1,77 @@
+import "i18next";
+import type commonVi from "../../../public/locales/vi/common.json";
+import type authVi from "../../../public/locales/vi/features/auth.json";
+import type buildingsVi from "../../../public/locales/vi/features/data-management/buildings.json";
+import type residentsVi from "../../../public/locales/vi/features/data-management/residents.json";
+import type vehiclesVi from "../../../public/locales/vi/features/data-management/vehicles.json";
+import type internalContactsVi from "../../../public/locales/vi/features/data-management/internal-contacts.json";
+import type servicesVi from "../../../public/locales/vi/features/service-management/services.json";
+import type feeFormulasVi from "../../../public/locales/vi/features/service-management/fee-formulas.json";
+import type serviceContractsVi from "../../../public/locales/vi/features/service-management/service-contracts.json";
+import type serviceOperationsVi from "../../../public/locales/vi/features/service-management/service-operations.json";
+import type accessCardsVi from "../../../public/locales/vi/features/service-management/access-cards.json";
+import type assetsVi from "../../../public/locales/vi/features/asset-management/assets.json";
+import type maintenanceSchedulesVi from "../../../public/locales/vi/features/asset-management/maintenance-schedules.json";
+import type technicalChecklistsVi from "../../../public/locales/vi/features/asset-management/technical-checklists.json";
+import type maintenanceTasksVi from "../../../public/locales/vi/features/asset-management/maintenance-tasks.json";
+import type fireSafetyVi from "../../../public/locales/vi/features/asset-management/fire-safety.json";
+import type feeNoticesVi from "../../../public/locales/vi/features/finance-management/fee-notices.json";
+import type paymentsVi from "../../../public/locales/vi/features/finance-management/payments.json";
+import type cashbookVi from "../../../public/locales/vi/features/finance-management/cashbook.json";
+import type financialReportsVi from "../../../public/locales/vi/features/finance-management/financial-reports.json";
+import type notificationsVi from "../../../public/locales/vi/features/customer-care/notifications.json";
+import type feedbackVi from "../../../public/locales/vi/features/customer-care/feedback.json";
+import type complaintsVi from "../../../public/locales/vi/features/customer-care/complaints.json";
+import type greetingsVi from "../../../public/locales/vi/features/customer-care/greetings.json";
+import type internalTasksVi from "../../../public/locales/vi/features/task-management/internal-tasks.json";
+import type kpiTrackingVi from "../../../public/locales/vi/features/task-management/kpi-tracking.json";
+import type internalDocumentsVi from "../../../public/locales/vi/features/document-management/internal-documents.json";
+import type projectDocumentsVi from "../../../public/locales/vi/features/document-management/project-documents.json";
+import type residentDocumentsVi from "../../../public/locales/vi/features/document-management/resident-documents.json";
+import type departmentsVi from "../../../public/locales/vi/features/system-management/departments.json";
+import type employeesVi from "../../../public/locales/vi/features/system-management/employees.json";
+import type permissionsVi from "../../../public/locales/vi/features/system-management/permissions.json";
+import type buildingSettingsVi from "../../../public/locales/vi/features/system-management/building-settings.json";
+import type centralizedManagementVi from "../../../public/locales/vi/features/system-management/centralized-management.json";
+
+declare module "i18next" {
+  interface CustomTypeOptions {
+    defaultNS: "common";
+    resources: {
+      common: typeof commonVi;
+      auth: typeof authVi;
+      buildings: typeof buildingsVi;
+      residents: typeof residentsVi;
+      vehicles: typeof vehiclesVi;
+      internalContacts: typeof internalContactsVi;
+      services: typeof servicesVi;
+      feeFormulas: typeof feeFormulasVi;
+      serviceContracts: typeof serviceContractsVi;
+      serviceOperations: typeof serviceOperationsVi;
+      accessCards: typeof accessCardsVi;
+      assets: typeof assetsVi;
+      maintenanceSchedules: typeof maintenanceSchedulesVi;
+      technicalChecklists: typeof technicalChecklistsVi;
+      maintenanceTasks: typeof maintenanceTasksVi;
+      fireSafety: typeof fireSafetyVi;
+      feeNotices: typeof feeNoticesVi;
+      payments: typeof paymentsVi;
+      cashbook: typeof cashbookVi;
+      financialReports: typeof financialReportsVi;
+      notifications: typeof notificationsVi;
+      feedback: typeof feedbackVi;
+      complaints: typeof complaintsVi;
+      greetings: typeof greetingsVi;
+      internalTasks: typeof internalTasksVi;
+      kpiTracking: typeof kpiTrackingVi;
+      internalDocuments: typeof internalDocumentsVi;
+      projectDocuments: typeof projectDocumentsVi;
+      residentDocuments: typeof residentDocumentsVi;
+      departments: typeof departmentsVi;
+      employees: typeof employeesVi;
+      permissions: typeof permissionsVi;
+      buildingSettings: typeof buildingSettingsVi;
+      centralizedManagement: typeof centralizedManagementVi;
+    };
+  }
+}

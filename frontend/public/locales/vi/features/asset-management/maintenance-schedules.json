@@ -1,0 +1,85 @@
+﻿{
+  "maintenanceType": {
+    "PREVENTIVE": "Bảo trì phòng ngừa",
+    "CORRECTIVE": "Sửa chữa khắc phục",
+    "INSPECTION": "Kiểm tra định kỳ",
+    "CALIBRATION": "Hiệu chuẩn",
+    "CLEANING": "Vệ sinh",
+    "OTHER": "Khác"
+  },
+  "recordStatus": {
+    "PENDING": "Chờ thực hiện",
+    "IN_PROGRESS": "Đang thực hiện",
+    "COMPLETED": "Hoàn thành",
+    "CANCELLED": "Đã hủy"
+  },
+  "urgency": {
+    "overdue": "Quá hạn",
+    "soon": "Sắp tới",
+    "normal": "Bình thường"
+  },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Ngưng hoạt động"
+  },
+  "section": {
+    "schedules": "Lịch bảo trì",
+    "schedulesEmpty": "Chưa có lịch bảo trì. Tạo lịch để bắt đầu.",
+    "upcoming": "Công việc sắp tới",
+    "upcomingEmpty": "Không có công việc sắp tới.",
+    "history": "Lịch sử bảo trì / sửa chữa",
+    "historyEmpty": "Chưa có lịch sử bảo trì."
+  },
+  "schedule": {
+    "every": "Mỗi {{count}} ngày",
+    "nextOn": "Lần tới:",
+    "assignedTo": "Phụ trách"
+  },
+  "form": {
+    "createTitle": "Tạo lịch bảo trì",
+    "editTitle": "Chỉnh sửa lịch bảo trì",
+    "name": "Tên lịch",
+    "namePlaceholder": "Ví dụ: Kiểm tra thang máy hàng tháng",
+    "maintenanceType": "Loại bảo trì",
+    "selectType": "Chọn loại",
+    "intervalDays": "Chu kỳ (ngày)",
+    "startDate": "Ngày bắt đầu",
+    "assignedTo": "Người phụ trách (ID)",
+    "assignedToPlaceholder": "Ví dụ: user-id-123",
+    "description": "Mô tả",
+    "descriptionPlaceholder": "Chi tiết về lịch bảo trì này",
+    "required": "Trường này là bắt buộc"
+  },
+  "actions": {
+    "create": "Tạo lịch",
+    "update": "Lưu thay đổi",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "cancel": "Hủy",
+    "deactivate": "Vô hiệu hóa",
+    "activate": "Kích hoạt"
+  },
+  "dashboard": {
+    "title": "Dashboard Bảo trì",
+    "description": "Tổng quan công việc sắp tới và quá hạn",
+    "overdue": "Quá hạn",
+    "soonIn7": "Trong 7 ngày tới",
+    "totalUpcoming": "Tổng sắp tới",
+    "overdueList": "Quá hạn",
+    "soonList": "Trong tuần này",
+    "myTasks": "Việc của tôi",
+    "noTasks": "Chưa có việc được giao.",
+    "today": "Hôm nay",
+    "upcomingGroup": "Sắp tới",
+    "overdueGroup": "Quá hạn"
+  },
+  "messages": {
+    "createSuccess": "Tạo lịch thành công",
+    "createError": "Tạo lịch thất bại",
+    "updateSuccess": "Cập nhật lịch thành công",
+    "updateError": "Cập nhật lịch thất bại",
+    "deleteSuccess": "Xóa lịch thành công",
+    "deleteError": "Xóa lịch thất bại",
+    "toggleError": "Cập nhật trạng thái thất bại"
+  }
+}

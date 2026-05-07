@@ -1,0 +1,101 @@
+﻿{
+  "status": {
+    "VALID": "Còn hạn",
+    "EXPIRING_SOON": "Sắp hết hạn",
+    "EXPIRED": "Quá hạn"
+  },
+  "cycleUnit": {
+    "MONTH": "Tháng",
+    "QUARTER": "Quý",
+    "YEAR": "Năm"
+  },
+  "overview": {
+    "total": "Tổng thiết bị",
+    "valid": "Còn hạn",
+    "expiringSoon": "Sắp hết hạn",
+    "expired": "Quá hạn"
+  },
+  "section": {
+    "overview": "Tổng quan PCCC",
+    "equipmentList": "Danh sách thiết bị",
+    "equipmentEmpty": "Chưa có thiết bị PCCC nào",
+    "expiringSoon": "Sắp hết hạn",
+    "expired": "Quá hạn",
+    "history": "Lịch sử kiểm định",
+    "historyEmpty": "Chưa có lịch sử kiểm định"
+  },
+  "page": {
+    "title": "Phòng cháy chữa cháy"
+  },
+  "filters": {
+    "search": "Tìm thiết bị...",
+    "type": "Lọc theo loại",
+    "allTypes": "Tất cả loại",
+    "status": "Lọc theo trạng thái",
+    "allStatuses": "Tất cả trạng thái"
+  },
+  "detail": {
+    "floor": "Tầng",
+    "latestInspection": "Kiểm định gần nhất",
+    "nextInspection": "Kiểm định tiếp theo",
+    "daysUntilDue": "Số ngày còn lại",
+    "cycle": "Chu kỳ kiểm định",
+    "overdue": "ngày quá hạn",
+    "remaining": "ngày còn lại",
+    "confirmedBy": "Người xác nhận",
+    "certificate": "Biên bản / Chứng nhận",
+    "viewCertificate": "Xem biên bản"
+  },
+  "form": {
+    "building": "Tòa nhà",
+    "selectBuilding": "Chọn tòa nhà",
+    "createTitle": "Thêm thiết bị PCCC",
+    "editTitle": "Chỉnh sửa thiết bị PCCC",
+    "confirmTitle": "Xác nhận kiểm định",
+    "name": "Tên thiết bị",
+    "namePlaceholder": "Ví dụ: Bình chữa cháy - B1",
+    "equipmentType": "Loại thiết bị",
+    "equipmentTypePlaceholder": "Ví dụ: Bình bột, Sprinkler, Chuông báo",
+    "floorNumber": "Tầng",
+    "areaName": "Khu vực",
+    "areaNamePlaceholder": "Ví dụ: Hành lang, Bãi xe",
+    "cycleValue": "Chu kỳ",
+    "cycleUnit": "Đơn vị",
+    "selectUnit": "Chọn đơn vị",
+    "nextInspectionDate": "Ngày kiểm định tiếp theo",
+    "inspectionDate": "Ngày kiểm định",
+    "certificateUrl": "URL biên bản",
+    "note": "Ghi chú",
+    "notePlaceholder": "Ghi chú tùy chọn",
+    "required": "Trường này là bắt buộc"
+  },
+  "actions": {
+    "addEquipment": "Thêm thiết bị",
+    "confirmInspection": "Xác nhận kiểm định",
+    "edit": "Sửa thông tin",
+    "delete": "Xóa",
+    "export": "Xuất báo cáo",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "create": "Tạo mới",
+    "update": "Cập nhật"
+  },
+  "tree": {
+    "noBuildings": "Chưa có tòa nhà nào",
+    "noFloors": "Chưa có tầng nào",
+    "floorLabel": "tầng",
+    "equipmentLabel": "thiết bị",
+    "unknownFloor": "Tầng không xác định"
+  },
+  "messages": {
+    "createSuccess": "Đã tạo thiết bị",
+    "createError": "Lỗi khi tạo thiết bị",
+    "updateSuccess": "Đã cập nhật thiết bị",
+    "updateError": "Lỗi khi cập nhật thiết bị",
+    "deleteSuccess": "Đã xóa thiết bị",
+    "deleteError": "Lỗi khi xóa thiết bị",
+    "confirmSuccess": "Đã xác nhận kiểm định",
+    "confirmError": "Lỗi khi xác nhận kiểm định",
+    "exportError": "Lỗi khi xuất báo cáo"
+  }
+}

@@ -1,0 +1,41 @@
+﻿{
+    "title":  "Lời chúc",
+    "list":  {
+                 "title":  "Danh sách Lời chúc",
+                 "empty":  "Chưa có dữ liệu Lời chúc"
+             },
+    "detail":  {
+                   "title":  "Chi tiết Lời chúc"
+               },
+    "form":  {
+                 "createTitle":  "Tạo Lời chúc",
+                 "editTitle":  "Cập nhật Lời chúc"
+             },
+    "table":  {
+                  "title":  "Bảng Lời chúc"
+              },
+    "filter":  {
+                   "title":  "Lọc Lời chúc",
+                   "searchPlaceholder":  "Tìm kiếm Lời chúc"
+               },
+    "actions":  {
+                    "create":  "Tạo mới",
+                    "update":  "Cập nhật",
+                    "view":  "Xem",
+                    "delete":  "Xóa"
+                },
+    "messages":  {
+                     "createSuccess":  "Tạo mới thành công",
+                     "updateSuccess":  "Cập nhật thành công",
+                     "deleteSuccess":  "Xóa thành công",
+                     "loadError":  "Không tải được dữ liệu"
+                 },
+    "fields":  {
+                   "id":  "ID",
+                   "name":  "Tên",
+                   "code":  "Mã",
+                   "status":  "Trạng thái",
+                   "createdAt":  "Ngày tạo",
+                   "updatedAt":  "Ngày cập nhật"
+               }
+}

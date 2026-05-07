@@ -1,0 +1,41 @@
+﻿{
+    "title":  "Feedback",
+    "list":  {
+                 "title":  "Feedback List",
+                 "empty":  "No Feedback data available"
+             },
+    "detail":  {
+                   "title":  "Feedback Detail"
+               },
+    "form":  {
+                 "createTitle":  "Create Feedback",
+                 "editTitle":  "Edit Feedback"
+             },
+    "table":  {
+                  "title":  "Feedback Table"
+              },
+    "filter":  {
+                   "title":  "Filter Feedback",
+                   "searchPlaceholder":  "Search Feedback"
+               },
+    "actions":  {
+                    "create":  "Create",
+                    "update":  "Update",
+                    "view":  "View",
+                    "delete":  "Delete"
+                },
+    "messages":  {
+                     "createSuccess":  "Created successfully",
+                     "updateSuccess":  "Updated successfully",
+                     "deleteSuccess":  "Deleted successfully",
+                     "loadError":  "Failed to load data"
+                 },
+    "fields":  {
+                   "id":  "ID",
+                   "name":  "Name",
+                   "code":  "Code",
+                   "status":  "Status",
+                   "createdAt":  "Created at",
+                   "updatedAt":  "Updated at"
+               }
+}
