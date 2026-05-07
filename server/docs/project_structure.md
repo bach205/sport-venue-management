@@ -44,7 +44,7 @@ The core business logic, organized by feature. Each module typically contains:
 - `chat`: Implements messaging, conversations, and participants.
 - `matching`: Facilitates match requests and partner discovery.
 - `social`: Manages posts, comments, and likes.
-- `venue`: Handles sports facilities, booking slots, and payments.
+- `venue`: Handles sports facilities, schedule-based slot browsing, booking holds, payments, refunds, owner venue management, and manual availability overrides.
 
 ### /sockets
 Socket.io event handlers for real-time features like chat notifications.

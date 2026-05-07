@@ -1,0 +1,412 @@
+const mongoose = require("mongoose");
+const request = require("supertest");
+const { MongoMemoryServer } = require("mongodb-memory-server");
+
+const app = require("../app");
+const { signToken } = require("../src/utils/jwt");
+const { User, Profile, UserRole } = require("../src/modules/user/model");
+const {
+  Venue,
+  VenueAvailabilityOverride,
+  Booking,
+  Payment,
+  Refund,
+} = require("../src/modules/venue/model");
+
+const TEST_DATE = "2026-05-11";
+const TEST_DAY_OF_WEEK = new Date(`${TEST_DATE}T00:00:00`).getDay();
+
+let mongoServer;
+
+const authHeader = (token) => ({ Authorization: `Bearer ${token}` });
+
+const createUser = async (role, email) => {
+  const user = await User.create({
+    email,
+    password_hash: "password123",
+    is_verified: true,
+  });
+
+  await Profile.create({
+    user_id: user._id,
+    name: email.split("@")[0],
+  });
+
+  await UserRole.create({
+    user_id: user._id,
+    role,
+  });
+
+  return {
+    user,
+    token: signToken({ id: user._id, email: user.email }),
+  };
+};
+
+const createVenue = async (ownerId) =>
+  Venue.create({
+    owner_id: ownerId,
+    name: "Central Court",
+    location: "District 1",
+    description: "Indoor court",
+    slot_price: 250000,
+    slot_duration_minutes: 60,
+    weekly_schedule: [
+      { day_of_week: TEST_DAY_OF_WEEK, start_time: "08:00", end_time: "12:00" },
+    ],
+  });
+
+const createHold = async (token, venueId, startTime, endTime) =>
+  request(app)
+    .post("/api/v1/bookings/holds")
+    .set(authHeader(token))
+    .send({
+      venue_id: String(venueId),
+      date: TEST_DATE,
+      start_time: startTime,
+      end_time: endTime,
+    });
+
+const createPayment = async (token, bookingId) =>
+  request(app)
+    .post(`/api/v1/bookings/${bookingId}/payments`)
+    .set(authHeader(token))
+    .send({});
+
+const confirmPayment = async (token, paymentId) =>
+  request(app)
+    .post(`/api/v1/payments/${paymentId}/confirm`)
+    .set(authHeader(token))
+    .send({});
+
+const createConfirmedBooking = async (token, venueId, startTime, endTime, paidAt) => {
+  const holdResponse = await createHold(token, venueId, startTime, endTime);
+  const bookingId = holdResponse.body.data.booking.id;
+
+  const paymentResponse = await createPayment(token, bookingId);
+  const paymentId = paymentResponse.body.data.payment.id;
+
+  await confirmPayment(token, paymentId);
+
+  if (paidAt) {
+    await Payment.findByIdAndUpdate(paymentId, { paid_at: paidAt });
+  }
+
+  return {
+    bookingId,
+    paymentId,
+  };
+};
+
+beforeAll(async () => {
+  process.env.JWT_SECRET = "test_secret";
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri());
+  await Booking.syncIndexes();
+  await VenueAvailabilityOverride.syncIndexes();
+});
+
+afterEach(async () => {
+  const collections = mongoose.connection.collections;
+  // Keep indexes between tests, only clear data.
+  await Promise.all(Object.values(collections).map((collection) => collection.deleteMany({})));
+});
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
+
+describe("Venue booking module", () => {
+  test("returns slot statuses for available and unavailable schedule entries", async () => {
+    const owner = await createUser("owner", "owner1@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    await VenueAvailabilityOverride.create({
+      venue_id: venue._id,
+      date: TEST_DATE,
+      start_time: "09:00",
+      end_time: "10:00",
+      status: "unavailable",
+      created_by: owner.user._id,
+      reason: "maintenance",
+    });
+
+    const response = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "08:00", endTime: "09:00", status: "available" }),
+        expect.objectContaining({ startTime: "09:00", endTime: "10:00", status: "unavailable" }),
+      ])
+    );
+  });
+
+  test("creates a hold for an available slot and rejects duplicate holds", async () => {
+    const owner = await createUser("owner", "owner2@example.com");
+    const userA = await createUser("user", "userA@example.com");
+    const userB = await createUser("user", "userB@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const firstResponse = await createHold(userA.token, venue._id, "08:00", "09:00");
+    const secondResponse = await createHold(userB.token, venue._id, "08:00", "09:00");
+
+    expect(firstResponse.status).toBe(201);
+    expect(firstResponse.body.data.booking.status).toBe("hold");
+    expect(secondResponse.status).toBe(400);
+    expect(secondResponse.body.message).toContain("no longer available");
+  });
+
+  test("prevents double booking under concurrent hold requests", async () => {
+    const owner = await createUser("owner", "owner3@example.com");
+    const userA = await createUser("user", "concurrentA@example.com");
+    const userB = await createUser("user", "concurrentB@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const [responseA, responseB] = await Promise.all([
+      createHold(userA.token, venue._id, "10:00", "11:00"),
+      createHold(userB.token, venue._id, "10:00", "11:00"),
+    ]);
+
+    const statuses = [responseA.status, responseB.status].sort();
+    expect(statuses).toEqual([400, 201]);
+  });
+
+  test("moves booking from hold to payment_pending to confirmed when payment is confirmed", async () => {
+    const owner = await createUser("owner", "owner4@example.com");
+    const user = await createUser("user", "payer@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "08:00", "09:00");
+    const bookingId = holdResponse.body.data.booking.id;
+    const paymentResponse = await createPayment(user.token, bookingId);
+
+    expect(paymentResponse.status).toBe(201);
+    expect(paymentResponse.body.data.booking.status).toBe("payment_pending");
+    expect(paymentResponse.body.data.payment.status).toBe("pending");
+
+    const paymentId = paymentResponse.body.data.payment.id;
+    const confirmResponse = await confirmPayment(user.token, paymentId);
+
+    expect(confirmResponse.status).toBe(200);
+    expect(confirmResponse.body.data.booking.status).toBe("confirmed");
+    expect(confirmResponse.body.data.payment.status).toBe("paid");
+  });
+
+  test("expires stale holds and reopens the slot in availability responses", async () => {
+    const owner = await createUser("owner", "owner5@example.com");
+    const user = await createUser("user", "stale@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "08:00", "09:00");
+    const bookingId = holdResponse.body.data.booking.id;
+
+    await Booking.findByIdAndUpdate(bookingId, {
+      hold_expires_at: new Date(Date.now() - 60 * 1000),
+    });
+
+    const slotsResponse = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+    const booking = await Booking.findById(bookingId);
+
+    expect(slotsResponse.status).toBe(200);
+    expect(booking.status).toBe("expired");
+    expect(slotsResponse.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "08:00", endTime: "09:00", status: "available" }),
+      ])
+    );
+  });
+
+  test("processes refunds automatically within five minutes and reopens the slot", async () => {
+    const owner = await createUser("owner", "owner6@example.com");
+    const user = await createUser("user", "refund-auto@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const { bookingId } = await createConfirmedBooking(
+      user.token,
+      venue._id,
+      "08:00",
+      "09:00",
+      new Date()
+    );
+
+    const refundResponse = await request(app)
+      .post(`/api/v1/bookings/${bookingId}/refund`)
+      .set(authHeader(user.token))
+      .send({ note: "Need to cancel" });
+
+    expect(refundResponse.status).toBe(200);
+    expect(refundResponse.body.data.mode).toBe("auto");
+    expect(refundResponse.body.data.booking.status).toBe("refunded");
+    expect(refundResponse.body.data.payment.status).toBe("refunded");
+    expect(refundResponse.body.data.refund.status).toBe("completed");
+
+    const slotsResponse = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+
+    expect(slotsResponse.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "08:00", endTime: "09:00", status: "available" }),
+      ])
+    );
+  });
+
+  test("creates a manual refund request after five minutes and keeps the slot booked until owner acts", async () => {
+    const owner = await createUser("owner", "owner7@example.com");
+    const user = await createUser("user", "refund-manual@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const { bookingId } = await createConfirmedBooking(
+      user.token,
+      venue._id,
+      "09:00",
+      "10:00",
+      new Date(Date.now() - (6 * 60 * 1000))
+    );
+
+    const refundResponse = await request(app)
+      .post(`/api/v1/bookings/${bookingId}/refund`)
+      .set(authHeader(user.token))
+      .send({ note: "Late cancel" });
+
+    expect(refundResponse.status).toBe(200);
+    expect(refundResponse.body.data.mode).toBe("manual");
+    expect(refundResponse.body.data.refund.status).toBe("pending_manual");
+    expect(refundResponse.body.data.booking.status).toBe("confirmed");
+
+    const slotsResponse = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+
+    expect(slotsResponse.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "09:00", endTime: "10:00", status: "booked" }),
+      ])
+    );
+  });
+
+  test("lets the owner approve or reject manual refund requests and updates booking state correctly", async () => {
+    const owner = await createUser("owner", "owner8@example.com");
+    const userA = await createUser("user", "manual-a@example.com");
+    const userB = await createUser("user", "manual-b@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const firstBooking = await createConfirmedBooking(
+      userA.token,
+      venue._id,
+      "09:00",
+      "10:00",
+      new Date(Date.now() - (6 * 60 * 1000))
+    );
+    await request(app)
+      .post(`/api/v1/bookings/${firstBooking.bookingId}/refund`)
+      .set(authHeader(userA.token))
+      .send({ note: "manual approve" });
+
+    const refundListResponse = await request(app)
+      .get(`/api/v1/my-venues/${venue._id}/refund-requests`)
+      .set(authHeader(owner.token));
+
+    expect(refundListResponse.status).toBe(200);
+    expect(refundListResponse.body.data.items).toHaveLength(1);
+
+    const firstRefundId = refundListResponse.body.data.items[0].id;
+    const approveResponse = await request(app)
+      .patch(`/api/v1/my-venues/refund-requests/${firstRefundId}`)
+      .set(authHeader(owner.token))
+      .send({ action: "approve", note: "approved by owner" });
+
+    expect(approveResponse.status).toBe(200);
+    expect(approveResponse.body.data.booking.status).toBe("refunded");
+    expect(approveResponse.body.data.payment.status).toBe("refunded");
+    expect(approveResponse.body.data.refund.status).toBe("completed");
+
+    const secondBooking = await createConfirmedBooking(
+      userB.token,
+      venue._id,
+      "10:00",
+      "11:00",
+      new Date(Date.now() - (6 * 60 * 1000))
+    );
+    await request(app)
+      .post(`/api/v1/bookings/${secondBooking.bookingId}/refund`)
+      .set(authHeader(userB.token))
+      .send({ note: "manual reject" });
+
+    const refundListResponse2 = await request(app)
+      .get(`/api/v1/my-venues/${venue._id}/refund-requests?status=pending_manual`)
+      .set(authHeader(owner.token));
+
+    expect(refundListResponse2.status).toBe(200);
+    expect(refundListResponse2.body.data.items).toHaveLength(1);
+
+    const secondRefundId = refundListResponse2.body.data.items[0].id;
+    const rejectResponse = await request(app)
+      .patch(`/api/v1/my-venues/refund-requests/${secondRefundId}`)
+      .set(authHeader(owner.token))
+      .send({ action: "reject", note: "slot was already prepared" });
+
+    expect(rejectResponse.status).toBe(200);
+    expect(rejectResponse.body.data.booking.status).toBe("confirmed");
+    expect(rejectResponse.body.data.refund.status).toBe("rejected");
+
+    const ownerBookingsResponse = await request(app)
+      .get(`/api/v1/my-venues/${venue._id}/bookings?date=${TEST_DATE}`)
+      .set(authHeader(owner.token));
+
+    expect(ownerBookingsResponse.status).toBe(200);
+    expect(ownerBookingsResponse.body.data.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "refunded" }),
+        expect.objectContaining({ status: "confirmed" }),
+      ])
+    );
+  });
+
+  test("owner availability toggles immediately affect slot browsing results", async () => {
+    const owner = await createUser("owner", "owner9@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const makeUnavailableResponse = await request(app)
+      .put(`/api/v1/my-venues/${venue._id}/availability`)
+      .set(authHeader(owner.token))
+      .send({
+        date: TEST_DATE,
+        start_time: "11:00",
+        end_time: "12:00",
+        status: "unavailable",
+        reason: "outside system booking",
+      });
+
+    expect(makeUnavailableResponse.status).toBe(200);
+    expect(makeUnavailableResponse.body.data.slot.status).toBe("unavailable");
+
+    const slotsAfterUnavailable = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+    expect(slotsAfterUnavailable.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "11:00", endTime: "12:00", status: "unavailable" }),
+      ])
+    );
+
+    const makeAvailableResponse = await request(app)
+      .put(`/api/v1/my-venues/${venue._id}/availability`)
+      .set(authHeader(owner.token))
+      .send({
+        date: TEST_DATE,
+        start_time: "11:00",
+        end_time: "12:00",
+        status: "available",
+      });
+
+    expect(makeAvailableResponse.status).toBe(200);
+    expect(makeAvailableResponse.body.data.slot.status).toBe("available");
+  });
+});

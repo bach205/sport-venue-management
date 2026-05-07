@@ -50,16 +50,17 @@ Manages community interaction through a feed.
 ## 5. Venue & Booking Module
 Manages sport facility availability and reservations.
 
-- **venues**: Details of sport facilities and their owners.
-- **venue_slots**: Specific time windows available for booking.
-- **bookings**: Reservation records for a venue slot.
-- **payments**: Financial transactions linked to bookings.
-- **refunds**: Refund processing records.
+- **venues**: Details of sport facilities, owners, default slot price, slot duration, and weekly schedule templates.
+- **venue_availability_overrides**: Per-date unavailable slot exceptions created by owners for manual schedule control.
+- **bookings**: Reservation records for generated schedule slots, including temporary holds and refund lifecycle states.
+- **payments**: Payment lifecycle records linked to bookings.
+- **refunds**: Auto/manual refund processing records linked to bookings and payments.
 
 ### Relationships
-- A **venue** offers multiple **venue_slots**.
-- A **venue_slot** links to one **booking**.
-- A **booking** has one **payment** and one **refund** record.
+- A **venue** defines multiple weekly schedule ranges and can have many availability overrides.
+- A **venue** can have many **bookings** derived from generated schedule slots.
+- A **booking** has one **payment** and can have refund request records over time.
+- A **refund** belongs to one **booking** and one **payment**.
 
 ## Entity Relationship Summary
 
@@ -83,9 +84,9 @@ erDiagram
     USER ||--|{ LIKE : "gives"
     
     USER ||--|{ VENUE : "owns"
-    VENUE ||--|{ VENUE_SLOT : "offers"
-    VENUE_SLOT ||--|| BOOKING : "reserved_by"
+    VENUE ||--|{ VENUE_AVAILABILITY_OVERRIDE : "overrides"
+    VENUE ||--|{ BOOKING : "receives"
     BOOKING ||--|| PAYMENT : "settled_by"
-    BOOKING ||--|| REFUND : "processed_by"
+    BOOKING ||--|{ REFUND : "processed_by"
     USER ||--|{ BOOKING : "makes"
 ```

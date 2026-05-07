@@ -1,6 +1,7 @@
 const { HTTP_STATUS } = require("../constants");
 const { verifyToken } = require("../utils/jwt");
 const { User } = require("../modules/user/model");
+const { UserRole } = require("../modules/user/model");
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -15,7 +16,10 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const payload = verifyToken(token);
-    const user = await User.findById(payload.id);
+    const [user, roles] = await Promise.all([
+      User.findById(payload.id),
+      UserRole.find({ user_id: payload.id }),
+    ]);
 
     if (!user) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -34,6 +38,7 @@ const authMiddleware = async (req, res, next) => {
       email: user.email,
       status: user.status,
       is_verified: user.is_verified,
+      roles: roles.map((role) => role.role),
     };
 
     return next();

@@ -1,109 +1,251 @@
 const mongoose = require("mongoose");
 
-// --- VENUE MODEL ---
+const ACTIVE_BOOKING_STATUSES = ["hold", "payment_pending", "confirmed", "refund_processing"];
+const BOOKING_STATUSES = [
+  ...ACTIVE_BOOKING_STATUSES,
+  "refunded",
+  "refund_rejected",
+  "expired",
+];
+const PAYMENT_STATUSES = ["pending", "paid", "failed", "refund_pending", "refunded"];
+const REFUND_STATUSES = ["pending_auto", "pending_manual", "approved", "rejected", "completed"];
+
+const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+const WeeklyScheduleSchema = new mongoose.Schema(
+  {
+    day_of_week: {
+      type: Number,
+      min: 0,
+      max: 6,
+      required: true,
+    },
+    start_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+    end_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+  },
+  { _id: false }
+);
+
 const VenueSchema = new mongoose.Schema(
   {
     owner_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
-    name: { type: String, required: true },
-    location: { type: String, required: true },
-    description: { type: String },
+    name: { type: String, required: true, trim: true },
+    location: { type: String, required: true, trim: true },
+    description: { type: String, default: "", trim: true },
+    slot_price: { type: Number, required: true, min: 0 },
+    slot_duration_minutes: { type: Number, required: true, min: 15 },
+    weekly_schedule: {
+      type: [WeeklyScheduleSchema],
+      default: [],
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
   { timestamps: true, collection: "venues" }
 );
 
-// --- VENUE SLOT MODEL ---
-const VenueSlotSchema = new mongoose.Schema(
+const VenueAvailabilityOverrideSchema = new mongoose.Schema(
   {
     venue_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Venue",
       required: true,
+      index: true,
     },
-    date: { type: Date, required: true },
-    start_time: { type: String, required: true },
-    end_time: { type: String, required: true },
-    status: { type: String, enum: ["available", "booked", "blocked"], default: "available", required: true },
+    date: {
+      type: String,
+      required: true,
+      match: datePattern,
+    },
+    start_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+    end_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+    status: {
+      type: String,
+      enum: ["unavailable"],
+      default: "unavailable",
+      required: true,
+    },
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    reason: { type: String, default: "", trim: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
-  { timestamps: true, collection: "venue_slots" }
+  { timestamps: true, collection: "venue_availability_overrides" }
 );
 
-// --- BOOKING MODEL ---
+VenueAvailabilityOverrideSchema.index(
+  { venue_id: 1, date: 1, start_time: 1, end_time: 1 },
+  { unique: true }
+);
+
 const BookingSchema = new mongoose.Schema(
   {
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
     venue_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Venue",
       required: true,
+      index: true,
     },
-    slot_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "VenueSlot",
+    date: {
+      type: String,
+      required: true,
+      match: datePattern,
+    },
+    start_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+    end_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+    amount: { type: Number, required: true, min: 0 },
+    status: {
+      type: String,
+      enum: BOOKING_STATUSES,
+      default: "hold",
       required: true,
     },
-    status: { type: String, enum: ["booked", "cancelled", "refund_processing"], default: "booked", required: true },
+    hold_expires_at: {
+      type: Date,
+      required: true,
+      index: true,
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
   { timestamps: true, collection: "bookings" }
 );
 
-// --- PAYMENT MODEL ---
+BookingSchema.index(
+  { venue_id: 1, date: 1, start_time: 1, end_time: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ACTIVE_BOOKING_STATUSES },
+    },
+    name: "unique_active_slot_booking",
+  }
+);
+
 const PaymentSchema = new mongoose.Schema(
   {
     booking_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
       required: true,
+      unique: true,
     },
-    amount: { type: Number, required: true },
-    status: { type: String, enum: ["paid", "refunded"], default: "paid", required: true },
+    amount: { type: Number, required: true, min: 0 },
+    provider: { type: String, default: "stub", required: true, trim: true },
+    status: {
+      type: String,
+      enum: PAYMENT_STATUSES,
+      default: "pending",
+      required: true,
+    },
+    provider_reference: { type: String, default: "", trim: true },
+    paid_at: { type: Date, default: null },
+    refunded_at: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
   { timestamps: true, collection: "payments" }
 );
 
-// --- REFUND MODEL ---
 const RefundSchema = new mongoose.Schema(
   {
     booking_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
       required: true,
+      index: true,
     },
-    status: { type: String, enum: ["processing", "completed", "rejected"], default: "processing", required: true },
+    payment_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+      required: true,
+    },
+    requested_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    processed_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    type: {
+      type: String,
+      enum: ["auto", "manual"],
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: REFUND_STATUSES,
+      default: "pending_manual",
+      required: true,
+    },
+    note: { type: String, default: "", trim: true },
+    processed_at: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
   { timestamps: true, collection: "refunds" }
 );
 
-// Middleware logic
 function updateTimestamp(next) {
   this.set({ updatedAt: Date.now() });
   next();
 }
 
-const schemas = [VenueSchema, VenueSlotSchema, BookingSchema, PaymentSchema, RefundSchema];
-
-schemas.forEach((schema) => {
-  schema.pre("save", function (next) {
+[
+  VenueSchema,
+  VenueAvailabilityOverrideSchema,
+  BookingSchema,
+  PaymentSchema,
+  RefundSchema,
+].forEach((schema) => {
+  schema.pre("save", function saveHook(next) {
     if (this.isNew) {
       this.createdAt = Date.now();
     }
+
     this.updatedAt = Date.now();
     next();
   });
@@ -115,9 +257,22 @@ schemas.forEach((schema) => {
 });
 
 const Venue = mongoose.model("Venue", VenueSchema);
-const VenueSlot = mongoose.model("VenueSlot", VenueSlotSchema);
+const VenueAvailabilityOverride = mongoose.model(
+  "VenueAvailabilityOverride",
+  VenueAvailabilityOverrideSchema
+);
 const Booking = mongoose.model("Booking", BookingSchema);
 const Payment = mongoose.model("Payment", PaymentSchema);
 const Refund = mongoose.model("Refund", RefundSchema);
 
-module.exports = { Venue, VenueSlot, Booking, Payment, Refund };
+module.exports = {
+  ACTIVE_BOOKING_STATUSES,
+  BOOKING_STATUSES,
+  PAYMENT_STATUSES,
+  REFUND_STATUSES,
+  Venue,
+  VenueAvailabilityOverride,
+  Booking,
+  Payment,
+  Refund,
+};
