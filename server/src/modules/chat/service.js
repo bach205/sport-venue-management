@@ -1,137 +1,274 @@
-// Chat Service - Business logic for chat operations
-const { ChatRoom, ChatMessage } = require("./model");
+const { HTTP_STATUS } = require("../../constants");
+const createHttpError = require("../../utils/createHttpError");
+const { Profile, User } = require("../user/model");
+const {
+  Conversation,
+  ConversationParticipant,
+  Message,
+  MESSAGE_STATUS,
+} = require("./model");
+
+const buildPagination = (page, limit, total) => ({
+  page,
+  limit,
+  total,
+  pages: Math.ceil(total / limit),
+});
 
 class ChatService {
-    async getChatRooms(userId) {
-        const rooms = await ChatRoom.find({
-            members: userId,
-        })
-            .populate("createdBy", "-password_hash")
-            .populate("members", "-password_hash")
-            .populate("lastMessage")
-            .sort({ updatedAt: -1 });
-
-        return rooms;
+  async createOrGetDirectConversation(userId, targetUserId) {
+    if (String(userId) === String(targetUserId)) {
+      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "You cannot chat with yourself.");
     }
 
-    async createChatRoom(userId, name, description, isPrivate = false) {
-        const room = await ChatRoom.create({
-            name,
-            description,
-            createdBy: userId,
-            members: [userId],
-            isPrivate,
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(userId).select("_id"),
+      User.findById(targetUserId).select("_id email"),
+    ]);
+
+    if (!currentUser || !targetUser) {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Target user not found.");
+    }
+
+    const directKey = this.buildDirectKey(userId, targetUserId);
+
+    let conversation = await Conversation.findOne({ type: "direct", direct_key: directKey }).populate(
+      "last_message_id"
+    );
+
+    if (!conversation) {
+      try {
+        conversation = await Conversation.create({
+          type: "direct",
+          direct_key: directKey,
         });
 
-        return room.populate("createdBy", "-password_hash");
+        await ConversationParticipant.insertMany([
+          { conversation_id: conversation._id, user_id: userId },
+          { conversation_id: conversation._id, user_id: targetUserId },
+        ]);
+      } catch (error) {
+        if (error?.code === 11000) {
+          conversation = await Conversation.findOne({
+            type: "direct",
+            direct_key: directKey,
+          }).populate("last_message_id");
+        } else {
+          throw error;
+        }
+      }
     }
 
-    async joinChatRoom(userId, roomId) {
-        const room = await ChatRoom.findById(roomId);
+    return this.getConversationSummaryById(conversation._id, userId);
+  }
 
-        if (!room) {
-            throw new Error("Chat room not found");
-        }
+  async listConversations(userId) {
+    const participantRows = await ConversationParticipant.find({ user_id: userId })
+      .select("conversation_id")
+      .lean();
 
-        if (!room.members.includes(userId)) {
-            room.members.push(userId);
-            await room.save();
-        }
-
-        return room.populate(["createdBy", "members"], "-password_hash");
+    const conversationIds = participantRows.map((item) => item.conversation_id);
+    if (conversationIds.length === 0) {
+      return { items: [] };
     }
 
-    async leaveChatRoom(userId, roomId) {
-        const room = await ChatRoom.findById(roomId);
+    const conversations = await Conversation.find({
+      _id: { $in: conversationIds },
+      type: "direct",
+    })
+      .populate("last_message_id")
+      .sort({ updatedAt: -1 });
 
-        if (!room) {
-            throw new Error("Chat room not found");
-        }
+    const summaries = await Promise.all(
+      conversations.map((conversation) => this.getConversationSummary(conversation, userId))
+    );
 
-        room.members = room.members.filter((id) => id.toString() !== userId);
-        await room.save();
+    return { items: summaries };
+  }
 
-        return room.populate(["createdBy", "members"], "-password_hash");
+  async getMessages(conversationId, userId, page = 1, limit = 20) {
+    const conversation = await this.getConversationOrThrow(conversationId);
+    await this.assertParticipant(conversation._id, userId);
+
+    const now = new Date();
+    await Message.updateMany(
+      {
+        conversation_id: conversation._id,
+        sender_id: { $ne: userId },
+        status: MESSAGE_STATUS.SENT,
+      },
+      {
+        $set: {
+          status: MESSAGE_STATUS.RECEIVED,
+          received_at: now,
+        },
+      }
+    );
+
+    const skip = (page - 1) * limit;
+    const [messages, total] = await Promise.all([
+      Message.find({ conversation_id: conversation._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Message.countDocuments({ conversation_id: conversation._id }),
+    ]);
+
+    return {
+      items: messages.map((message) => this.formatMessage(message, userId)),
+      pagination: buildPagination(page, limit, total),
+    };
+  }
+
+  async sendMessage(conversationId, userId, payload) {
+    const conversation = await this.getConversationOrThrow(conversationId);
+    await this.assertParticipant(conversation._id, userId);
+
+    const message = await Message.create({
+      conversation_id: conversation._id,
+      sender_id: userId,
+      content: String(payload.content).trim(),
+      attachments: Array.isArray(payload.attachments) ? payload.attachments : [],
+      status: MESSAGE_STATUS.SENT,
+    });
+
+    conversation.last_message_id = message._id;
+    await conversation.save();
+
+    return this.formatMessage(message, userId);
+  }
+
+  async markConversationSeen(conversationId, userId) {
+    const conversation = await this.getConversationOrThrow(conversationId);
+    await this.assertParticipant(conversation._id, userId);
+
+    const now = new Date();
+    const sentResult = await Message.updateMany(
+      {
+        conversation_id: conversation._id,
+        sender_id: { $ne: userId },
+        status: MESSAGE_STATUS.SENT,
+      },
+      {
+        $set: {
+          status: MESSAGE_STATUS.SEEN,
+          received_at: now,
+          seen_at: now,
+        },
+      }
+    );
+
+    const receivedResult = await Message.updateMany(
+      {
+        conversation_id: conversation._id,
+        sender_id: { $ne: userId },
+        status: MESSAGE_STATUS.RECEIVED,
+      },
+      {
+        $set: {
+          status: MESSAGE_STATUS.SEEN,
+          seen_at: now,
+        },
+      }
+    );
+
+    return {
+      updatedCount: (sentResult.modifiedCount || 0) + (receivedResult.modifiedCount || 0),
+    };
+  }
+
+  async getConversationSummaryById(conversationId, userId) {
+    const conversation = await Conversation.findById(conversationId).populate("last_message_id");
+
+    if (!conversation) {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Conversation not found.");
     }
 
-    async sendMessage(userId, roomId, message, attachments = []) {
-        // Verify user is member of room
-        const room = await ChatRoom.findById(roomId);
-        if (!room || !room.members.includes(userId)) {
-            throw new Error("You are not a member of this room");
-        }
+    await this.assertParticipant(conversation._id, userId);
+    return this.getConversationSummary(conversation, userId);
+  }
 
-        const msg = await ChatMessage.create({
-            roomId,
-            userId,
-            message,
-            attachments,
-        });
+  async getConversationSummary(conversation, userId) {
+    const participants = await ConversationParticipant.find({
+      conversation_id: conversation._id,
+    })
+      .select("user_id")
+      .lean();
 
-        // Update room's lastMessage
-        room.lastMessage = msg._id;
-        await room.save();
+    const participantIds = participants.map((item) => item.user_id);
+    const peerUserId = participantIds.find((participantId) => String(participantId) !== String(userId));
+    const [peerUser, peerProfile, unseenCount] = await Promise.all([
+      User.findById(peerUserId).select("email"),
+      Profile.findOne({ user_id: peerUserId }).select("name"),
+      Message.countDocuments({
+        conversation_id: conversation._id,
+        sender_id: { $ne: userId },
+        status: { $ne: MESSAGE_STATUS.SEEN },
+      }),
+    ]);
 
-        return msg.populate("userId", "-password_hash");
+    return {
+      id: String(conversation._id),
+      type: conversation.type,
+      peerUser: peerUser
+        ? {
+            id: String(peerUser._id),
+            email: peerUser.email,
+            name: peerProfile?.name || null,
+          }
+        : null,
+      lastMessage: conversation.last_message_id
+        ? this.formatMessage(conversation.last_message_id, userId)
+        : null,
+      unseenCount,
+      createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
+    };
+  }
+
+  async getConversationOrThrow(conversationId) {
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation || conversation.type !== "direct") {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Conversation not found.");
     }
 
-    async getRoomMessages(roomId, page = 1, limit = 20) {
-        const skip = (page - 1) * limit;
+    return conversation;
+  }
 
-        const messages = await ChatMessage.find({ roomId })
-            .populate("userId", "-password_hash")
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+  async assertParticipant(conversationId, userId) {
+    const participant = await ConversationParticipant.findOne({
+      conversation_id: conversationId,
+      user_id: userId,
+    }).select("_id");
 
-        const total = await ChatMessage.countDocuments({ roomId });
-
-        return {
-            messages,
-            pagination: {
-                page,
-                limit,
-                total,
-                pages: Math.ceil(total / limit),
-            },
-        };
+    if (!participant) {
+      throw createHttpError(
+        HTTP_STATUS.FORBIDDEN,
+        "You are not allowed to access this conversation."
+      );
     }
+  }
 
-    async updateRoom(roomId, userId, updateData) {
-        const room = await ChatRoom.findById(roomId);
+  formatMessage(message, viewerUserId) {
+    return {
+      id: String(message._id),
+      conversationId: String(message.conversation_id),
+      senderId: String(message.sender_id),
+      content: message.content,
+      attachments: Array.isArray(message.attachments) ? message.attachments : [],
+      status: message.status,
+      receivedAt: message.received_at,
+      seenAt: message.seen_at,
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+      isOwner: String(message.sender_id) === String(viewerUserId),
+    };
+  }
 
-        if (!room) {
-            throw new Error("Chat room not found");
-        }
-
-        // Only creator can update room
-        if (room.createdBy.toString() !== userId) {
-            throw new Error("Only room creator can update this room");
-        }
-
-        Object.assign(room, updateData);
-        await room.save();
-
-        return room.populate(["createdBy", "members"], "-password_hash");
-    }
-
-    async deleteRoom(roomId, userId) {
-        const room = await ChatRoom.findById(roomId);
-
-        if (!room) {
-            throw new Error("Chat room not found");
-        }
-
-        // Only creator can delete room
-        if (room.createdBy.toString() !== userId) {
-            throw new Error("Only room creator can delete this room");
-        }
-
-        await ChatMessage.deleteMany({ roomId });
-        await ChatRoom.findByIdAndDelete(roomId);
-
-        return { message: "Chat room deleted successfully" };
-    }
+  buildDirectKey(userAId, userBId) {
+    return [String(userAId), String(userBId)].sort().join(":");
+  }
 }
 
 module.exports = new ChatService();
