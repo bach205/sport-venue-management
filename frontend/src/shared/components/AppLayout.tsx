@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 const NAV_LINKS = [
   { label: 'Home',        to: '/discover' },
+  { label: 'Feed',        to: '/feed' },
   { label: 'Venues',      to: '/venues' },
   { label: 'My Bookings', to: '/bookings' },
   { label: 'Community',   to: '/messages' },
