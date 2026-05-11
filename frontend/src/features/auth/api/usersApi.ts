@@ -19,7 +19,7 @@
 
 import axios from 'axios';
 import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
-import { getToken } from '../store/authStore';
+import { getToken, getCurrentUser } from '../store/authStore';
 import type {
   ApiResponse,
   GetMeResponseData,
@@ -75,7 +75,6 @@ const _mockProfiles: Record<string, ApiProfile> = {
 export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
   if (isMockApi) {
     await delay(500);
-    const { getCurrentUser } = await import('../store/authStore');
     const user = getCurrentUser();
     if (!user) return { success: false, message: 'Unauthorized.' };
     const profile = _mockProfiles[user._id];
@@ -108,7 +107,6 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
 export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiResponse<ApiProfile>> {
   if (isMockApi) {
     await delay(600);
-    const { getCurrentUser } = await import('../store/authStore');
     const user = getCurrentUser();
     if (!user) return { success: false, message: 'Unauthorized.' };
 

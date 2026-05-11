@@ -33,9 +33,9 @@
  *   404:     { message: "User not found." }
  */
 
-import axios from "axios";
-import { isMockApi, API_BASE_URL } from "../../../shared/constants/api";
-import { getToken } from "../store/authStore";
+import axios from 'axios';
+import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
+import { getToken } from '../store/authStore';
 import type {
   LoginPayload,
   RegisterPayload,
@@ -46,73 +46,70 @@ import type {
   LoginResponseData,
   RegisterResponseData,
   VerifyEmailResponseData,
-} from "../types/auth.types";
+} from '../types/auth.types';
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 // ─── Mock data shaped exactly like API responses ──────────────────────────────
 
 const MOCK_USER_PLAYER = {
-  _id: "u-player",
-  email: "player@demo.com",
-  status: "active" as const,
+  _id: 'u-player',
+  email: 'player@demo.com',
+  status: 'active' as const,
   is_verified: true,
 };
 const MOCK_PROFILE_PLAYER = {
-  _id: "prof-player",
-  user_id: "u-player",
-  name: "Alex Nguyen",
+  _id: 'prof-player',
+  user_id: 'u-player',
+  name: 'Alex Nguyen',
   age: 26,
-  gender: "male",
-  sport_preference: ["badminton", "tennis", "pickleball"],
-  skill_level: "intermediate",
-  location: "Ho Chi Minh City",
+  gender: 'male',
+  sport_preference: ['badminton', 'tennis', 'pickleball'],
+  skill_level: 'intermediate',
+  location: 'Ho Chi Minh City',
   reputation_score: 755,
 };
 
 const MOCK_USER_OWNER = {
-  _id: "u-owner",
-  email: "owner@demo.com",
-  status: "active" as const,
+  _id: 'u-owner',
+  email: 'owner@demo.com',
+  status: 'active' as const,
   is_verified: true,
 };
 const MOCK_PROFILE_OWNER = {
-  _id: "prof-owner",
-  user_id: "u-owner",
-  name: "Minh Tran",
+  _id: 'prof-owner',
+  user_id: 'u-owner',
+  name: 'Minh Tran',
   age: 34,
-  gender: "male",
-  sport_preference: ["tennis", "badminton"],
-  skill_level: "competitive",
-  location: "Ho Chi Minh City",
+  gender: 'male',
+  sport_preference: ['tennis', 'badminton'],
+  skill_level: 'competitive',
+  location: 'Ho Chi Minh City',
   reputation_score: 2100,
 };
 
 const MOCK_USER_ADMIN = {
-  _id: "u-admin",
-  email: "admin@demo.com",
-  status: "active" as const,
+  _id: 'u-admin',
+  email: 'admin@demo.com',
+  status: 'active' as const,
   is_verified: true,
 };
 const MOCK_PROFILE_ADMIN = {
-  _id: "prof-admin",
-  user_id: "u-admin",
-  name: "Admin System",
+  _id: 'prof-admin',
+  user_id: 'u-admin',
+  name: 'Admin System',
   age: null,
-  gender: "prefer_not_to_say",
+  gender: 'prefer_not_to_say',
   sport_preference: [] as string[],
-  skill_level: "casual",
-  location: "Ho Chi Minh City",
+  skill_level: 'casual',
+  location: 'Ho Chi Minh City',
   reputation_score: 9999,
 };
 
-const MOCK_ACCOUNTS: Record<
-  string,
-  { user: typeof MOCK_USER_PLAYER; profile: typeof MOCK_PROFILE_PLAYER }
-> = {
-  "player@demo.com": { user: MOCK_USER_PLAYER, profile: MOCK_PROFILE_PLAYER },
-  "owner@demo.com": { user: MOCK_USER_OWNER, profile: MOCK_PROFILE_OWNER },
-  "admin@demo.com": { user: MOCK_USER_ADMIN, profile: MOCK_PROFILE_ADMIN },
+const MOCK_ACCOUNTS: Record<string, { user: typeof MOCK_USER_PLAYER; profile: typeof MOCK_PROFILE_PLAYER }> = {
+  'player@demo.com': { user: MOCK_USER_PLAYER, profile: MOCK_PROFILE_PLAYER },
+  'owner@demo.com':  { user: MOCK_USER_OWNER,  profile: MOCK_PROFILE_OWNER },
+  'admin@demo.com':  { user: MOCK_USER_ADMIN,  profile: MOCK_PROFILE_ADMIN },
 };
 
 // ─── API functions ────────────────────────────────────────────────────────────
@@ -124,7 +121,7 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
     if (account && payload.password.length >= 6) {
       return {
         success: true,
-        message: "Login successful.",
+        message: 'Login successful.',
         data: {
           token: `mock_jwt_${account.user._id}_${Date.now()}`,
           user: account.user,
@@ -132,7 +129,7 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
         },
       };
     }
-    return { success: false, message: "Invalid email or password." };
+    return { success: false, message: 'Invalid email or password.' };
   }
 
   try {
@@ -142,7 +139,7 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
     });
     return { success: true, message: res.data.message, data: res.data.data };
   } catch (err: any) {
-    const msg = err.response?.data?.message || "Login failed.";
+    const msg = err.response?.data?.message || 'Login failed.';
     return { success: false, message: msg };
   }
 }
@@ -150,7 +147,7 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
 export async function logout(): Promise<ApiResponse> {
   if (isMockApi) {
     await delay(400);
-    return { success: true, message: "Logout successful." };
+    return { success: true, message: 'Logout successful.' };
   }
 
   try {
@@ -160,29 +157,27 @@ export async function logout(): Promise<ApiResponse> {
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    return { success: true, message: "Logout successful." };
+    return { success: true, message: 'Logout successful.' };
   } catch (err: any) {
-    const msg = err.response?.data?.message || "Logout failed.";
+    const msg = err.response?.data?.message || 'Logout failed.';
     return { success: false, message: msg };
   }
 }
 
-export async function register(
-  payload: RegisterPayload
-): Promise<ApiResponse<RegisterResponseData>> {
+export async function register(payload: RegisterPayload): Promise<ApiResponse<RegisterResponseData>> {
   if (isMockApi) {
     await delay(800);
-    if (Object.values(MOCK_ACCOUNTS).some((a) => a.user.email === payload.email.toLowerCase())) {
-      return { success: false, message: "User already exists." };
+    if (Object.values(MOCK_ACCOUNTS).some(a => a.user.email === payload.email.toLowerCase())) {
+      return { success: false, message: 'User already exists.' };
     }
     return {
       success: true,
-      message: "Registration successful. Please verify your email before logging in.",
+      message: 'Registration successful. Please verify your email before logging in.',
       data: {
         user: {
           _id: `u-new-${Date.now()}`,
           email: payload.email.toLowerCase(),
-          status: "active",
+          status: 'active',
           is_verified: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -199,33 +194,31 @@ export async function register(
     return { success: true, message: res.data.message, data: res.data.data };
   } catch (err: any) {
     const errors: string[] = err.response?.data?.errors;
-    if (errors?.length) return { success: false, message: errors.join(" ") };
-    const msg = err.response?.data?.message || "Registration failed.";
+    if (errors?.length) return { success: false, message: errors.join(' ') };
+    const msg = err.response?.data?.message || 'Registration failed.';
     return { success: false, message: msg };
   }
 }
 
-export async function verifyEmail(
-  payload: VerifyEmailPayload
-): Promise<ApiResponse<VerifyEmailResponseData>> {
+export async function verifyEmail(payload: VerifyEmailPayload): Promise<ApiResponse<VerifyEmailResponseData>> {
   if (isMockApi) {
     await delay(700);
     // Any non-empty token is valid in mock mode
     if (payload.token && payload.token.length > 0) {
       return {
         success: true,
-        message: "Email verified successfully.",
+        message: 'Email verified successfully.',
         data: {
           user: {
-            _id: "u-new",
-            email: "user@example.com",
-            status: "active",
+            _id: 'u-new',
+            email: 'user@example.com',
+            status: 'active',
             is_verified: true,
           },
         },
       };
     }
-    return { success: false, message: "Verification token is invalid." };
+    return { success: false, message: 'Verification token is invalid.' };
   }
 
   try {
@@ -235,8 +228,8 @@ export async function verifyEmail(
     return { success: true, message: res.data.message, data: res.data.data };
   } catch (err: any) {
     const errors: string[] = err.response?.data?.errors;
-    if (errors?.length) return { success: false, message: errors.join(" ") };
-    const msg = err.response?.data?.message || "Verification failed.";
+    if (errors?.length) return { success: false, message: errors.join(' ') };
+    const msg = err.response?.data?.message || 'Verification failed.';
     return { success: false, message: msg };
   }
 }
@@ -245,14 +238,14 @@ export async function verifyEmail(
 export async function forgotPassword(payload: ForgotPasswordPayload): Promise<ApiResponse> {
   if (isMockApi) {
     await delay(800);
-    return { success: true, message: "Link đặt lại mật khẩu đã được gửi đến email của bạn." };
+    return { success: true, message: 'Link đặt lại mật khẩu đã được gửi đến email của bạn.' };
   }
 
   try {
     const res = await axios.post(`${API_BASE_URL}/auth/forgot-password`, payload);
     return { success: true, message: res.data.message };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || "Request failed." };
+    return { success: false, message: err.response?.data?.message || 'Request failed.' };
   }
 }
 
@@ -260,7 +253,7 @@ export async function forgotPassword(payload: ForgotPasswordPayload): Promise<Ap
 export async function resetPassword(payload: ResetPasswordPayload): Promise<ApiResponse> {
   if (isMockApi) {
     await delay(800);
-    return { success: true, message: "Mật khẩu đã được đặt lại thành công!" };
+    return { success: true, message: 'Mật khẩu đã được đặt lại thành công!' };
   }
 
   try {
@@ -270,6 +263,6 @@ export async function resetPassword(payload: ResetPasswordPayload): Promise<ApiR
     });
     return { success: true, message: res.data.message };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || "Reset failed." };
+    return { success: false, message: err.response?.data?.message || 'Reset failed.' };
   }
 }
