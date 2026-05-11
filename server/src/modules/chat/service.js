@@ -16,14 +16,16 @@ const buildPagination = (page, limit, total) => ({
 });
 
 class ChatService {
-  async createOrGetDirectConversation(userId, targetUserId) {
+  async createOrGetDirectConversation(userId, targetUserId, options = {}) {
+    const session = options.session || null;
+
     if (String(userId) === String(targetUserId)) {
       throw createHttpError(HTTP_STATUS.BAD_REQUEST, "You cannot chat with yourself.");
     }
 
     const [currentUser, targetUser] = await Promise.all([
-      User.findById(userId).select("_id"),
-      User.findById(targetUserId).select("_id email"),
+      User.findById(userId).select("_id").session(session),
+      User.findById(targetUserId).select("_id email").session(session),
     ]);
 
     if (!currentUser || !targetUser) {
@@ -32,34 +34,49 @@ class ChatService {
 
     const directKey = this.buildDirectKey(userId, targetUserId);
 
-    let conversation = await Conversation.findOne({ type: "direct", direct_key: directKey }).populate(
-      "last_message_id"
-    );
+    let conversation = await Conversation.findOne({
+      type: "direct",
+      direct_key: directKey,
+    })
+      .session(session)
+      .populate("last_message_id");
 
     if (!conversation) {
       try {
-        conversation = await Conversation.create({
-          type: "direct",
-          direct_key: directKey,
-        });
+        const createdConversations = await Conversation.create(
+          [
+            {
+              type: "direct",
+              direct_key: directKey,
+            },
+          ],
+          session ? { session } : {}
+        );
 
-        await ConversationParticipant.insertMany([
-          { conversation_id: conversation._id, user_id: userId },
-          { conversation_id: conversation._id, user_id: targetUserId },
-        ]);
+        conversation = createdConversations[0];
+
+        await ConversationParticipant.insertMany(
+          [
+            { conversation_id: conversation._id, user_id: userId },
+            { conversation_id: conversation._id, user_id: targetUserId },
+          ],
+          session ? { session } : {}
+        );
       } catch (error) {
         if (error?.code === 11000) {
           conversation = await Conversation.findOne({
             type: "direct",
             direct_key: directKey,
-          }).populate("last_message_id");
+          })
+            .session(session)
+            .populate("last_message_id");
         } else {
           throw error;
         }
       }
     }
 
-    return this.getConversationSummaryById(conversation._id, userId);
+    return this.getConversationSummaryById(conversation._id, userId, options);
   }
 
   async listConversations(userId) {
@@ -177,34 +194,39 @@ class ChatService {
     };
   }
 
-  async getConversationSummaryById(conversationId, userId) {
-    const conversation = await Conversation.findById(conversationId).populate("last_message_id");
+  async getConversationSummaryById(conversationId, userId, options = {}) {
+    const session = options.session || null;
+    const conversation = await Conversation.findById(conversationId)
+      .session(session)
+      .populate("last_message_id");
 
     if (!conversation) {
       throw createHttpError(HTTP_STATUS.NOT_FOUND, "Conversation not found.");
     }
 
-    await this.assertParticipant(conversation._id, userId);
-    return this.getConversationSummary(conversation, userId);
+    await this.assertParticipant(conversation._id, userId, options);
+    return this.getConversationSummary(conversation, userId, options);
   }
 
-  async getConversationSummary(conversation, userId) {
+  async getConversationSummary(conversation, userId, options = {}) {
+    const session = options.session || null;
     const participants = await ConversationParticipant.find({
       conversation_id: conversation._id,
     })
+      .session(session)
       .select("user_id")
       .lean();
 
     const participantIds = participants.map((item) => item.user_id);
     const peerUserId = participantIds.find((participantId) => String(participantId) !== String(userId));
     const [peerUser, peerProfile, unseenCount] = await Promise.all([
-      User.findById(peerUserId).select("email"),
-      Profile.findOne({ user_id: peerUserId }).select("name"),
+      User.findById(peerUserId).select("email").session(session),
+      Profile.findOne({ user_id: peerUserId }).select("name").session(session),
       Message.countDocuments({
         conversation_id: conversation._id,
         sender_id: { $ne: userId },
         status: { $ne: MESSAGE_STATUS.SEEN },
-      }),
+      }).session(session),
     ]);
 
     return {
@@ -236,11 +258,14 @@ class ChatService {
     return conversation;
   }
 
-  async assertParticipant(conversationId, userId) {
+  async assertParticipant(conversationId, userId, options = {}) {
+    const session = options.session || null;
     const participant = await ConversationParticipant.findOne({
       conversation_id: conversationId,
       user_id: userId,
-    }).select("_id");
+    })
+      .session(session)
+      .select("_id");
 
     if (!participant) {
       throw createHttpError(

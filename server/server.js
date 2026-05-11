@@ -16,6 +16,7 @@ const bootstrap = async () => {
 
   const server = http.createServer(app);
   const io = createSocketServer(server);
+  app.set("io", io);
 
   registerSocketHandlers(io);
 
