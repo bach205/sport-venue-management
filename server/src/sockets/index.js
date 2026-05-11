@@ -4,6 +4,14 @@ const registerSocketHandlers = (io) => {
   io.on(SOCKET_EVENTS.CONNECTION, (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
+    socket.on(SOCKET_EVENTS.USER_JOIN, (userId) => {
+      if (!userId) {
+        return;
+      }
+
+      socket.join(`user:${userId}`);
+    });
+
     socket.on(SOCKET_EVENTS.CHAT_JOIN, (roomId) => {
       socket.join(roomId);
     });

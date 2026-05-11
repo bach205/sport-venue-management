@@ -1,27 +1,48 @@
 const mongoose = require("mongoose");
 
-// --- CONVERSATION MODEL ---
+const MESSAGE_STATUS = {
+  SENT: "sent",
+  RECEIVED: "received",
+  SEEN: "seen",
+};
+
 const ConversationSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ["direct", "group"], required: true },
+    type: {
+      type: String,
+      enum: ["direct", "group"],
+      required: true,
+      default: "direct",
+    },
+    direct_key: {
+      type: String,
+      default: null,
+      index: { unique: true, sparse: true },
+    },
+    last_message_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
   { timestamps: true, collection: "conversations" }
 );
 
-// --- CONVERSATION PARTICIPANT MODEL ---
 const ConversationParticipantSchema = new mongoose.Schema(
   {
     conversation_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversation",
       required: true,
+      index: true,
     },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
     joined_at: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now },
@@ -30,39 +51,69 @@ const ConversationParticipantSchema = new mongoose.Schema(
   { timestamps: true, collection: "conversation_participants" }
 );
 
-// --- MESSAGE MODEL ---
+ConversationParticipantSchema.index(
+  { conversation_id: 1, user_id: 1 },
+  { unique: true, name: "uniq_conversation_participant" }
+);
+
 const MessageSchema = new mongoose.Schema(
   {
     conversation_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversation",
       required: true,
+      index: true,
     },
     sender_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
-    content: { type: String, required: true },
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    attachments: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: [],
+    },
+    status: {
+      type: String,
+      enum: Object.values(MESSAGE_STATUS),
+      default: MESSAGE_STATUS.SENT,
+      required: true,
+      index: true,
+    },
+    received_at: {
+      type: Date,
+      default: null,
+    },
+    seen_at: {
+      type: Date,
+      default: null,
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
   { timestamps: true, collection: "messages" }
 );
 
-// Middleware logic
+MessageSchema.index({ conversation_id: 1, createdAt: -1 });
+MessageSchema.index({ conversation_id: 1, sender_id: 1, status: 1 });
+
 function updateTimestamp(next) {
   this.set({ updatedAt: Date.now() });
   next();
 }
 
-const schemas = [ConversationSchema, ConversationParticipantSchema, MessageSchema];
-
-schemas.forEach((schema) => {
-  schema.pre("save", function (next) {
+[ConversationSchema, ConversationParticipantSchema, MessageSchema].forEach((schema) => {
+  schema.pre("save", function setTimestamps(next) {
     if (this.isNew) {
       this.createdAt = Date.now();
     }
+
     this.updatedAt = Date.now();
     next();
   });
@@ -74,7 +125,15 @@ schemas.forEach((schema) => {
 });
 
 const Conversation = mongoose.model("Conversation", ConversationSchema);
-const ConversationParticipant = mongoose.model("ConversationParticipant", ConversationParticipantSchema);
+const ConversationParticipant = mongoose.model(
+  "ConversationParticipant",
+  ConversationParticipantSchema
+);
 const Message = mongoose.model("Message", MessageSchema);
 
-module.exports = { Conversation, ConversationParticipant, Message };
+module.exports = {
+  Conversation,
+  ConversationParticipant,
+  Message,
+  MESSAGE_STATUS,
+};
