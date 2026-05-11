@@ -28,7 +28,23 @@ const MatchSchema = new mongoose.Schema(
     sport: { type: String, required: true },
     location: { type: String, required: true },
     time: { type: Date, required: true },
-    status: { type: String, required: true },
+    status: { type: String, enum: ["matched", "cancelled"], required: true, default: "matched" },
+    conversation_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Conversation",
+      default: null,
+    },
+    request_ids: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "MatchRequest",
+      default: [],
+      validate: {
+        validator(value) {
+          return Array.isArray(value) && value.length <= 2;
+        },
+        message: "A match can reference up to two requests.",
+      },
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
@@ -70,6 +86,12 @@ const DiscoverPostSchema = new mongoose.Schema(
     number_of_players: { type: Number, required: true },
     match_type: { type: String, enum: ["teammate", "opponent"], required: true },
     content: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["open", "closed", "cancelled"],
+      default: "open",
+      required: true,
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },
@@ -83,6 +105,27 @@ function updateTimestamp(next) {
 }
 
 const schemas = [MatchRequestSchema, MatchSchema, MatchParticipantSchema, DiscoverPostSchema];
+
+MatchRequestSchema.index({ user_id: 1, status: 1 });
+MatchRequestSchema.index({
+  status: 1,
+  sport: 1,
+  location: 1,
+  skill_level: 1,
+  match_type: 1,
+  time: 1,
+});
+MatchSchema.index({ conversation_id: 1 });
+MatchParticipantSchema.index({ match_id: 1, user_id: 1 }, { unique: true });
+DiscoverPostSchema.index({ status: 1, createdAt: -1 });
+DiscoverPostSchema.index({
+  status: 1,
+  sport: 1,
+  location: 1,
+  skill_level: 1,
+  match_type: 1,
+  time: 1,
+});
 
 schemas.forEach((schema) => {
   schema.pre("save", function (next) {

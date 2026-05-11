@@ -11,8 +11,12 @@ const HTTP_STATUS = {
 const SOCKET_EVENTS = {
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
+  USER_JOIN: "user:join",
   CHAT_MESSAGE: "chat:message",
   CHAT_JOIN: "chat:join",
+  MATCHING_REQUEST_CREATED: "matching:request:created",
+  MATCHING_REQUEST_MATCHED: "matching:request:matched",
+  DISCOVER_CONTACT_STARTED: "discover:contact:started",
 };
 
 module.exports = {

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 const NAV_LINKS = [
   { label: 'Home',        to: '/discover' },
+  { label: 'Feed',        to: '/feed' },
   { label: 'Venues',      to: '/venues' },
   { label: 'My Bookings', to: '/bookings' },
   { label: 'Community',   to: '/messages' },
@@ -35,7 +36,7 @@ export default function AppLayout() {
   const handleLogout = () => {
     logout();
     toast.success('Đã đăng xuất');
-    navigate('/auth/login');
+    navigate('/login');
     setUserMenuOpen(false);
   };
 
@@ -189,7 +190,7 @@ export default function AppLayout() {
               </div>
             ) : (
               <Link
-                to="/auth/login"
+                to="/login"
                 className="flex items-center gap-1.5 ml-2 h-9 px-4 rounded-xl hover:opacity-90 transition-opacity"
                 style={{
                   background: 'linear-gradient(90deg,#a04100,#ff7e36)',
