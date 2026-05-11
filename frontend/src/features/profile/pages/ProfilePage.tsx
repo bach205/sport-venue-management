@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Camera, Edit3, MapPin, Trophy, Star, Shield,
+  Camera, Edit3, MapPin, Trophy, Star,
   Calendar, Zap, CheckCircle2, Lock, Loader2,
-  BadgeCheck, Users, Save, X
+  BadgeCheck, Save, X
 } from 'lucide-react';
-import { getCurrentUser, subscribeAuth } from '../../auth/store/authStore';
+import { getCurrentUser, subscribeAuth, patchCurrentUser } from '../../auth/store/authStore';
 import { getProfile, updateProfile, getLevelProgress, subscribeProfile } from '../store/profileStore';
-import type { UserProfile, Achievement, Gender } from '../types/profile.types';
-import type { Sport, SkillLevel } from '../../discover/types/discover.types';
+import type { UserProfile, Achievement, Gender, SkillLevel, Sport } from '../types/profile.types';
+import { updateProfile as apiUpdateProfile } from '../../auth/api/usersApi';
 import { toast } from 'sonner';
 
 type Tab = 'info' | 'achievements' | 'activity';
 
 const SPORTS: { value: Sport; label: string; emoji: string }[] = [
-  { value: 'tennis', label: 'Tennis', emoji: '🎾' },
-  { value: 'basketball', label: 'Basketball', emoji: '🏀' },
-  { value: 'badminton', label: 'Badminton', emoji: '🏸' },
-  { value: 'football', label: 'Football', emoji: '⚽' },
-  { value: 'pickleball', label: 'Pickleball', emoji: '🏓' },
-  { value: 'volleyball', label: 'Volleyball', emoji: '🏐' },
+  { value: 'tennis',       label: 'Tennis',      emoji: '🎾' },
+  { value: 'basketball',   label: 'Basketball',  emoji: '🏀' },
+  { value: 'badminton',    label: 'Badminton',   emoji: '🏸' },
+  { value: 'football',     label: 'Football',    emoji: '⚽' },
+  { value: 'pickleball',   label: 'Pickleball',  emoji: '🏓' },
+  { value: 'volleyball',   label: 'Volleyball',  emoji: '🏐' },
+  { value: 'swimming',     label: 'Swimming',    emoji: '🏊' },
+  { value: 'table_tennis', label: 'Table Tennis',emoji: '🏓' },
 ];
 
-const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string; color: string }[] = [
-  { value: 'casual', label: 'Casual', desc: 'Just for fun', color: '#006a65' },
-  { value: 'intermediate', label: 'Intermediate', desc: 'Regular player', color: '#1a5fb4' },
-  { value: 'competitive', label: 'Competitive', desc: 'Tournament level', color: '#a04100' },
+const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string; active: string; border: string }[] = [
+  { value: 'casual',       label: 'Casual',       desc: 'Just for fun',      active: 'bg-brand-teal/15 border-brand-teal text-brand-teal',        border: 'border-brand-border' },
+  { value: 'intermediate', label: 'Intermediate', desc: 'Regular player',    active: 'bg-brand-navy/10 border-brand-navy text-brand-navy',         border: 'border-brand-border' },
+  { value: 'competitive',  label: 'Competitive',  desc: 'Tournament level',  active: 'bg-brand-orange/10 border-brand-orange text-brand-orange',   border: 'border-brand-border' },
 ];
 
 const GENDERS: { value: Gender; label: string }[] = [
@@ -34,106 +36,53 @@ const GENDERS: { value: Gender; label: string }[] = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  booking: '#a04100',
-  social: '#1a5fb4',
-  skill: '#006a65',
-  loyalty: '#856404',
-};
-const CATEGORY_BG: Record<string, string> = {
-  booking: '#fff1eb',
-  social: '#ddeeff',
-  skill: '#e7f8f7',
-  loyalty: '#fff3cd',
+const CATEGORY_CONFIG: Record<string, { color: string; bg: string; textClass: string; bgClass: string }> = {
+  booking: { color: '#a04100', bg: '#fff1eb', textClass: 'text-brand-orange',   bgClass: 'bg-brand-surface-orange' },
+  social:  { color: '#1a5fb4', bg: '#ddeeff', textClass: 'text-brand-navy',     bgClass: 'bg-[#ddeeff]' },
+  skill:   { color: '#006a65', bg: '#e7f8f7', textClass: 'text-brand-teal',     bgClass: 'bg-brand-surface-teal' },
+  loyalty: { color: '#856404', bg: '#fff3cd', textClass: 'text-[#856404]',      bgClass: 'bg-[#fff3cd]' },
 };
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-// ─── Achievement Card ─────────────────────────────────────────────────────────
+// Achievement Card
 function AchievementCard({ ach }: { ach: Achievement }) {
   const unlocked = ach.unlockedAt !== null;
+  const cat = CATEGORY_CONFIG[ach.category];
   return (
-    <div
-      className="rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden transition-all hover:-translate-y-0.5"
-      style={{
-        background: unlocked ? '#fff' : '#f9f4f2',
-        border: `1.5px solid ${unlocked ? CATEGORY_COLORS[ach.category] + '33' : '#dfc0b3'}`,
-        boxShadow: unlocked ? '0 2px 12px rgba(36,25,20,0.08)' : 'none',
-        opacity: unlocked ? 1 : 0.7,
-      }}
-    >
-      {/* Category badge */}
+    <div className={`rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden transition-all hover:-translate-y-0.5
+      ${unlocked ? 'bg-white border-[1.5px]' : 'bg-[#f9f4f2] border border-brand-border opacity-70'}`}
+      style={unlocked ? { borderColor: cat.color + '33', boxShadow: '0 2px 12px rgba(36,25,20,0.08)' } : undefined}>
       <div className="absolute top-3 right-3">
-        <span
-          className="px-2 py-0.5 rounded-full capitalize"
-          style={{
-            background: CATEGORY_BG[ach.category],
-            color: CATEGORY_COLORS[ach.category],
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '10px',
-            fontWeight: 700,
-          }}
-        >
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${cat.bgClass} ${cat.textClass}`}>
           {ach.category}
         </span>
       </div>
-
-      {/* Icon */}
-      <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-        style={{
-          background: unlocked
-            ? `linear-gradient(135deg, ${CATEGORY_COLORS[ach.category]}22, ${CATEGORY_COLORS[ach.category]}44)`
-            : '#f0e8e3',
-          filter: unlocked ? 'none' : 'grayscale(0.5)',
-        }}
-      >
-        {unlocked ? ach.icon : <Lock size={20} style={{ color: '#8b7266' }} />}
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${cat.bgClass} ${!unlocked ? 'grayscale-[50%]' : ''}`}>
+        {unlocked ? ach.icon : <Lock size={20} className="text-brand-muted" />}
       </div>
-
-      {/* Title + desc */}
       <div>
-        <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: unlocked ? '#241914' : '#8b7266' }}>
-          {ach.title}
-        </p>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 2, lineHeight: 1.4 }}>
-          {ach.description}
-        </p>
+        <p className={`text-sm font-bold font-heading ${unlocked ? 'text-brand-dark' : 'text-brand-muted'}`}>{ach.title}</p>
+        <p className="text-xs text-brand-muted mt-0.5 leading-snug">{ach.description}</p>
       </div>
-
-      {/* XP / date */}
       {unlocked ? (
         <div className="flex items-center justify-between">
-          <span
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-            style={{ background: '#fff1eb', fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 700, color: '#a04100' }}
-          >
+          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${cat.bgClass} ${cat.textClass}`}>
             <Zap size={10} /> +{ach.xp} XP
           </span>
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>
-            {formatDate(ach.unlockedAt!)}
-          </span>
+          <span className="text-[11px] text-brand-muted">{formatDate(ach.unlockedAt!)}</span>
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>{ach.requirement}</span>
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#a04100', fontWeight: 600 }}>
-              {ach.xp} XP
-            </span>
+            <span className="text-[11px] text-brand-muted">{ach.requirement}</span>
+            <span className={`text-[11px] font-semibold ${cat.textClass}`}>{ach.xp} XP</span>
           </div>
           {ach.progress !== undefined && (
-            <div className="w-full rounded-full overflow-hidden" style={{ height: 5, background: '#f0e8e3' }}>
-              <div
-                style={{
-                  height: '100%',
-                  width: `${ach.progress}%`,
-                  borderRadius: '9999px',
-                  background: `linear-gradient(90deg, ${CATEGORY_COLORS[ach.category]}, ${CATEGORY_COLORS[ach.category]}99)`,
-                }}
-              />
+            <div className="w-full h-1.5 rounded-full overflow-hidden bg-brand-surface-warm">
+              <div className="h-full rounded-full" style={{ width: `${ach.progress}%`, background: cat.color }} />
             </div>
           )}
         </div>
@@ -142,219 +91,116 @@ function AchievementCard({ ach }: { ach: Achievement }) {
   );
 }
 
-// ─── Edit Form ────────────────────────────────────────────────────────────────
+// Edit Form
 function EditForm({ profile, onSave, onCancel }: {
-  profile: UserProfile;
-  onSave: (patch: Partial<UserProfile>) => void;
-  onCancel: () => void;
+  profile: UserProfile; onSave: (p: Partial<UserProfile>) => void; onCancel: () => void;
 }) {
   const [form, setForm] = useState({
-    displayName: profile.displayName,
-    bio: profile.bio,
-    age: profile.age ?? '',
+    name: profile.name,
+    age: profile.age ?? ('' as number | ''),
     gender: profile.gender,
-    city: profile.city,
-    sportPreferences: [...profile.sportPreferences],
-    skillLevel: profile.skillLevel,
+    location: profile.location,
+    sport_preference: [...profile.sport_preference],
+    skill_level: profile.skill_level,
   });
   const [saving, setSaving] = useState(false);
 
-  const toggleSport = (s: Sport) => {
-    setForm(f => ({
-      ...f,
-      sportPreferences: f.sportPreferences.includes(s)
-        ? f.sportPreferences.filter(x => x !== s)
-        : [...f.sportPreferences, s],
-    }));
-  };
+  const toggleSport = (s: Sport) => setForm(f => ({
+    ...f,
+    sport_preference: f.sport_preference.includes(s) ? f.sport_preference.filter(x => x !== s) : [...f.sport_preference, s],
+  }));
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise(r => setTimeout(r, 700));
-    onSave({ ...form, age: form.age ? Number(form.age) : null });
+    const result = await apiUpdateProfile({
+      name: form.name, age: form.age !== '' ? Number(form.age) : null,
+      gender: form.gender, location: form.location,
+      sport_preference: form.sport_preference, skill_level: form.skill_level,
+    });
     setSaving(false);
+    if (result.success && result.data) {
+      onSave({
+        name: result.data.name, age: result.data.age ?? null,
+        gender: result.data.gender as Gender, location: result.data.location ?? '',
+        sport_preference: result.data.sport_preference as Sport[],
+        skill_level: result.data.skill_level as SkillLevel,
+        reputation_score: result.data.reputation_score,
+      });
+    } else { toast.error(result.message); }
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    border: '1.5px solid #dfc0b3',
-    borderRadius: 10,
-    padding: '10px 14px',
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '14px',
-    color: '#241914',
-    background: '#fff',
-    outline: 'none',
-    boxSizing: 'border-box',
-  };
+  const inputCls = 'w-full border-[1.5px] border-brand-border rounded-xl px-4 py-2.5 text-sm text-brand-dark bg-white outline-none focus:border-brand-teal transition-colors';
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Name + Bio */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 6 }}>
-            Display Name *
-          </label>
-          <input
-            style={inputStyle}
-            value={form.displayName}
-            onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))}
-            onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-            onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-          />
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Display Name *</label>
+          <input className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div>
-          <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 6 }}>
-            City / Location
-          </label>
-          <input
-            style={inputStyle}
-            value={form.city}
-            onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-            onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-            onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-            placeholder="e.g. Ho Chi Minh City"
-          />
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Location</label>
+          <input className={inputCls} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Ho Chi Minh City" />
         </div>
       </div>
-
-      <div>
-        <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 6 }}>
-          Bio
-        </label>
-        <textarea
-          style={{ ...inputStyle, resize: 'none' }}
-          rows={3}
-          value={form.bio}
-          onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-          onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-          onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-          placeholder="Tell the community about yourself..."
-          maxLength={200}
-        />
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', textAlign: 'right', marginTop: 4 }}>
-          {form.bio.length}/200
-        </p>
-      </div>
-
-      {/* Age + Gender */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 6 }}>
-            Age
-          </label>
-          <input
-            style={inputStyle}
-            type="number"
-            min={10}
-            max={80}
-            value={form.age}
-            onChange={e => setForm(f => ({ ...f, age: e.target.value }))}
-            onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-            onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-            placeholder="Your age"
-          />
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Age</label>
+          <input className={inputCls} type="number" min={10} max={80} value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} placeholder="Your age" />
         </div>
         <div>
-          <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 6 }}>
-            Gender
-          </label>
-          <select
-            style={{ ...inputStyle, cursor: 'pointer' }}
-            value={form.gender}
-            onChange={e => setForm(f => ({ ...f, gender: e.target.value as Gender }))}
-            onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-            onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-          >
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Gender</label>
+          <select className={inputCls + ' cursor-pointer'} value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value as Gender }))}>
             {GENDERS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Sport preferences */}
       <div>
-        <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 8 }}>
-          Sport Preferences
+        <label className="text-[13px] font-semibold text-brand-dark block mb-2">
+          Sport Preferences <span className="font-mono font-normal text-brand-muted text-[11px]">(sport_preference)</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {SPORTS.map(s => {
-            const active = form.sportPreferences.includes(s.value);
+            const active = form.sport_preference.includes(s.value);
             return (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => toggleSport(s.value)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all"
-                style={{
-                  background: active ? '#a04100' : '#fff',
-                  border: `1.5px solid ${active ? '#a04100' : '#dfc0b3'}`,
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '13px',
-                  fontWeight: active ? 700 : 400,
-                  color: active ? '#fff' : '#584238',
-                }}
-              >
-                {s.emoji} {s.label}
-                {active && <CheckCircle2 size={13} />}
+              <button key={s.value} type="button" onClick={() => toggleSport(s.value)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] transition-all border-[1.5px]
+                  ${active ? 'bg-brand-orange border-brand-orange text-white font-bold' : 'bg-white border-brand-border text-brand-body hover:border-brand-orange'}`}>
+                {s.emoji} {s.label} {active && <CheckCircle2 size={13} />}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Skill level */}
       <div>
-        <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 8 }}>
-          Skill Level
+        <label className="text-[13px] font-semibold text-brand-dark block mb-2">
+          Skill Level <span className="font-mono font-normal text-brand-muted text-[11px]">(skill_level)</span>
         </label>
         <div className="grid grid-cols-3 gap-3">
           {SKILL_LEVELS.map(sl => {
-            const active = form.skillLevel === sl.value;
+            const active = form.skill_level === sl.value;
             return (
-              <button
-                key={sl.value}
-                type="button"
-                onClick={() => setForm(f => ({ ...f, skillLevel: sl.value }))}
-                className="flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all"
-                style={{
-                  borderColor: active ? sl.color : '#dfc0b3',
-                  background: active ? sl.color + '15' : '#fff',
-                }}
-              >
-                <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: active ? sl.color : '#241914' }}>
-                  {sl.label}
-                </span>
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>{sl.desc}</span>
+              <button key={sl.value} type="button" onClick={() => setForm(f => ({ ...f, skill_level: sl.value }))}
+                className={`flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all
+                  ${active ? sl.active : `bg-white ${sl.border} text-brand-dark`}`}>
+                <span className="text-sm font-bold font-heading">{sl.label}</span>
+                <span className="text-[11px] text-brand-muted">{sl.desc}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <button
-          onClick={onCancel}
-          className="flex items-center gap-2 h-11 px-5 rounded-xl transition-colors hover:bg-[#fff1eb]"
-          style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', border: '1.5px solid #dfc0b3' }}
-        >
+        <button onClick={onCancel}
+          className="flex items-center gap-2 h-11 px-5 rounded-xl border-[1.5px] border-brand-border text-brand-body text-sm hover:bg-brand-surface-orange transition-colors">
           <X size={15} /> Cancel
         </button>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 h-11 px-6 rounded-xl transition-opacity hover:opacity-90 disabled:opacity-70"
-          style={{
-            background: 'linear-gradient(90deg,#a04100,#ff7e36)',
-            fontFamily: 'Lexend, sans-serif',
-            fontSize: '14px',
-            fontWeight: 700,
-            color: '#fff',
-            border: 'none',
-            boxShadow: '0 4px 14px rgba(160,65,0,0.3)',
-          }}
-        >
+        <button onClick={handleSave} disabled={saving}
+          className="flex items-center gap-2 h-11 px-6 rounded-xl gradient-orange text-white font-heading text-sm font-bold hover:opacity-90 disabled:opacity-70 transition-opacity"
+          style={{ boxShadow: '0 4px 14px rgba(160,65,0,0.3)' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
           {saving ? 'Saving…' : 'Save Changes'}
         </button>
@@ -363,7 +209,7 @@ function EditForm({ profile, onSave, onCancel }: {
   );
 }
 
-// ─── Main ProfilePage ─────────────────────────────────────────────────────────
+// Main ProfilePage
 export default function ProfilePage() {
   const [authUser, setAuthUser] = useState(getCurrentUser());
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -372,336 +218,234 @@ export default function ProfilePage() {
   const [achFilter, setAchFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
 
   useEffect(() => subscribeAuth(() => setAuthUser(getCurrentUser())), []);
-
   useEffect(() => {
     if (!authUser) return;
-    const p = getProfile(authUser.id);
+    const p = getProfile(authUser._id);
     setProfile(p);
-    return subscribeProfile(() => setProfile(getProfile(authUser.id)));
+    return subscribeProfile(() => setProfile(getProfile(authUser._id)));
   }, [authUser]);
 
   if (!authUser || !profile) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <Shield size={40} style={{ color: '#dfc0b3' }} />
-        <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', color: '#241914' }}>
-          Please log in to view your profile
-        </p>
+        <p className="font-heading text-lg text-brand-dark">Please log in to view your profile</p>
       </div>
     );
   }
 
-  const xpInfo = getLevelProgress(profile.xp);
+  const xpInfo = getLevelProgress(profile.reputation_score);
   const unlockedCount = profile.achievements.filter(a => a.unlockedAt !== null).length;
   const totalXp = profile.achievements.filter(a => a.unlockedAt !== null).reduce((s, a) => s + a.xp, 0);
-  const filteredAch = profile.achievements.filter(a => {
-    if (achFilter === 'unlocked') return a.unlockedAt !== null;
-    if (achFilter === 'locked') return a.unlockedAt === null;
-    return true;
-  });
+  const filteredAch = profile.achievements.filter(a =>
+    achFilter === 'unlocked' ? a.unlockedAt !== null :
+    achFilter === 'locked'   ? a.unlockedAt === null : true
+  );
 
   const handleSave = (patch: Partial<UserProfile>) => {
-    const updated = updateProfile(authUser.id, patch);
+    const updated = updateProfile(authUser._id, patch);
     if (updated) {
       setProfile(updated);
+      if (patch.name) patchCurrentUser({ name: patch.name });
       setEditing(false);
       toast.success('Profile updated successfully!');
     }
   };
 
   const TABS = [
-    { id: 'info' as Tab, label: 'Personal Info', icon: <Edit3 size={15} /> },
+    { id: 'info' as Tab,         label: 'Personal Info',                                       icon: <Edit3 size={15} /> },
     { id: 'achievements' as Tab, label: `Achievements (${unlockedCount}/${profile.achievements.length})`, icon: <Trophy size={15} /> },
-    { id: 'activity' as Tab, label: 'Activity', icon: <Calendar size={15} /> },
+    { id: 'activity' as Tab,     label: 'Activity',                                             icon: <Calendar size={15} /> },
   ];
 
   const ROLE_BADGE = {
-    player: { label: 'Người chơi', bg: '#d0f5ee', color: '#00785e' },
-    owner: { label: 'Chủ sân', bg: '#ddeeff', color: '#1a5fb4' },
-    admin: { label: 'Admin', bg: '#ffd6d6', color: '#c0392b' },
+    player: 'bg-[#d0f5ee] text-[#00785e]',
+    owner:  'bg-[#ddeeff] text-brand-navy',
+    admin:  'bg-[#ffd6d6] text-brand-red',
   };
-  const badge = ROLE_BADGE[authUser.role];
+  const ROLE_LABEL = { player: 'Người chơi', owner: 'Chủ sân', admin: 'Admin' };
 
   return (
-    <div className="flex flex-col min-h-full" style={{ background: '#fff8f6' }}>
-      {/* ─── Cover + Avatar ─── */}
-      <div className="relative w-full overflow-hidden" style={{ height: 220 }}>
+    <div className="flex flex-col min-h-full bg-brand-surface">
+      {/* Cover */}
+      <div className="relative w-full overflow-hidden h-[220px]">
         <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(36,25,20,0.65))' }} />
-        {/* Edit cover button */}
-        <button
-          className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-xl"
-          style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', fontFamily: 'Inter, sans-serif', fontSize: '13px', border: '1px solid rgba(255,255,255,0.25)' }}
-        >
+        <button className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-[13px] border border-white/25 bg-white/15 backdrop-blur-sm">
           <Camera size={14} /> Change Cover
         </button>
       </div>
 
-      {/* ─── Profile Header ─── */}
       <div className="max-w-screen-lg mx-auto w-full px-6">
+        {/* Profile header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-14 mb-6 relative z-10">
-          {/* Avatar */}
           <div className="relative shrink-0">
-            <div
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-4 border-[#fff8f6]"
-              style={{ boxShadow: '0 4px 16px rgba(36,25,20,0.2)' }}
-            >
-              <img src={profile.avatarUrl} alt={profile.displayName} className="w-full h-full object-cover" style={{ background: '#f4ded5' }} />
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-4 border-brand-surface" style={{ boxShadow: '0 4px 16px rgba(36,25,20,0.2)' }}>
+              <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover bg-brand-surface-warm" />
             </div>
-            <button
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center"
-              style={{ background: '#a04100', border: '2px solid #fff8f6' }}
-            >
-              <Camera size={12} color="#fff" />
+            <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center bg-brand-orange border-2 border-brand-surface">
+              <Camera size={12} className="text-white" />
             </button>
           </div>
 
-          {/* Name + meta */}
           <div className="flex-1 pb-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '24px', fontWeight: 800, color: '#241914' }}>
-                {profile.displayName}
-              </h1>
-              {profile.isVerified && (
-                <BadgeCheck size={20} style={{ color: '#006a65' }} />
-              )}
-              <span
-                className="px-2.5 py-0.5 rounded-full"
-                style={{ background: badge.bg, color: badge.color, fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: 700 }}
-              >
-                {badge.label}
+              <h1 className="font-heading text-2xl font-extrabold text-brand-dark">{profile.name}</h1>
+              {profile.is_verified && <BadgeCheck size={20} className="text-brand-teal" />}
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${ROLE_BADGE[authUser.role]}`}>
+                {ROLE_LABEL[authUser.role]}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-4 mt-1.5">
-              <span className="flex items-center gap-1" style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
-                <MapPin size={13} style={{ color: '#a04100' }} /> {profile.city}
+              <span className="flex items-center gap-1 text-[13px] text-brand-body">
+                <MapPin size={13} className="text-brand-orange" /> {profile.location}
               </span>
-              <span className="flex items-center gap-1" style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
-                <Calendar size={13} style={{ color: '#a04100' }} /> Joined {formatDate(profile.joinedAt)}
+              <span className="flex items-center gap-1 text-[13px] text-brand-body">
+                <Calendar size={13} className="text-brand-orange" /> Joined {formatDate(profile.joinedAt)}
               </span>
-              <span className="flex items-center gap-1" style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
-                <Star size={13} fill="#a04100" color="#a04100" /> {profile.rating} ({profile.reviewCount} reviews)
+              <span className="flex items-center gap-1 text-[13px] text-brand-body">
+                <Star size={13} fill="#a04100" className="text-brand-orange" /> {profile.rating} ({profile.reviewCount} reviews)
               </span>
             </div>
           </div>
 
-          {/* Edit button */}
-          <button
-            onClick={() => { setTab('info'); setEditing(true); }}
-            className="flex items-center gap-2 h-10 px-4 rounded-xl transition-all hover:opacity-90 shrink-0"
-            style={{
-              background: 'linear-gradient(90deg,#a04100,#ff7e36)',
-              fontFamily: 'Inter, sans-serif',
-              fontSize: '13px',
-              fontWeight: 700,
-              color: '#fff',
-              border: 'none',
-            }}
-          >
+          <button onClick={() => { setTab('info'); setEditing(true); }}
+            className="flex items-center gap-2 h-10 px-4 rounded-xl gradient-orange text-white text-[13px] font-bold font-heading hover:opacity-90 transition-opacity shrink-0">
             <Edit3 size={14} /> Edit Profile
           </button>
         </div>
 
-        {/* ─── Stats row ─── */}
+        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
-            { icon: '🏸', label: 'Sport', value: profile.sportPreferences.slice(0, 2).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') || '–' },
-            { icon: '⚡', label: 'Skill Level', value: profile.skillLevel.charAt(0).toUpperCase() + profile.skillLevel.slice(1) },
+            { icon: '🏸', label: 'Sport',         value: profile.sport_preference.slice(0,2).map(s => s.charAt(0).toUpperCase()+s.slice(1)).join(', ') || '–' },
+            { icon: '⚡', label: 'Skill Level',    value: profile.skill_level.charAt(0).toUpperCase() + profile.skill_level.slice(1) },
             { icon: '📅', label: 'Total Bookings', value: `${profile.totalBookings}` },
             { icon: '🤝', label: 'Matches Played', value: `${profile.totalMatchesPlayed}` },
           ].map((s, i) => (
-            <div
-              key={i}
-              className="rounded-xl px-4 py-3 flex items-center gap-3"
-              style={{ background: '#fff', border: '1px solid #dfc0b3' }}
-            >
+            <div key={i} className="rounded-xl px-4 py-3 flex items-center gap-3 bg-white border border-brand-border">
               <span className="text-xl">{s.icon}</span>
               <div>
-                <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: '#241914' }}>{s.value}</p>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>{s.label}</p>
+                <p className="text-sm font-bold text-brand-dark font-heading">{s.value}</p>
+                <p className="text-[11px] text-brand-muted">{s.label}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* ─── Level / XP bar ─── */}
-        <div
-          className="rounded-2xl p-5 mb-6 flex items-center gap-5"
-          style={{ background: '#fff', border: '1px solid #dfc0b3' }}
-        >
-          <div
-            className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0"
-            style={{ background: 'linear-gradient(135deg,#a04100,#ff7e36)', boxShadow: '0 4px 12px rgba(160,65,0,0.35)' }}
-          >
-            <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
-              {xpInfo.level}
-            </span>
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', color: 'rgba(255,255,255,0.8)', letterSpacing: '0.06em' }}>
-              LEVEL
-            </span>
+        {/* Level / reputation bar */}
+        <div className="rounded-2xl p-5 mb-6 flex items-center gap-5 bg-white border border-brand-border">
+          <div className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 gradient-orange" style={{ boxShadow: '0 4px 12px rgba(160,65,0,0.35)' }}>
+            <span className="font-heading text-lg font-black text-white leading-none">{xpInfo.level}</span>
+            <span className="text-[9px] text-white/80 tracking-widest">LEVEL</span>
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
-              <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: '#241914' }}>
+              <span className="font-heading text-sm font-bold text-brand-dark">
                 Level {xpInfo.level}
-                {xpInfo.level < 50 && <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, color: '#8b7266', fontSize: '13px' }}> → {xpInfo.level + 1}</span>}
+                {xpInfo.level < 50 && <span className="text-[13px] font-normal text-brand-muted"> → {xpInfo.level + 1}</span>}
               </span>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100', fontWeight: 600 }}>
-                {xpInfo.currentXp} / {xpInfo.nextLevelXp} XP
-              </span>
+              <span className="text-[13px] text-brand-orange font-semibold">{profile.reputation_score} reputation</span>
             </div>
-            <div className="w-full rounded-full overflow-hidden" style={{ height: 10, background: '#f4ded5' }}>
-              <div
-                style={{
-                  height: '100%',
-                  width: `${xpInfo.pct}%`,
-                  borderRadius: '9999px',
-                  background: 'linear-gradient(90deg,#a04100,#ff7e36)',
-                  transition: 'width 0.6s ease',
-                }}
-              />
+            <div className="w-full h-2.5 rounded-full overflow-hidden bg-brand-surface-warm">
+              <div className="h-full rounded-full gradient-orange transition-[width] duration-500" style={{ width: `${xpInfo.pct}%` }} />
             </div>
             <div className="flex items-center justify-between mt-1.5">
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>
-                {unlockedCount} achievements · {totalXp} total XP
-              </span>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#a04100', fontWeight: 600 }}>
-                {xpInfo.pct}%
-              </span>
+              <span className="text-[11px] text-brand-muted">{unlockedCount} achievements · {totalXp} XP</span>
+              <span className="text-[11px] text-brand-orange font-semibold">{xpInfo.pct}%</span>
             </div>
           </div>
           <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">
             <div className="flex items-center gap-1.5">
-              <Trophy size={14} style={{ color: '#a04100' }} />
-              <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '15px', fontWeight: 700, color: '#a04100' }}>
-                {unlockedCount}/{profile.achievements.length}
-              </span>
+              <Trophy size={14} className="text-brand-orange" />
+              <span className="font-heading text-[15px] font-bold text-brand-orange">{unlockedCount}/{profile.achievements.length}</span>
             </div>
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>Achievements</span>
+            <span className="text-[11px] text-brand-muted">Achievements</span>
           </div>
         </div>
 
-        {/* ─── Tabs ─── */}
-        <div className="flex border-b border-[#dfc0b3] mb-6">
+        {/* Tabs */}
+        <div className="flex border-b border-brand-border mb-6">
           {TABS.map(t => (
-            <button
-              key={t.id}
-              onClick={() => { setTab(t.id); setEditing(false); }}
-              className="flex items-center gap-2 px-4 py-3 transition-colors"
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '14px',
-                fontWeight: tab === t.id ? 700 : 400,
-                color: tab === t.id ? '#a04100' : '#584238',
-                borderBottom: tab === t.id ? '2.5px solid #a04100' : '2.5px solid transparent',
-                marginBottom: -1,
-              }}
-            >
+            <button key={t.id} onClick={() => { setTab(t.id); setEditing(false); }}
+              className={`flex items-center gap-2 px-4 py-3 transition-colors text-sm -mb-px border-b-2
+                ${tab === t.id ? 'font-bold text-brand-orange border-brand-orange' : 'font-normal text-brand-body border-transparent hover:text-brand-orange'}`}>
               {t.icon} {t.label}
             </button>
           ))}
         </div>
 
-        {/* ─── Personal Info Tab ─── */}
+        {/* ── Personal Info Tab ── */}
         {tab === 'info' && (
           <div className="pb-12">
             {editing ? (
-              <div className="rounded-2xl p-6" style={{ background: '#fff', border: '1px solid #dfc0b3' }}>
-                <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914', marginBottom: 20 }}>
-                  Edit Profile
-                </h2>
+              <div className="rounded-2xl p-6 bg-white border border-brand-border">
+                <h2 className="font-heading text-lg font-bold text-brand-dark mb-5">Edit Profile</h2>
                 <EditForm profile={profile} onSave={handleSave} onCancel={() => setEditing(false)} />
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                {/* Left: bio + info */}
                 <div className="lg:col-span-2 flex flex-col gap-5">
-                  {/* Bio */}
-                  <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid #dfc0b3' }}>
+                  <div className="rounded-2xl p-5 bg-white border border-brand-border">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 700, color: '#241914' }}>About Me</h3>
-                      <button
-                        onClick={() => setEditing(true)}
-                        className="flex items-center gap-1 px-3 h-8 rounded-lg hover:bg-[#fff1eb] transition-colors"
-                        style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100', fontWeight: 600 }}
-                      >
+                      <h3 className="font-heading text-base font-bold text-brand-dark">Personal Details</h3>
+                      <button onClick={() => setEditing(true)}
+                        className="flex items-center gap-1 px-3 h-8 rounded-lg hover:bg-brand-surface-orange transition-colors text-[13px] text-brand-orange font-semibold">
                         <Edit3 size={12} /> Edit
                       </button>
                     </div>
-                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', lineHeight: 1.7 }}>
-                      {profile.bio || <span style={{ color: '#8b7266', fontStyle: 'italic' }}>No bio yet. Click Edit to add one!</span>}
-                    </p>
-                  </div>
-
-                  {/* Info grid */}
-                  <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid #dfc0b3' }}>
-                    <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 700, color: '#241914', marginBottom: 16 }}>
-                      Personal Details
-                    </h3>
                     <div className="grid grid-cols-2 gap-y-5 gap-x-8">
                       {[
-                        { label: 'Age', value: profile.age ? `${profile.age} years old` : '—' },
-                        { label: 'Gender', value: profile.gender === 'prefer_not_to_say' ? 'Prefer not to say' : profile.gender?.charAt(0).toUpperCase() + profile.gender?.slice(1) || '—' },
-                        { label: 'City', value: profile.city || '—' },
-                        { label: 'Skill Level', value: profile.skillLevel?.charAt(0).toUpperCase() + profile.skillLevel?.slice(1) || '—' },
-                        { label: 'Member Since', value: formatDate(profile.joinedAt) },
-                        { label: 'Account Status', value: profile.isVerified ? '✅ Verified' : 'Unverified' },
+                        { label: 'name',             value: profile.name },
+                        { label: 'age',              value: profile.age ? `${profile.age} years old` : '—' },
+                        { label: 'gender',           value: profile.gender === 'prefer_not_to_say' ? 'Prefer not to say' : profile.gender?.charAt(0).toUpperCase() + profile.gender?.slice(1) || '—' },
+                        { label: 'location',         value: profile.location || '—' },
+                        { label: 'skill_level',      value: profile.skill_level?.charAt(0).toUpperCase() + profile.skill_level?.slice(1) || '—' },
+                        { label: 'reputation_score', value: `${profile.reputation_score} pts` },
+                        { label: 'is_verified',      value: profile.is_verified ? '✅ Verified' : 'Unverified' },
+                        { label: 'joinedAt',         value: formatDate(profile.joinedAt) },
                       ].map((item, i) => (
                         <div key={i}>
-                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
-                            {item.label}
-                          </p>
-                          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, color: '#241914' }}>
-                            {item.value}
-                          </p>
+                          <p className="font-mono text-[11px] text-brand-muted mb-1">{item.label}</p>
+                          <p className="text-sm font-semibold text-brand-dark">{item.value}</p>
                         </div>
                       ))}
                     </div>
                   </div>
+
+                  <div className="rounded-2xl p-5 bg-white border border-brand-border">
+                    <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Performance</h3>
+                    {[
+                      { label: 'Court Bookings',    value: profile.totalBookings,   icon: '📅' },
+                      { label: 'Matches Played',    value: profile.totalMatchesPlayed, icon: '🤝' },
+                      { label: 'Community Rating',  value: `${profile.rating} ⭐`,  icon: '🌟' },
+                      { label: 'Reviews Received',  value: profile.reviewCount,     icon: '💬' },
+                    ].map((item, i) => (
+                      <div key={i} className={`flex items-center justify-between py-2.5 text-[13px] ${i > 0 ? 'border-t border-brand-surface-warm' : ''}`}>
+                        <span className="text-brand-body">{item.icon} {item.label}</span>
+                        <span className="font-heading text-[15px] font-bold text-brand-dark">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Right: sports */}
                 <div className="flex flex-col gap-5">
-                  <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid #dfc0b3' }}>
-                    <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 700, color: '#241914', marginBottom: 12 }}>
-                      Sport Preferences
-                    </h3>
-                    {profile.sportPreferences.length === 0 ? (
-                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', fontStyle: 'italic' }}>No sports added yet.</p>
+                  <div className="rounded-2xl p-5 bg-white border border-brand-border">
+                    <h3 className="font-heading text-base font-bold text-brand-dark mb-1">Sport Preferences</h3>
+                    <p className="font-mono text-[11px] text-brand-muted mb-3">sport_preference</p>
+                    {profile.sport_preference.length === 0 ? (
+                      <p className="text-[13px] text-brand-muted italic">No sports added yet.</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
-                        {profile.sportPreferences.map(s => {
+                        {profile.sport_preference.map(s => {
                           const info = SPORTS.find(x => x.value === s);
                           return (
-                            <span
-                              key={s}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
-                              style={{ background: '#fff1eb', border: '1.5px solid rgba(160,65,0,0.2)', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100', fontWeight: 600 }}
-                            >
-                              {info?.emoji} {info?.label}
+                            <span key={s} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-surface-orange border-[1.5px] border-brand-orange/20 text-[13px] text-brand-orange font-semibold">
+                              {info?.emoji} {info?.label ?? s}
                             </span>
                           );
                         })}
                       </div>
                     )}
-                  </div>
-
-                  {/* Quick stats */}
-                  <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid #dfc0b3' }}>
-                    <h3 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 700, color: '#241914', marginBottom: 12 }}>
-                      Performance
-                    </h3>
-                    {[
-                      { label: 'Court Bookings', value: profile.totalBookings, icon: '📅' },
-                      { label: 'Matches Played', value: profile.totalMatchesPlayed, icon: '🤝' },
-                      { label: 'Community Rating', value: `${profile.rating} ⭐`, icon: '🌟' },
-                      { label: 'Reviews Received', value: profile.reviewCount, icon: '💬' },
-                    ].map((item, i) => (
-                      <div key={i} className={`flex items-center justify-between py-2.5 ${i > 0 ? 'border-t border-[#f4ded5]' : ''}`}>
-                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>{item.icon} {item.label}</span>
-                        <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '15px', fontWeight: 700, color: '#241914' }}>{item.value}</span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -709,112 +453,63 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* ─── Achievements Tab ─── */}
+        {/* ── Achievements Tab ── */}
         {tab === 'achievements' && (
           <div className="pb-12">
-            {/* Summary bar */}
             <div className="flex items-center gap-4 mb-5 flex-wrap">
-              <div
-                className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                style={{ background: '#fff1eb', border: '1px solid rgba(160,65,0,0.15)' }}
-              >
-                <Trophy size={18} style={{ color: '#a04100' }} />
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-surface-orange border border-brand-orange/15">
+                <Trophy size={18} className="text-brand-orange" />
                 <div>
-                  <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 800, color: '#a04100', lineHeight: 1 }}>
-                    {unlockedCount}/{profile.achievements.length}
-                  </p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>Unlocked</p>
+                  <p className="font-heading text-base font-extrabold text-brand-orange leading-none">{unlockedCount}/{profile.achievements.length}</p>
+                  <p className="text-[11px] text-brand-muted">Unlocked</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: '#fff1eb', border: '1px solid rgba(160,65,0,0.15)' }}>
-                <Zap size={18} style={{ color: '#a04100' }} />
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-surface-orange border border-brand-orange/15">
+                <Zap size={18} className="text-brand-orange" />
                 <div>
-                  <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 800, color: '#a04100', lineHeight: 1 }}>
-                    {totalXp} XP
-                  </p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>From achievements</p>
+                  <p className="font-heading text-base font-extrabold text-brand-orange leading-none">{totalXp} XP</p>
+                  <p className="text-[11px] text-brand-muted">From achievements</p>
                 </div>
               </div>
               <div className="ml-auto flex gap-2">
                 {(['all', 'unlocked', 'locked'] as const).map(f => (
-                  <button
-                    key={f}
-                    onClick={() => setAchFilter(f)}
-                    className="px-3 h-9 rounded-xl capitalize transition-all"
-                    style={{
-                      background: achFilter === f ? '#a04100' : '#fff',
-                      border: `1.5px solid ${achFilter === f ? '#a04100' : '#dfc0b3'}`,
-                      fontFamily: 'Inter, sans-serif',
-                      fontSize: '13px',
-                      fontWeight: achFilter === f ? 700 : 400,
-                      color: achFilter === f ? '#fff' : '#584238',
-                    }}
-                  >
+                  <button key={f} onClick={() => setAchFilter(f)}
+                    className={`px-3 h-9 rounded-xl capitalize text-[13px] transition-all border-[1.5px]
+                      ${achFilter === f ? 'bg-brand-orange border-brand-orange text-white font-bold' : 'bg-white border-brand-border text-brand-body hover:bg-brand-surface-orange'}`}>
                     {f}
                   </button>
                 ))}
               </div>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredAch.map(ach => <AchievementCard key={ach.id} ach={ach} />)}
             </div>
           </div>
         )}
 
-        {/* ─── Activity Tab ─── */}
+        {/* ── Activity Tab ── */}
         {tab === 'activity' && (
           <div className="pb-12">
             {profile.recentActivity.length === 0 ? (
               <div className="text-center py-16">
-                <Calendar size={48} style={{ color: '#dfc0b3', margin: '0 auto 12px' }} />
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#8b7266' }}>No activity yet</p>
+                <Calendar size={48} className="text-brand-border mx-auto mb-3" />
+                <p className="text-[15px] text-brand-muted">No activity yet</p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {profile.recentActivity.map((item, idx) => {
-                  const TYPE_COLOR: Record<string, string> = {
-                    booking: '#a04100',
-                    match: '#006a65',
-                    message: '#1a5fb4',
-                    achievement: '#856404',
-                  };
-                  const TYPE_BG: Record<string, string> = {
-                    booking: '#fff1eb',
-                    match: '#e7f8f7',
-                    message: '#ddeeff',
-                    achievement: '#fff3cd',
-                  };
+                {profile.recentActivity.map(item => {
+                  const TYPE_COLOR: Record<string, string> = { booking: 'text-brand-orange', match: 'text-brand-teal', message: 'text-brand-navy', achievement: 'text-[#856404]' };
+                  const TYPE_BG: Record<string, string> = { booking: 'bg-brand-surface-orange', match: 'bg-brand-surface-teal', message: 'bg-[#ddeeff]', achievement: 'bg-[#fff3cd]' };
                   return (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-4 px-5 py-4 rounded-xl"
-                      style={{ background: '#fff', border: '1px solid #dfc0b3' }}
-                    >
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
-                        style={{ background: TYPE_BG[item.type] }}
-                      >
-                        {item.icon}
-                      </div>
+                    <div key={item.id} className="flex items-center gap-4 px-5 py-4 rounded-xl bg-white border border-brand-border">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${TYPE_BG[item.type]}`}>{item.icon}</div>
                       <div className="flex-1">
-                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, color: '#241914' }}>
-                          {item.title}
-                        </p>
-                        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 1 }}>
-                          {item.subtitle}
-                        </p>
+                        <p className="text-sm font-semibold text-brand-dark">{item.title}</p>
+                        <p className="text-xs text-brand-muted mt-0.5">{item.subtitle}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span
-                          className="px-2 py-0.5 rounded-full capitalize"
-                          style={{ background: TYPE_BG[item.type], color: TYPE_COLOR[item.type], fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: 700 }}
-                        >
-                          {item.type}
-                        </span>
-                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>
-                          {formatDate(item.date)}
-                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${TYPE_BG[item.type]} ${TYPE_COLOR[item.type]}`}>{item.type}</span>
+                        <span className="text-[11px] text-brand-muted">{formatDate(item.date)}</span>
                       </div>
                     </div>
                   );
