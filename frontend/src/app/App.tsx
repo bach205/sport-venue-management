@@ -1,16 +1,28 @@
-import { RouterProvider } from "react-router-dom";
-import { ReduxProvider } from "@/app/providers/ReduxProvider";
-import { router } from "@/app/router";
-import { TooltipProvider } from "@/shared/components/ui/tooltip";
-import { Toaster } from "@/shared/components/ui/sonner";
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { RouterProvider } from 'react-router';
+import { store, persistor } from './store';
+import { Loader2 } from 'lucide-react';
+import { router } from './router';
+import { Toaster } from 'sonner';
+ 
+/** Shown during the brief localStorage rehydration window. */
+function PersistLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-brand-surface">
+      <Loader2 size={28} className="animate-spin text-brand-orange" />
+    </div>
+  );
+}
 
 export function App() {
   return (
-    <ReduxProvider>
-      <TooltipProvider>
+    <Provider store={store}>
+      <PersistGate loading={<PersistLoader />} persistor={persistor}>
         <RouterProvider router={router} />
-        <Toaster />
-      </TooltipProvider>
-    </ReduxProvider>
+      </PersistGate>
+      {/* Toaster outside PersistGate so toasts work during rehydration */}
+      <Toaster position="top-right" richColors />
+    </Provider>
   );
 }

@@ -2,59 +2,69 @@ import React, { useState, useEffect } from 'react';
 import {
   Camera, Edit3, MapPin, Trophy, Star,
   Calendar, Zap, CheckCircle2, Lock, Loader2,
-  BadgeCheck, Save, X
+  BadgeCheck, Save, X,
 } from 'lucide-react';
-import { getCurrentUser, subscribeAuth, patchCurrentUser } from '../../auth/store/authStore';
-import { getProfile, updateProfile, getLevelProgress, subscribeProfile } from '../store/profileStore';
+import { useAppSelector, useAppDispatch } from '../../../app/hooks';
+import { patchUser } from '../../auth/store/authSlice';
+import {
+  fetchProfileStart, fetchProfileSuccess, fetchProfileFailed, updateProfileData,
+} from '../store/profileSlice';
+import { getMe, updateProfile } from '../api/profileApi';
+import { getLevelProgress, getFEOnlyData } from '../store/profileStore';
 import type { UserProfile, Achievement, Gender, SkillLevel, Sport } from '../types/profile.types';
-import { updateProfile as apiUpdateProfile } from '../../auth/api/usersApi';
+import type { ApiUser, UpdateProfilePayload } from '../../auth/types/auth.types';
 import { toast } from 'sonner';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 type Tab = 'info' | 'achievements' | 'activity';
 
 const SPORTS: { value: Sport; label: string; emoji: string }[] = [
-  { value: 'tennis',       label: 'Tennis',      emoji: '🎾' },
-  { value: 'basketball',   label: 'Basketball',  emoji: '🏀' },
-  { value: 'badminton',    label: 'Badminton',   emoji: '🏸' },
-  { value: 'football',     label: 'Football',    emoji: '⚽' },
-  { value: 'pickleball',   label: 'Pickleball',  emoji: '🏓' },
-  { value: 'volleyball',   label: 'Volleyball',  emoji: '🏐' },
-  { value: 'swimming',     label: 'Swimming',    emoji: '🏊' },
-  { value: 'table_tennis', label: 'Table Tennis',emoji: '🏓' },
+  { value: 'tennis',       label: 'Tennis',       emoji: '🎾' },
+  { value: 'basketball',   label: 'Basketball',   emoji: '🏀' },
+  { value: 'badminton',    label: 'Badminton',    emoji: '🏸' },
+  { value: 'football',     label: 'Football',     emoji: '⚽' },
+  { value: 'pickleball',   label: 'Pickleball',   emoji: '🏓' },
+  { value: 'volleyball',   label: 'Volleyball',   emoji: '🏐' },
+  { value: 'swimming',     label: 'Swimming',     emoji: '🏊' },
+  { value: 'table_tennis', label: 'Table Tennis', emoji: '🏓' },
 ];
 
-const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string; active: string; border: string }[] = [
-  { value: 'casual',       label: 'Casual',       desc: 'Just for fun',      active: 'bg-brand-teal/15 border-brand-teal text-brand-teal',        border: 'border-brand-border' },
-  { value: 'intermediate', label: 'Intermediate', desc: 'Regular player',    active: 'bg-brand-navy/10 border-brand-navy text-brand-navy',         border: 'border-brand-border' },
-  { value: 'competitive',  label: 'Competitive',  desc: 'Tournament level',  active: 'bg-brand-orange/10 border-brand-orange text-brand-orange',   border: 'border-brand-border' },
+const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string; active: string }[] = [
+  { value: 'casual',       label: 'Casual',       desc: 'Just for fun',     active: 'bg-brand-teal/15 border-brand-teal text-brand-teal' },
+  { value: 'intermediate', label: 'Intermediate', desc: 'Regular player',   active: 'bg-brand-navy/10 border-brand-navy text-brand-navy' },
+  { value: 'competitive',  label: 'Competitive',  desc: 'Tournament level', active: 'bg-brand-orange/10 border-brand-orange text-brand-orange' },
 ];
 
 const GENDERS: { value: Gender; label: string }[] = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
+  { value: 'male',              label: 'Male' },
+  { value: 'female',            label: 'Female' },
+  { value: 'other',             label: 'Other' },
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
-const CATEGORY_CONFIG: Record<string, { color: string; bg: string; textClass: string; bgClass: string }> = {
-  booking: { color: '#a04100', bg: '#fff1eb', textClass: 'text-brand-orange',   bgClass: 'bg-brand-surface-orange' },
-  social:  { color: '#1a5fb4', bg: '#ddeeff', textClass: 'text-brand-navy',     bgClass: 'bg-[#ddeeff]' },
-  skill:   { color: '#006a65', bg: '#e7f8f7', textClass: 'text-brand-teal',     bgClass: 'bg-brand-surface-teal' },
-  loyalty: { color: '#856404', bg: '#fff3cd', textClass: 'text-[#856404]',      bgClass: 'bg-[#fff3cd]' },
+const CATEGORY_CONFIG: Record<string, { color: string; textClass: string; bgClass: string }> = {
+  booking: { color: '#a04100', textClass: 'text-brand-orange', bgClass: 'bg-brand-surface-orange' },
+  social:  { color: '#1a5fb4', textClass: 'text-brand-navy',   bgClass: 'bg-[#ddeeff]' },
+  skill:   { color: '#006a65', textClass: 'text-brand-teal',   bgClass: 'bg-brand-surface-teal' },
+  loyalty: { color: '#856404', textClass: 'text-[#856404]',    bgClass: 'bg-[#fff3cd]' },
 };
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-// Achievement Card
+// ─── Achievement Card ─────────────────────────────────────────────────────────
+
 function AchievementCard({ ach }: { ach: Achievement }) {
   const unlocked = ach.unlockedAt !== null;
   const cat = CATEGORY_CONFIG[ach.category];
   return (
-    <div className={`rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden transition-all hover:-translate-y-0.5
-      ${unlocked ? 'bg-white border-[1.5px]' : 'bg-[#f9f4f2] border border-brand-border opacity-70'}`}
-      style={unlocked ? { borderColor: cat.color + '33', boxShadow: '0 2px 12px rgba(36,25,20,0.08)' } : undefined}>
+    <div
+      className={`rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden transition-all hover:-translate-y-0.5
+        ${unlocked ? 'bg-white border-[1.5px]' : 'bg-[#f9f4f2] border border-brand-border opacity-70'}`}
+      style={unlocked ? { borderColor: cat.color + '33', boxShadow: '0 2px 12px rgba(36,25,20,0.08)' } : undefined}
+    >
       <div className="absolute top-3 right-3">
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${cat.bgClass} ${cat.textClass}`}>
           {ach.category}
@@ -91,42 +101,46 @@ function AchievementCard({ ach }: { ach: Achievement }) {
   );
 }
 
-// Edit Form
-function EditForm({ profile, onSave, onCancel }: {
-  profile: UserProfile; onSave: (p: Partial<UserProfile>) => void; onCancel: () => void;
+// ─── Edit Form (pure UI — API call is in ProfilePage.handleSave) ──────────────
+
+function EditForm({
+  profile,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  profile: UserProfile;
+  onSave: (payload: UpdateProfilePayload) => void;
+  onCancel: () => void;
+  saving: boolean;
 }) {
   const [form, setForm] = useState({
-    name: profile.name,
-    age: profile.age ?? ('' as number | ''),
-    gender: profile.gender,
-    location: profile.location,
+    name:             profile.name,
+    age:              profile.age !== null ? String(profile.age) : '',
+    gender:           profile.gender,
+    location:         profile.location,
     sport_preference: [...profile.sport_preference],
-    skill_level: profile.skill_level,
+    skill_level:      profile.skill_level,
   });
-  const [saving, setSaving] = useState(false);
 
-  const toggleSport = (s: Sport) => setForm(f => ({
-    ...f,
-    sport_preference: f.sport_preference.includes(s) ? f.sport_preference.filter(x => x !== s) : [...f.sport_preference, s],
-  }));
+  const toggleSport = (s: Sport) =>
+    setForm(f => ({
+      ...f,
+      sport_preference: f.sport_preference.includes(s)
+        ? f.sport_preference.filter(x => x !== s)
+        : [...f.sport_preference, s],
+    }));
 
-  const handleSave = async () => {
-    setSaving(true);
-    const result = await apiUpdateProfile({
-      name: form.name, age: form.age !== '' ? Number(form.age) : null,
-      gender: form.gender, location: form.location,
-      sport_preference: form.sport_preference, skill_level: form.skill_level,
+  const handleSubmit = () => {
+    if (!form.name.trim()) return;
+    onSave({
+      name:             form.name.trim(),
+      age:              form.age !== '' ? Number(form.age) : null,
+      gender:           form.gender,
+      location:         form.location.trim(),
+      sport_preference: form.sport_preference,
+      skill_level:      form.skill_level,
     });
-    setSaving(false);
-    if (result.success && result.data) {
-      onSave({
-        name: result.data.name, age: result.data.age ?? null,
-        gender: result.data.gender as Gender, location: result.data.location ?? '',
-        sport_preference: result.data.sport_preference as Sport[],
-        skill_level: result.data.skill_level as SkillLevel,
-        reputation_score: result.data.reputation_score,
-      });
-    } else { toast.error(result.message); }
   };
 
   const inputCls = 'w-full border-[1.5px] border-brand-border rounded-xl px-4 py-2.5 text-sm text-brand-dark bg-white outline-none focus:border-brand-teal transition-colors';
@@ -143,6 +157,7 @@ function EditForm({ profile, onSave, onCancel }: {
           <input className={inputCls} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Ho Chi Minh City" />
         </div>
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Age</label>
@@ -184,7 +199,7 @@ function EditForm({ profile, onSave, onCancel }: {
             return (
               <button key={sl.value} type="button" onClick={() => setForm(f => ({ ...f, skill_level: sl.value }))}
                 className={`flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all
-                  ${active ? sl.active : `bg-white ${sl.border} text-brand-dark`}`}>
+                  ${active ? sl.active : 'bg-white border-brand-border text-brand-dark'}`}>
                 <span className="text-sm font-bold font-heading">{sl.label}</span>
                 <span className="text-[11px] text-brand-muted">{sl.desc}</span>
               </button>
@@ -198,7 +213,7 @@ function EditForm({ profile, onSave, onCancel }: {
           className="flex items-center gap-2 h-11 px-5 rounded-xl border-[1.5px] border-brand-border text-brand-body text-sm hover:bg-brand-surface-orange transition-colors">
           <X size={15} /> Cancel
         </button>
-        <button onClick={handleSave} disabled={saving}
+        <button onClick={handleSubmit} disabled={saving || !form.name.trim()}
           className="flex items-center gap-2 h-11 px-6 rounded-xl gradient-orange text-white font-heading text-sm font-bold hover:opacity-90 disabled:opacity-70 transition-opacity"
           style={{ boxShadow: '0 4px 14px rgba(160,65,0,0.3)' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
@@ -209,23 +224,85 @@ function EditForm({ profile, onSave, onCancel }: {
   );
 }
 
-// Main ProfilePage
+// ─── Main ProfilePage ─────────────────────────────────────────────────────────
+
 export default function ProfilePage() {
-  const [authUser, setAuthUser] = useState(getCurrentUser());
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [tab, setTab] = useState<Tab>('info');
-  const [editing, setEditing] = useState(false);
+  const dispatch   = useAppDispatch();
+  const authUser   = useAppSelector(state => state.auth.user);
+  const profile    = useAppSelector(state => state.profile.data);
+  const status     = useAppSelector(state => state.profile.status);
+
+  const [saving,    setSaving]    = useState(false);
+  const [tab,       setTab]       = useState<Tab>('info');
+  const [editing,   setEditing]   = useState(false);
   const [achFilter, setAchFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
 
-  useEffect(() => subscribeAuth(() => setAuthUser(getCurrentUser())), []);
+  // ── Fetch profile from API on mount (refresh stale-while-revalidate) ─────────
   useEffect(() => {
     if (!authUser) return;
-    const p = getProfile(authUser._id);
-    setProfile(p);
-    return subscribeProfile(() => setProfile(getProfile(authUser._id)));
-  }, [authUser]);
 
-  if (!authUser || !profile) {
+    // Only show spinner on initial fetch (no cached data in store yet)
+    if (!profile) dispatch(fetchProfileStart());
+
+    getMe().then(res => {
+      if (res.success && res.data) {
+        const { user, profile: apiProfile } = res.data;
+        const feData  = getFEOnlyData(authUser._id);
+        const userId  = typeof apiProfile.user_id === 'string'
+          ? apiProfile.user_id
+          : (apiProfile.user_id as ApiUser)._id;
+
+        dispatch(fetchProfileSuccess({
+          // FE-only display fields (from local mock catalogue)
+          ...feData,
+          // API fields (authoritative — overwrite FE defaults)
+          _id:              apiProfile._id,
+          user_id:          userId,
+          name:             apiProfile.name,
+          age:              apiProfile.age ?? null,
+          gender:           (apiProfile.gender ?? 'prefer_not_to_say') as Gender,
+          sport_preference: (apiProfile.sport_preference ?? []) as Sport[],
+          skill_level:      (apiProfile.skill_level ?? 'casual') as SkillLevel,
+          location:         apiProfile.location ?? '',
+          reputation_score: apiProfile.reputation_score,
+          is_verified:      user.is_verified,
+        }));
+      } else {
+        dispatch(fetchProfileFailed(res.message));
+        toast.error(res.message);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?._id]);
+
+  // ── Handle profile update ─────────────────────────────────────────────────────
+  const handleSave = async (payload: UpdateProfilePayload) => {
+    setSaving(true);
+    const res = await updateProfile(payload);
+    if (res.success && res.data) {
+      const apiProfile = res.data;
+      dispatch(updateProfileData({
+        name:             apiProfile.name,
+        age:              apiProfile.age ?? null,
+        gender:           (apiProfile.gender ?? profile?.gender) as Gender,
+        sport_preference: (apiProfile.sport_preference ?? profile?.sport_preference) as Sport[],
+        skill_level:      (apiProfile.skill_level ?? profile?.skill_level) as SkillLevel,
+        location:         apiProfile.location ?? profile?.location ?? '',
+        reputation_score: apiProfile.reputation_score,
+      }));
+      // Keep authUser.name in sync (displayed in NavBar, etc.)
+      dispatch(patchUser({ name: apiProfile.name }));
+      setEditing(false);
+      toast.success('Profile updated successfully!');
+    } else {
+      toast.error(res.message);
+    }
+    setSaving(false);
+  };
+
+  // ── Loading / auth guard ──────────────────────────────────────────────────────
+
+  if (!authUser) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
         <p className="font-heading text-lg text-brand-dark">Please log in to view your profile</p>
@@ -233,35 +310,34 @@ export default function ProfilePage() {
     );
   }
 
-  const xpInfo = getLevelProgress(profile.reputation_score);
+  if (status === 'loading' && !profile) {
+    return (
+      <div className="flex items-center justify-center py-24 gap-3 text-brand-muted">
+        <Loader2 size={20} className="animate-spin text-brand-orange" />
+        <span className="text-sm">Loading profile…</span>
+      </div>
+    );
+  }
+
+  if (!profile) return null;
+
+  // ── Derived values ─────────────────────────────────────────────────────────────
+
+  const xpInfo        = getLevelProgress(profile.reputation_score);
   const unlockedCount = profile.achievements.filter(a => a.unlockedAt !== null).length;
-  const totalXp = profile.achievements.filter(a => a.unlockedAt !== null).reduce((s, a) => s + a.xp, 0);
-  const filteredAch = profile.achievements.filter(a =>
+  const totalXp       = profile.achievements.filter(a => a.unlockedAt !== null).reduce((s, a) => s + a.xp, 0);
+  const filteredAch   = profile.achievements.filter(a =>
     achFilter === 'unlocked' ? a.unlockedAt !== null :
     achFilter === 'locked'   ? a.unlockedAt === null : true
   );
 
-  const handleSave = (patch: Partial<UserProfile>) => {
-    const updated = updateProfile(authUser._id, patch);
-    if (updated) {
-      setProfile(updated);
-      if (patch.name) patchCurrentUser({ name: patch.name });
-      setEditing(false);
-      toast.success('Profile updated successfully!');
-    }
-  };
-
   const TABS = [
-    { id: 'info' as Tab,         label: 'Personal Info',                                       icon: <Edit3 size={15} /> },
+    { id: 'info'         as Tab, label: 'Personal Info',                                              icon: <Edit3 size={15} /> },
     { id: 'achievements' as Tab, label: `Achievements (${unlockedCount}/${profile.achievements.length})`, icon: <Trophy size={15} /> },
-    { id: 'activity' as Tab,     label: 'Activity',                                             icon: <Calendar size={15} /> },
+    { id: 'activity'     as Tab, label: 'Activity',                                                   icon: <Calendar size={15} /> },
   ];
 
-  const ROLE_BADGE = {
-    player: 'bg-[#d0f5ee] text-[#00785e]',
-    owner:  'bg-[#ddeeff] text-brand-navy',
-    admin:  'bg-[#ffd6d6] text-brand-red',
-  };
+  const ROLE_BADGE = { player: 'bg-[#d0f5ee] text-[#00785e]', owner: 'bg-[#ddeeff] text-brand-navy', admin: 'bg-[#ffd6d6] text-brand-red' };
   const ROLE_LABEL = { player: 'Người chơi', owner: 'Chủ sân', admin: 'Admin' };
 
   return (
@@ -273,13 +349,20 @@ export default function ProfilePage() {
         <button className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-[13px] border border-white/25 bg-white/15 backdrop-blur-sm">
           <Camera size={14} /> Change Cover
         </button>
+        {/* Subtle refresh indicator when revalidating cached data */}
+        {status === 'loading' && profile && (
+          <div className="absolute top-4 left-4">
+            <Loader2 size={16} className="animate-spin text-white/70" />
+          </div>
+        )}
       </div>
 
       <div className="max-w-screen-lg mx-auto w-full px-6">
         {/* Profile header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-14 mb-6 relative z-10">
           <div className="relative shrink-0">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-4 border-brand-surface" style={{ boxShadow: '0 4px 16px rgba(36,25,20,0.2)' }}>
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-4 border-brand-surface"
+              style={{ boxShadow: '0 4px 16px rgba(36,25,20,0.2)' }}>
               <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover bg-brand-surface-warm" />
             </div>
             <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center bg-brand-orange border-2 border-brand-surface">
@@ -296,9 +379,11 @@ export default function ProfilePage() {
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-4 mt-1.5">
-              <span className="flex items-center gap-1 text-[13px] text-brand-body">
-                <MapPin size={13} className="text-brand-orange" /> {profile.location}
-              </span>
+              {profile.location && (
+                <span className="flex items-center gap-1 text-[13px] text-brand-body">
+                  <MapPin size={13} className="text-brand-orange" /> {profile.location}
+                </span>
+              )}
               <span className="flex items-center gap-1 text-[13px] text-brand-body">
                 <Calendar size={13} className="text-brand-orange" /> Joined {formatDate(profile.joinedAt)}
               </span>
@@ -317,7 +402,7 @@ export default function ProfilePage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
-            { icon: '🏸', label: 'Sport',         value: profile.sport_preference.slice(0,2).map(s => s.charAt(0).toUpperCase()+s.slice(1)).join(', ') || '–' },
+            { icon: '🏸', label: 'Sport',         value: profile.sport_preference.slice(0, 2).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') || '–' },
             { icon: '⚡', label: 'Skill Level',    value: profile.skill_level.charAt(0).toUpperCase() + profile.skill_level.slice(1) },
             { icon: '📅', label: 'Total Bookings', value: `${profile.totalBookings}` },
             { icon: '🤝', label: 'Matches Played', value: `${profile.totalMatchesPlayed}` },
@@ -334,7 +419,8 @@ export default function ProfilePage() {
 
         {/* Level / reputation bar */}
         <div className="rounded-2xl p-5 mb-6 flex items-center gap-5 bg-white border border-brand-border">
-          <div className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 gradient-orange" style={{ boxShadow: '0 4px 12px rgba(160,65,0,0.35)' }}>
+          <div className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 gradient-orange"
+            style={{ boxShadow: '0 4px 12px rgba(160,65,0,0.35)' }}>
             <span className="font-heading text-lg font-black text-white leading-none">{xpInfo.level}</span>
             <span className="text-[9px] text-white/80 tracking-widest">LEVEL</span>
           </div>
@@ -344,7 +430,7 @@ export default function ProfilePage() {
                 Level {xpInfo.level}
                 {xpInfo.level < 50 && <span className="text-[13px] font-normal text-brand-muted"> → {xpInfo.level + 1}</span>}
               </span>
-              <span className="text-[13px] text-brand-orange font-semibold">{profile.reputation_score} reputation</span>
+              <span className="text-[13px] text-brand-orange font-semibold">{profile.reputation_score} rep</span>
             </div>
             <div className="w-full h-2.5 rounded-full overflow-hidden bg-brand-surface-warm">
               <div className="h-full rounded-full gradient-orange transition-[width] duration-500" style={{ width: `${xpInfo.pct}%` }} />
@@ -380,7 +466,7 @@ export default function ProfilePage() {
             {editing ? (
               <div className="rounded-2xl p-6 bg-white border border-brand-border">
                 <h2 className="font-heading text-lg font-bold text-brand-dark mb-5">Edit Profile</h2>
-                <EditForm profile={profile} onSave={handleSave} onCancel={() => setEditing(false)} />
+                <EditForm profile={profile} onSave={handleSave} onCancel={() => setEditing(false)} saving={saving} />
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -397,11 +483,11 @@ export default function ProfilePage() {
                       {[
                         { label: 'name',             value: profile.name },
                         { label: 'age',              value: profile.age ? `${profile.age} years old` : '—' },
-                        { label: 'gender',           value: profile.gender === 'prefer_not_to_say' ? 'Prefer not to say' : profile.gender?.charAt(0).toUpperCase() + profile.gender?.slice(1) || '—' },
+                        { label: 'gender',           value: profile.gender === 'prefer_not_to_say' ? 'Prefer not to say' : (profile.gender?.charAt(0).toUpperCase() + profile.gender?.slice(1) || '—') },
                         { label: 'location',         value: profile.location || '—' },
                         { label: 'skill_level',      value: profile.skill_level?.charAt(0).toUpperCase() + profile.skill_level?.slice(1) || '—' },
                         { label: 'reputation_score', value: `${profile.reputation_score} pts` },
-                        { label: 'is_verified',      value: profile.is_verified ? '✅ Verified' : 'Unverified' },
+                        { label: 'is_verified',      value: profile.is_verified ? '✅ Verified' : '⚠️ Unverified' },
                         { label: 'joinedAt',         value: formatDate(profile.joinedAt) },
                       ].map((item, i) => (
                         <div key={i}>
@@ -415,10 +501,10 @@ export default function ProfilePage() {
                   <div className="rounded-2xl p-5 bg-white border border-brand-border">
                     <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Performance</h3>
                     {[
-                      { label: 'Court Bookings',    value: profile.totalBookings,   icon: '📅' },
-                      { label: 'Matches Played',    value: profile.totalMatchesPlayed, icon: '🤝' },
-                      { label: 'Community Rating',  value: `${profile.rating} ⭐`,  icon: '🌟' },
-                      { label: 'Reviews Received',  value: profile.reviewCount,     icon: '💬' },
+                      { label: 'Court Bookings',   value: profile.totalBookings,      icon: '📅' },
+                      { label: 'Matches Played',   value: profile.totalMatchesPlayed, icon: '🤝' },
+                      { label: 'Community Rating', value: `${profile.rating} ⭐`,     icon: '🌟' },
+                      { label: 'Reviews Received', value: profile.reviewCount,        icon: '💬' },
                     ].map((item, i) => (
                       <div key={i} className={`flex items-center justify-between py-2.5 text-[13px] ${i > 0 ? 'border-t border-brand-surface-warm' : ''}`}>
                         <span className="text-brand-body">{item.icon} {item.label}</span>
@@ -446,6 +532,24 @@ export default function ProfilePage() {
                         })}
                       </div>
                     )}
+                  </div>
+
+                  <div className="rounded-2xl p-5 bg-white border border-brand-border">
+                    <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Account</h3>
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <p className="font-mono text-[11px] text-brand-muted mb-0.5">email</p>
+                        <p className="text-sm font-semibold text-brand-dark">{authUser.email}</p>
+                      </div>
+                      <div>
+                        <p className="font-mono text-[11px] text-brand-muted mb-0.5">status</p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-bold
+                          ${authUser.status === 'active'  ? 'bg-[#d0f5ee] text-[#00785e]' :
+                            authUser.status === 'warning' ? 'bg-[#fff3cd] text-[#856404]' : 'bg-[#ffd6d6] text-brand-red'}`}>
+                          {authUser.status}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -499,7 +603,7 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-2">
                 {profile.recentActivity.map(item => {
                   const TYPE_COLOR: Record<string, string> = { booking: 'text-brand-orange', match: 'text-brand-teal', message: 'text-brand-navy', achievement: 'text-[#856404]' };
-                  const TYPE_BG: Record<string, string> = { booking: 'bg-brand-surface-orange', match: 'bg-brand-surface-teal', message: 'bg-[#ddeeff]', achievement: 'bg-[#fff3cd]' };
+                  const TYPE_BG:    Record<string, string> = { booking: 'bg-brand-surface-orange', match: 'bg-brand-surface-teal', message: 'bg-[#ddeeff]', achievement: 'bg-[#fff3cd]' };
                   return (
                     <div key={item.id} className="flex items-center gap-4 px-5 py-4 rounded-xl bg-white border border-brand-border">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${TYPE_BG[item.type]}`}>{item.icon}</div>
@@ -508,7 +612,9 @@ export default function ProfilePage() {
                         <p className="text-xs text-brand-muted mt-0.5">{item.subtitle}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${TYPE_BG[item.type]} ${TYPE_COLOR[item.type]}`}>{item.type}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold capitalize bg-white border border-brand-border ${TYPE_COLOR[item.type]}`}>
+                          {item.type}
+                        </span>
                         <span className="text-[11px] text-brand-muted">{formatDate(item.date)}</span>
                       </div>
                     </div>

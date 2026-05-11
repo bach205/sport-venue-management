@@ -1,100 +1,94 @@
 /**
- * Auth Store — in-memory session (demo / mock mode)
- * In production: store token in httpOnly cookie or localStorage,
- * and rehydrate user from GET /api/v1/users/me on app mount.
+ * Auth Store — thin bridge over the Redux store.
+ *
+ * PURPOSE: Provides imperative getters/setters for non-React contexts
+ *   (API files, utility modules) that cannot use React hooks.
+ *
+ * React components should use the typed hooks instead:
+ *   useAppSelector(state => state.auth.user)
+ *   useAppDispatch() + loginSuccess / logout / patchUser actions
+ *
+ * IMPORTANT: Do NOT add local state here. All state lives in Redux.
  */
 
-import type { ApiUser, ApiProfile, UserStatus } from '../types/auth.types';
+import { loginSuccess, logout as logoutAction, patchUser } from "./authSlice";
+import type { ApiUser, ApiProfile } from "../types/auth.types";
 
-export type { UserStatus };
-export type UserRole = 'player' | 'owner' | 'admin';
+// ─── Re-exports (so existing imports stay unchanged) ─────────────────────────
 
-/**
- * Internal FE auth user — combines data from API `user` + `profile` objects.
- * Field names match the API response exactly where they originate from the API.
- * `role`, `avatar`, `ownedVenueIds` are FE-only (not returned by API).
- */
-export interface AuthUser {
-  // From API user object
-  _id: string;
-  email: string;
-  status: UserStatus;
-  is_verified: boolean;
-  // From API profile object
-  name: string;
-  sport_preference: string[];
-  reputation_score: number;
-  // FE-only fields (not from API)
-  role: UserRole;
-  avatar: string;
-  ownedVenueIds: string[];
-}
+export type { AuthUser, UserRole } from "./authSlice";
+export type { UserStatus } from "../types/auth.types";
 
-// ─── Demo accounts (mock API response shaped to AuthUser) ─────────────────────
+// ─── Demo accounts (mock API shaped to AuthUser) ──────────────────────────────
+
+import type { AuthUser } from "./authSlice";
+import { store } from "@/app/store";
+
 export const DEMO_ACCOUNTS: Record<string, AuthUser> = {
-  'player@demo.com': {
-    _id: 'u-player',
-    email: 'player@demo.com',
-    status: 'active',
+  "player@demo.com": {
+    _id: "u-player",
+    email: "player@demo.com",
+    status: "active",
     is_verified: true,
-    name: 'Alex Nguyen',
-    sport_preference: ['badminton', 'tennis', 'pickleball'],
+    name: "Alex Nguyen",
+    sport_preference: ["badminton", "tennis", "pickleball"],
     reputation_score: 755,
-    role: 'player',
-    avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Alex',
+    role: "player",
+    avatar: "https://api.dicebear.com/8.x/avataaars/svg?seed=Alex",
     ownedVenueIds: [],
   },
-  'owner@demo.com': {
-    _id: 'u-owner',
-    email: 'owner@demo.com',
-    status: 'active',
+  "owner@demo.com": {
+    _id: "u-owner",
+    email: "owner@demo.com",
+    status: "active",
     is_verified: true,
-    name: 'Minh Tran',
-    sport_preference: ['tennis', 'badminton'],
+    name: "Minh Tran",
+    sport_preference: ["tennis", "badminton"],
     reputation_score: 2100,
-    role: 'owner',
-    avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Minh',
-    ownedVenueIds: ['v-001', 'v-002', 'v-003'],
+    role: "owner",
+    avatar: "https://api.dicebear.com/8.x/avataaars/svg?seed=Minh",
+    ownedVenueIds: ["v-001", "v-002", "v-003"],
   },
-  'admin@demo.com': {
-    _id: 'u-admin',
-    email: 'admin@demo.com',
-    status: 'active',
+  "admin@demo.com": {
+    _id: "u-admin",
+    email: "admin@demo.com",
+    status: "active",
     is_verified: true,
-    name: 'Admin System',
+    name: "Admin System",
     sport_preference: [],
     reputation_score: 9999,
-    role: 'admin',
-    avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Admin',
+    role: "admin",
+    avatar: "https://api.dicebear.com/8.x/avataaars/svg?seed=Admin",
     ownedVenueIds: [],
   },
 };
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let _currentUser: AuthUser | null = null;
-let _token: string | null = null;
-const _listeners = new Set<() => void>();
+// ─── Non-React getters (for API files / utilities) ────────────────────────────
 
-function emit() { _listeners.forEach(fn => fn()); }
-
-// ─── Public API ───────────────────────────────────────────────────────────────
-
-export function subscribeAuth(fn: () => void): () => void {
-  _listeners.add(fn);
-  return () => _listeners.delete(fn);
-}
-
-export function getCurrentUser(): AuthUser | null {
-  return _currentUser;
-}
-
+/** Read JWT from Redux state — for use in Axios auth headers. */
 export function getToken(): string | null {
-  return _token;
+  return store.getState().auth.token;
+}
+
+/** Read current user from Redux state — for use in mock API handlers. */
+export function getCurrentUser(): AuthUser | null {
+  return store.getState().auth.user;
 }
 
 /**
- * Called after a real API login succeeds.
- * Maps { ApiUser + ApiProfile } → AuthUser and stores the JWT.
+ * Subscribe to any Redux state change.
+ * Returns an unsubscribe function (matches the original pub-sub API).
+ * Note: fires on ALL store changes, not just auth. Prefer useAppSelector in React.
+ */
+export function subscribeAuth(fn: () => void): () => void {
+  return store.subscribe(fn);
+}
+
+// ─── Auth actions (dispatch wrappers) ────────────────────────────────────────
+
+/**
+ * Maps { ApiUser + ApiProfile } from login response → AuthUser,
+ * then dispatches loginSuccess to Redux (persisted to localStorage).
  */
 export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfile): AuthUser {
   const authUser: AuthUser = {
@@ -105,38 +99,40 @@ export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfi
     name: profile.name,
     sport_preference: profile.sport_preference,
     reputation_score: profile.reputation_score,
-    // FE-only defaults (role not returned by API yet)
-    role: 'player',
+    role: "player",
     avatar: `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
     ownedVenueIds: [],
   };
-  _token = token;
-  _currentUser = authUser;
-  emit();
+  store.dispatch(loginSuccess({ token, user: authUser }));
   return authUser;
 }
 
 /**
- * Demo shortcut: bypass API, log in directly as a demo account.
- * Sets a fake token for mock API calls.
+ * Demo shortcut — bypasses API, logs in as a demo account.
+ * Dispatches loginSuccess with a fake JWT token.
  */
 export function loginAs(email: string): AuthUser | null {
-  const user = DEMO_ACCOUNTS[email] ?? null;
-  _currentUser = user;
-  _token = user ? `mock_demo_${user._id}` : null;
-  emit();
+  const user = DEMO_ACCOUNTS[email.toLowerCase()] ?? null;
+  if (user) {
+    store.dispatch(
+      loginSuccess({
+        token: `mock_demo_${user._id}_${Date.now()}`,
+        user,
+      })
+    );
+  }
   return user;
 }
 
+/**
+ * Log out — dispatches logout action.
+ * Profile slice will auto-clear via its extraReducers.
+ */
 export function logout(): void {
-  _currentUser = null;
-  _token = null;
-  emit();
+  store.dispatch(logoutAction());
 }
 
-/** Update the in-memory user fields (e.g. after profile update) */
+/** Patch a subset of the current user in Redux (e.g. after profile update). */
 export function patchCurrentUser(patch: Partial<AuthUser>): void {
-  if (!_currentUser) return;
-  _currentUser = { ..._currentUser, ...patch };
-  emit();
+  store.dispatch(patchUser(patch));
 }

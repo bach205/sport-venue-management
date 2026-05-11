@@ -7,10 +7,14 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AuthLayout, MatchillLogo } from "../components/AuthLayout";
 import { login } from "../api/authApi";
-import { loginAs, loginWithApiData } from "../store/authStore";
+import { loginSuccess } from "../store/authSlice";
+import { DEMO_ACCOUNTS } from "../store/authStore";
+import type { AuthUser } from "../store/authSlice";
+import type { ApiUser, ApiProfile } from "../types/auth.types";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { useAppDispatch } from "@/app/hooks";
 
 const SPORT_IMAGE =
   "https://images.unsplash.com/photo-1762695003191-b5c6edd02484?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZW5uaXMlMjBwbGF5ZXIlMjBjb3VydCUyMGFjdGlvbiUyMHNwb3J0fGVufDF8fHx8MTc3ODI2MjQyN3ww&ixlib=rb-4.1.0&q=80&w=1080";
@@ -60,8 +64,25 @@ const DEMO_ROLES = [
   },
 ];
 
+/** Maps { ApiUser + ApiProfile } from login response → AuthUser. */
+function buildAuthUser(user: ApiUser, profile: ApiProfile): AuthUser {
+  return {
+    _id: user._id,
+    email: user.email,
+    status: user.status,
+    is_verified: user.is_verified,
+    name: profile.name,
+    sport_preference: profile.sport_preference,
+    reputation_score: profile.reputation_score,
+    role: "player",
+    avatar: `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
+    ownedVenueIds: [],
+  };
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
 
@@ -71,10 +92,16 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  // ── Real / mock email+password login ────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
     const result = await login({ email: data.email, password: data.password });
     if (result.success && result.data) {
-      loginWithApiData(result.data.token, result.data.user, result.data.profile);
+      dispatch(
+        loginSuccess({
+          token: result.data.token,
+          user: buildAuthUser(result.data.user, result.data.profile),
+        })
+      );
       toast.success(result.message);
       navigate("/");
     } else {
@@ -82,11 +109,20 @@ export default function LoginPage() {
     }
   };
 
+  // ── Demo one-click login ─────────────────────────────────────────────────────
   const handleDemoLogin = async (demo: (typeof DEMO_ROLES)[0]) => {
     setDemoLoading(demo.email);
-    await new Promise((r) => setTimeout(r, 600));
-    loginAs(demo.email);
-    toast.success(`Đăng nhập thành công với vai trò ${demo.label}!`);
+    await new Promise((r) => setTimeout(r, 600)); // simulate API latency
+    const user = DEMO_ACCOUNTS[demo.email];
+    if (user) {
+      dispatch(
+        loginSuccess({
+          token: `mock_demo_${user._id}_${Date.now()}`,
+          user,
+        })
+      );
+      toast.success(`Đăng nhập thành công với vai trò ${demo.label}!`);
+    }
     setDemoLoading(null);
     navigate(demo.redirectTo);
   };
