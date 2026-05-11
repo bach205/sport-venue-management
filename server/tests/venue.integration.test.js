@@ -118,6 +118,33 @@ afterAll(async () => {
 });
 
 describe("Venue booking module", () => {
+  test("lets an owner create a venue", async () => {
+    const owner = await createUser("owner", "owner-create@example.com");
+
+    const response = await request(app)
+      .post("/api/v1/my-venues")
+      .set(authHeader(owner.token))
+      .send({
+        name: "Fresh Arena",
+        location: "Thu Duc",
+        description: "Newly opened venue",
+        slot_price: 300000,
+        slot_duration_minutes: 90,
+        weekly_schedule: [
+          {
+            day_of_week: TEST_DAY_OF_WEEK,
+            start_time: "07:00",
+            end_time: "10:00",
+          },
+        ],
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.name).toBe("Fresh Arena");
+    expect(response.body.data.slotPrice).toBe(300000);
+    expect(response.body.data.slotDurationMinutes).toBe(90);
+  });
+
   test("returns slot statuses for available and unavailable schedule entries", async () => {
     const owner = await createUser("owner", "owner1@example.com");
     const venue = await createVenue(owner.user._id);
@@ -408,5 +435,29 @@ describe("Venue booking module", () => {
 
     expect(makeAvailableResponse.status).toBe(200);
     expect(makeAvailableResponse.body.data.slot.status).toBe("available");
+  });
+
+  test("lets an owner delete a venue with no booking history and blocks deletion otherwise", async () => {
+    const owner = await createUser("owner", "owner-delete@example.com");
+    const user = await createUser("user", "delete-booking@example.com");
+    const deletableVenue = await createVenue(owner.user._id);
+
+    const deleteResponse = await request(app)
+      .delete(`/api/v1/my-venues/${deletableVenue._id}`)
+      .set(authHeader(owner.token));
+
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteResponse.body.data.id).toBe(String(deletableVenue._id));
+    expect(await Venue.findById(deletableVenue._id)).toBeNull();
+
+    const blockedVenue = await createVenue(owner.user._id);
+    await createHold(user.token, blockedVenue._id, "08:00", "09:00");
+
+    const blockedDeleteResponse = await request(app)
+      .delete(`/api/v1/my-venues/${blockedVenue._id}`)
+      .set(authHeader(owner.token));
+
+    expect(blockedDeleteResponse.status).toBe(400);
+    expect(blockedDeleteResponse.body.message).toContain("booking history");
   });
 });

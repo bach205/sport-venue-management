@@ -231,6 +231,47 @@ const validateVenueUpdatePayload = (payload = {}) => {
   };
 };
 
+const validateCreateVenuePayload = (payload = {}) => {
+  const errors = [];
+  const name = normalizeOptionalString(payload.name);
+  const location = normalizeOptionalString(payload.location);
+  const description = normalizeOptionalString(payload.description) || "";
+  const slotPrice = Number(payload.slot_price);
+  const slotDuration = Number(payload.slot_duration_minutes);
+  const weeklySchedule = payload.weekly_schedule === undefined
+    ? []
+    : validateWeeklySchedule(payload.weekly_schedule, errors);
+
+  if (!name) {
+    errors.push("Name is required.");
+  }
+
+  if (!location) {
+    errors.push("Location is required.");
+  }
+
+  if (!Number.isFinite(slotPrice) || slotPrice < 0) {
+    errors.push("Slot price must be a non-negative number.");
+  }
+
+  if (!Number.isInteger(slotDuration) || slotDuration < 15) {
+    errors.push("Slot duration minutes must be an integer greater than or equal to 15.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      name,
+      location,
+      description,
+      slot_price: Number.isFinite(slotPrice) ? slotPrice : undefined,
+      slot_duration_minutes: Number.isInteger(slotDuration) ? slotDuration : undefined,
+      weekly_schedule: Array.isArray(weeklySchedule) ? weeklySchedule : [],
+    },
+  };
+};
+
 const validateWeeklySchedule = (schedule, errors) => {
   if (!Array.isArray(schedule)) {
     errors.push("Weekly schedule must be an array.");
@@ -424,6 +465,7 @@ const validateRefundRequestsQuery = (query = {}) => {
 };
 
 module.exports = {
+  validateCreateVenuePayload,
   validateObjectIdParam,
   validatePaginationQuery,
   validateSlotsQuery,
