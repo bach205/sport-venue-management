@@ -1,473 +1,539 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from "react";
 import {
-  Heart, MessageCircle, Share2, Bookmark,
-  MapPin, MoreHorizontal, Trash2, Send, ThumbsUp
-} from 'lucide-react';
-import type { FeedPost } from '../types/feed.types';
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Trash2,
+  Send,
+  Edit3,
+  Check,
+  X,
+  Loader2,
+  ChevronDown,
+  AlertTriangle,
+} from "lucide-react";
+import type { ApiPost, ApiComment } from "../types/feed.types";
 import {
-  toggleLike, toggleSave, addComment,
-  toggleCommentLike, incrementShare, deletePost
-} from '../store/feedStore';
-import { getCurrentUser } from '../../auth/store/authStore';
-import { toast } from 'sonner';
+  likePost,
+  unlikePost,
+  updatePost,
+  deletePost,
+  getComments,
+  createComment,
+  updateComment,
+  deleteComment,
+} from "../api/socialApi";
+import { getCurrentUser } from "../../auth/store/authStore";
+import { toast } from "sonner";
 
-type Sport = FeedPost['sport'];
-
-const SPORT_CONFIG: Record<string, { emoji: string; label: string; color: string; bg: string }> = {
-  badminton:   { emoji: '🏸', label: 'Badminton',   color: '#006a65', bg: '#e7f8f7' },
-  tennis:      { emoji: '🎾', label: 'Tennis',       color: '#a04100', bg: '#fff1eb' },
-  pickleball:  { emoji: '🏓', label: 'Pickleball',  color: '#1a5fb4', bg: '#ddeeff' },
-  football:    { emoji: '⚽', label: 'Football',     color: '#00785e', bg: '#d0f5ee' },
-  basketball:  { emoji: '🏀', label: 'Basketball',  color: '#856404', bg: '#fff3cd' },
-  table_tennis:{ emoji: '🏓', label: 'Table Tennis',color: '#c0392b', bg: '#ffd6d6' },
-  swimming:    { emoji: '🏊', label: 'Swimming',    color: '#1a5fb4', bg: '#ddeeff' },
-  volleyball:  { emoji: '🏐', label: 'Volleyball',  color: '#5c3317', bg: '#f4ded5' },
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  const h = Math.floor(m / 60);
-  const d = Math.floor(h / 24);
-  if (m < 1) return 'Vừa xong';
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (m < 1) return "Vừa xong";
   if (m < 60) return `${m} phút trước`;
+  const h = Math.floor(m / 60);
   if (h < 24) return `${h} giờ trước`;
-  return `${d} ngày trước`;
+  return `${Math.floor(h / 24)} ngày trước`;
 }
 
-// ─── Image grid ──────────────────────────────────────────────────────────────
-function ImageGrid({ images }: { images: string[] }) {
-  const [lightbox, setLightbox] = useState<string | null>(null);
-
-  if (images.length === 0) return null;
-
-  const Grid = () => {
-    if (images.length === 1) {
-      return (
-        <div className="w-full overflow-hidden rounded-xl cursor-pointer" style={{ maxHeight: 420 }} onClick={() => setLightbox(images[0])}>
-          <img src={images[0]} alt="" className="w-full h-full object-cover hover:opacity-95 transition-opacity" style={{ display: 'block' }} />
-        </div>
-      );
-    }
-    if (images.length === 2) {
-      return (
-        <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden">
-          {images.map((img, i) => (
-            <img key={i} src={img} alt="" className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity" style={{ height: 240 }} onClick={() => setLightbox(img)} />
-          ))}
-        </div>
-      );
-    }
-    if (images.length === 3) {
-      return (
-        <div className="grid gap-1 rounded-xl overflow-hidden" style={{ gridTemplateColumns: '2fr 1fr' }}>
-          <img src={images[0]} alt="" className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity row-span-2" style={{ height: 300 }} onClick={() => setLightbox(images[0])} />
-          {images.slice(1).map((img, i) => (
-            <img key={i} src={img} alt="" className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity" style={{ height: 148 }} onClick={() => setLightbox(img)} />
-          ))}
-        </div>
-      );
-    }
-    // 4 images
-    return (
-      <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden">
-        {images.slice(0, 4).map((img, i) => (
-          <img key={i} src={img} alt="" className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity" style={{ height: 200 }} onClick={() => setLightbox(img)} />
-        ))}
-      </div>
-    );
-  };
-
-  return (
-    <>
-      <Grid />
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ background: 'rgba(0,0,0,0.9)' }}
-          onClick={() => setLightbox(null)}
-        >
-          <img src={lightbox} alt="" className="max-w-full max-h-full object-contain rounded-xl" style={{ boxShadow: '0 0 60px rgba(0,0,0,0.8)' }} />
-        </div>
-      )}
-    </>
-  );
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(-2)
+    .join("")
+    .toUpperCase();
 }
 
 // ─── Comment section ──────────────────────────────────────────────────────────
-function CommentSection({ post }: { post: FeedPost }) {
+
+function CommentSection({
+  postId,
+  onCountChange,
+}: {
+  postId: string;
+  onCountChange: (delta: number) => void;
+}) {
   const user = getCurrentUser();
-  const [text, setText] = useState('');
-  const [sending, setSending] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [comments, setComments] = useState<ApiComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sendingComment, setSendingComment] = useState(false);
+  const [text, setText] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    getComments(postId).then((r) => {
+      if (r.success && r.data) setComments(r.data.items);
+      setLoading(false);
+    });
+  }, [postId]);
 
   const handleSend = async () => {
     if (!text.trim() || !user) return;
-    setSending(true);
-    await new Promise(r => setTimeout(r, 300));
-    addComment(post.id, {
-      authorId: user.id,
-      authorName: user.name,
-      authorAvatar: user.avatar,
-      content: text.trim(),
-    });
-    setText('');
-    setSending(false);
+    setSendingComment(true);
+    const r = await createComment(postId, text.trim());
+    if (r.success && r.data) {
+      setComments((prev) => [...prev, r.data!]);
+      setText("");
+      onCountChange(1);
+    } else {
+      toast.error(r.message);
+    }
+    setSendingComment(false);
   };
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  const handleEdit = async (commentId: string) => {
+    if (!editText.trim()) return;
+    const r = await updateComment(commentId, editText.trim());
+    if (r.success && r.data) {
+      setComments((prev) => prev.map((c) => (c.id === commentId ? r.data! : c)));
+      setEditingId(null);
+    } else {
+      toast.error(r.message);
+    }
   };
 
-  const initials = user?.name?.split(' ').map(w => w[0]).slice(-2).join('') ?? 'U';
+  const handleDelete = async (commentId: string) => {
+    setDeletingId(commentId);
+    const r = await deleteComment(commentId);
+    if (r.success) {
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      onCountChange(-1);
+      toast.success("Đã xóa bình luận");
+    } else {
+      toast.error(r.message);
+    }
+    setDeletingId(null);
+    setConfirmDeleteId(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="px-4 py-4 flex items-center gap-2 text-brand-muted text-sm">
+        <Loader2 size={14} className="animate-spin" /> Đang tải bình luận...
+      </div>
+    );
+  }
 
   return (
-    <div className="px-4 pb-3 flex flex-col gap-3">
-      {/* Existing comments */}
-      {post.comments.map(c => {
-        const liked = user ? c.likedBy.includes(user.id) : false;
-        const cInitials = c.authorName.split(' ').map(w => w[0]).slice(-2).join('');
-        return (
-          <div key={c.id} className="flex gap-2.5">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-              style={{ background: 'linear-gradient(135deg,#006a65,#00a896)', color: '#fff', fontFamily: 'Lexend, sans-serif' }}
-            >
-              {cInitials}
-            </div>
-            <div className="flex-1">
-              <div
-                className="rounded-2xl px-3.5 py-2.5 inline-block"
-                style={{ background: '#f4f0ee', maxWidth: '100%' }}
-              >
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 700, color: '#241914', marginBottom: 2 }}>
-                  {c.authorName}
-                </p>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#241914', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                  {c.content}
-                </p>
-              </div>
-              <div className="flex items-center gap-4 mt-1 pl-1">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266' }}>
-                  {timeAgo(c.createdAt)}
-                </span>
+    <div className="px-4 pb-4 flex flex-col gap-3">
+      {comments.map((c) => (
+        <div key={c.id} className="flex gap-2.5">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white gradient-teal-diag font-heading">
+            {initials(c.author.name)}
+          </div>
+          <div className="flex-1 min-w-0">
+            {editingId === c.id ? (
+              <div className="flex gap-2">
+                <input
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleEdit(c.id);
+                    if (e.key === "Escape") setEditingId(null);
+                  }}
+                  className="flex-1 rounded-xl px-3 py-2 text-[13px] bg-brand-surface border border-brand-teal outline-none text-brand-dark"
+                  autoFocus
+                />
                 <button
-                  onClick={() => user && toggleCommentLike(post.id, c.id, user.id)}
-                  className="flex items-center gap-1 hover:text-[#a04100] transition-colors"
-                  style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: liked ? 700 : 500, color: liked ? '#a04100' : '#8b7266' }}
+                  onClick={() => handleEdit(c.id)}
+                  className="p-2 rounded-lg text-brand-teal hover:bg-brand-surface-teal transition-colors"
                 >
-                  <ThumbsUp size={11} fill={liked ? '#a04100' : 'none'} />
-                  {liked ? 'Đã thích' : 'Thích'}
-                  {c.likedBy.length > 0 && <span>({c.likedBy.length})</span>}
+                  <Check size={14} />
+                </button>
+                <button
+                  onClick={() => setEditingId(null)}
+                  className="p-2 rounded-lg text-brand-muted hover:bg-brand-surface transition-colors"
+                >
+                  <X size={14} />
                 </button>
               </div>
+            ) : (
+              <div className="rounded-2xl px-3.5 py-2.5 bg-[#f4f0ee] inline-block max-w-full">
+                <span className="text-[13px] font-bold text-brand-dark font-heading mr-1.5">
+                  {c.author.name}
+                </span>
+                <span className="text-[13px] text-brand-dark leading-relaxed">{c.content}</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-4 mt-1 pl-1">
+              <span className="text-[11px] text-brand-muted">{timeAgo(c.createdAt)}</span>
+              {c.updatedAt !== c.createdAt && (
+                <span className="text-[11px] text-brand-muted italic">đã chỉnh sửa</span>
+              )}
+              {c.isOwner && editingId !== c.id && (
+                <>
+                  <button
+                    onClick={() => {
+                      setEditingId(c.id);
+                      setEditText(c.content);
+                      setConfirmDeleteId(null);
+                    }}
+                    className="flex items-center gap-1 text-[11px] text-brand-muted hover:text-brand-teal transition-colors"
+                  >
+                    <Edit3 size={10} /> Sửa
+                  </button>
+                  {confirmDeleteId === c.id ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-brand-red">Xóa?</span>
+                      <button
+                        onClick={() => handleDelete(c.id)}
+                        disabled={deletingId === c.id}
+                        className="text-[11px] text-brand-red hover:underline disabled:opacity-50"
+                      >
+                        {deletingId === c.id ? (
+                          <Loader2 size={10} className="animate-spin" />
+                        ) : (
+                          "Xác nhận"
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-[11px] text-brand-muted hover:underline"
+                      >
+                        Hủy
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(c.id)}
+                      className="flex items-center gap-1 text-[11px] text-brand-muted hover:text-brand-red transition-colors"
+                    >
+                      <Trash2 size={10} /> Xóa
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
 
       {/* New comment input */}
       {user ? (
         <div className="flex gap-2.5">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-            style={{ background: 'linear-gradient(135deg,#a04100,#ff7e36)', color: '#fff', fontFamily: 'Lexend, sans-serif' }}
-          >
-            {initials}
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white gradient-orange-diag font-heading">
+            {initials(user.name)}
           </div>
-          <div
-            className="flex-1 flex items-center gap-2 px-3 rounded-2xl"
-            style={{ background: '#f4f0ee', minHeight: 38 }}
-          >
+          <div className="flex-1 flex items-center gap-2 px-3 rounded-2xl bg-[#f4f0ee] min-h-[38px]">
             <input
-              ref={inputRef}
               type="text"
               value={text}
-              onChange={e => setText(e.target.value)}
-              onKeyDown={handleKey}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder="Viết bình luận..."
-              className="flex-1 bg-transparent outline-none py-2"
-              style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#241914', border: 'none' }}
+              className="flex-1 bg-transparent outline-none py-2 text-[13px] text-brand-dark border-none"
             />
             <button
               onClick={handleSend}
-              disabled={!text.trim() || sending}
-              className="shrink-0 disabled:opacity-40 transition-opacity hover:opacity-80"
-              style={{ color: '#006a65' }}
+              disabled={!text.trim() || sendingComment}
+              className="shrink-0 disabled:opacity-40 hover:opacity-80 text-brand-teal transition-opacity"
             >
-              <Send size={15} />
+              {sendingComment ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             </button>
           </div>
         </div>
       ) : (
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', textAlign: 'center', padding: '4px 0' }}>
-          Đăng nhập để bình luận
-        </p>
+        <p className="text-[13px] text-brand-muted text-center py-1">Đăng nhập để bình luận</p>
       )}
     </div>
   );
 }
 
-// ─── Main PostCard ────────────────────────────────────────────────────────────
-export function PostCard({ post, onUpdate }: { post: FeedPost; onUpdate: () => void }) {
+// ─── Delete confirm banner ─────────────────────────────────────────────────────
+
+function DeleteConfirmBanner({
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div className="mx-4 mb-3 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#fff5f5] border border-[#fecdca]">
+      <AlertTriangle size={16} className="text-brand-red shrink-0" />
+      <p className="flex-1 text-[13px] text-brand-red">
+        Xóa bài viết không thể hoàn tác. Tiếp tục?
+      </p>
+      <button
+        onClick={onCancel}
+        className="h-7 px-3 rounded-lg border border-[#fecdca] text-[12px] text-brand-body hover:bg-white transition-colors"
+      >
+        Hủy
+      </button>
+      <button
+        onClick={onConfirm}
+        disabled={loading}
+        className="h-7 px-3 rounded-lg bg-brand-red text-[12px] text-white hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center gap-1"
+      >
+        {loading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+        Xóa
+      </button>
+    </div>
+  );
+}
+
+// ─── PostCard ──────────────────────────────────────────────────────────────────
+
+export function PostCard({
+  post: initialPost,
+  onUpdated,
+  onDeleted,
+}: {
+  post: ApiPost;
+  onUpdated: (updated: ApiPost) => void;
+  onDeleted: (postId: string) => void;
+}) {
   const user = getCurrentUser();
-  const userId = user?.id ?? '';
-  const liked   = userId ? post.likedBy.includes(userId) : false;
-  const saved   = userId ? post.savedBy.includes(userId) : false;
+  const [post, setPost] = useState(initialPost);
   const [showComments, setShowComments] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [likeAnim, setLikeAnim] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const sport = post.sport ? SPORT_CONFIG[post.sport] : null;
-  const isAuthor = userId === post.authorId;
-  const initials = post.authorName.split(' ').map(w => w[0]).slice(-2).join('');
+  React.useEffect(() => {
+    setPost(initialPost);
+  }, [initialPost]);
 
-  const handleLike = () => {
-    if (!userId) { toast.error('Đăng nhập để thích bài viết'); return; }
-    if (!liked) { setLikeAnim(true); setTimeout(() => setLikeAnim(false), 600); }
-    toggleLike(post.id, userId);
-    onUpdate();
+  const handleLikeToggle = async () => {
+    if (!user) {
+      toast.error("Đăng nhập để thích bài viết");
+      return;
+    }
+    if (liking) return;
+    setLiking(true);
+    const fn = post.hasLiked ? unlikePost : likePost;
+    const r = await fn(post.id);
+    if (r.success && r.data) {
+      setPost(r.data);
+      onUpdated(r.data);
+    } else {
+      toast.error(r.message);
+    }
+    setLiking(false);
   };
 
-  const handleSave = () => {
-    if (!userId) { toast.error('Đăng nhập để lưu bài viết'); return; }
-    toggleSave(post.id, userId);
-    onUpdate();
-    toast.success(saved ? 'Đã bỏ lưu bài viết' : 'Đã lưu bài viết! 🔖');
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return;
+    setSavingEdit(true);
+    const r = await updatePost(post.id, editContent.trim());
+    if (r.success && r.data) {
+      setPost(r.data);
+      onUpdated(r.data);
+      setEditing(false);
+      toast.success("Đã cập nhật bài viết");
+    } else {
+      toast.error(r.message);
+    }
+    setSavingEdit(false);
   };
 
-  const handleShare = () => {
-    incrementShare(post.id);
-    onUpdate();
-    navigator.clipboard?.writeText(window.location.href).catch(() => {});
-    toast.success('Đã sao chép link bài viết! 🔗');
+  const handleDelete = async () => {
+    setDeleting(true);
+    const r = await deletePost(post.id);
+    if (r.success) {
+      toast.success("Đã xóa bài viết");
+      onDeleted(post.id);
+    } else {
+      toast.error(r.message);
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
   };
 
-  const handleDelete = () => {
-    if (!isAuthor) return;
-    deletePost(post.id, userId);
-    onUpdate();
-    toast.success('Đã xóa bài viết');
-    setMenuOpen(false);
+  const handleCommentCountChange = (delta: number) => {
+    setPost((p) => ({ ...p, commentCount: Math.max(0, p.commentCount + delta) }));
   };
-
-  const ActionBtn = ({
-    icon, label, active, activeColor, count, onClick,
-  }: {
-    icon: React.ReactNode; label: string; active?: boolean;
-    activeColor?: string; count?: number; onClick: () => void;
-  }) => (
-    <button
-      onClick={onClick}
-      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all hover:bg-[#f4f0ee]"
-      style={{
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '13px',
-        fontWeight: active ? 700 : 500,
-        color: active ? activeColor : '#584238',
-      }}
-    >
-      {icon}
-      <span>{label}</span>
-      {count !== undefined && count > 0 && (
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', fontWeight: 400 }}>
-          ({count})
-        </span>
-      )}
-    </button>
-  );
 
   return (
-    <div
-      className="flex flex-col rounded-2xl overflow-hidden"
-      style={{ background: '#fff', border: '1px solid #e8e0dc', boxShadow: '0 1px 4px rgba(36,25,20,0.06)' }}
-    >
-      {/* ─── Post Header ──────────────────────────────────────────────────── */}
+    <article className="flex flex-col rounded-2xl overflow-hidden bg-white border border-[#e8e0dc] shadow-[0_1px_4px_rgba(36,25,20,0.06)]">
+      {/* Header */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
-        {/* Avatar */}
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
-          style={{ background: 'linear-gradient(135deg,#006a65,#00a896)', color: '#fff', fontFamily: 'Lexend, sans-serif' }}
-        >
-          {initials}
+        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-teal-diag font-heading">
+          {initials(post.author.name)}
         </div>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: '#241914' }}>
-                {post.authorName}
+              <p className="text-sm font-bold text-brand-dark font-heading">{post.author.name}</p>
+              <p className="text-xs text-brand-muted mt-0.5">
+                {timeAgo(post.createdAt)}
+                {post.updatedAt !== post.createdAt && " · đã chỉnh sửa"}
               </p>
-              <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>
-                  {timeAgo(post.createdAt)}
-                </span>
-                {post.location && (
-                  <span className="flex items-center gap-0.5" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>
-                    <MapPin size={11} /> {post.location}
-                  </span>
-                )}
-              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {sport && (
-                <span
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full"
-                  style={{ background: sport.bg, color: sport.color, fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: 700 }}
-                >
-                  {sport.emoji} {sport.label}
-                </span>
-              )}
-              {/* More menu */}
-              <div className="relative">
+            {post.isOwner && (
+              <div className="relative shrink-0">
                 <button
-                  onClick={() => setMenuOpen(o => !o)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f4f0ee] transition-colors"
-                  style={{ color: '#8b7266' }}
+                  onClick={() => {
+                    setMenuOpen((o) => !o);
+                    setConfirmDelete(false);
+                  }}
+                  className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[#f4f0ee] transition-colors text-brand-muted"
                 >
                   <MoreHorizontal size={16} />
                 </button>
                 {menuOpen && (
                   <>
                     <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
-                    <div
-                      className="absolute right-0 top-8 z-30 rounded-xl overflow-hidden"
-                      style={{ background: '#fff', border: '1.5px solid #dfc0b3', width: 160, boxShadow: '0 8px 24px rgba(36,25,20,0.18)' }}
-                    >
-                      {isAuthor && (
-                        <button
-                          onClick={handleDelete}
-                          className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-[#ffeeee] transition-colors text-left"
-                          style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#c0392b' }}
-                        >
-                          <Trash2 size={14} /> Xóa bài viết
-                        </button>
-                      )}
+                    <div className="absolute right-0 top-8 z-30 rounded-xl overflow-hidden bg-white border-[1.5px] border-brand-border w-44 shadow-[0_8px_24px_rgba(36,25,20,0.18)]">
                       <button
-                        onClick={() => { toast.info('Tính năng báo cáo sẽ sớm ra mắt'); setMenuOpen(false); }}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-[#fff1eb] transition-colors text-left"
-                        style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}
+                        onClick={() => {
+                          setEditing(true);
+                          setEditContent(post.content);
+                          setMenuOpen(false);
+                          setConfirmDelete(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-brand-surface-orange transition-colors text-left text-[13px] text-brand-dark"
                       >
-                        Báo cáo
+                        <Edit3 size={14} className="text-brand-orange" /> Chỉnh sửa
+                      </button>
+                      <button
+                        onClick={() => {
+                          setConfirmDelete(true);
+                          setMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#fff5f5] transition-colors text-left text-[13px] text-brand-red"
+                      >
+                        <Trash2 size={14} /> Xóa bài viết
                       </button>
                     </div>
                   </>
                 )}
               </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="px-4 pb-3">
+        {editing ? (
+          <div className="flex flex-col gap-2">
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows={4}
+              className="w-full resize-none rounded-xl border border-brand-teal px-3 py-2.5 text-sm text-brand-dark outline-none bg-brand-surface leading-relaxed"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveEdit}
+                disabled={savingEdit || !editContent.trim()}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-teal text-sm font-bold text-white font-heading disabled:opacity-60"
+              >
+                {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                Lưu
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                className="flex items-center gap-1.5 h-9 px-4 rounded-xl border border-brand-border text-sm text-brand-body hover:bg-brand-surface-orange transition-colors"
+              >
+                <X size={14} /> Hủy
+              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <p className="text-sm text-brand-dark leading-relaxed whitespace-pre-wrap">
+            {post.content}
+          </p>
+        )}
       </div>
 
-      {/* ─── Content ──────────────────────────────────────────────────────── */}
-      <div className="px-4 pb-3">
-        <p
-          style={{
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '14px',
-            color: '#241914',
-            lineHeight: 1.65,
-            whiteSpace: 'pre-wrap',
-          }}
-        >
-          {post.content}
-        </p>
-      </div>
-
-      {/* ─── Images ──────────────────────────────────────────────────────── */}
-      {post.images.length > 0 && (
-        <div className="px-4 pb-3">
-          <ImageGrid images={post.images} />
-        </div>
+      {/* Delete confirm banner */}
+      {confirmDelete && (
+        <DeleteConfirmBanner
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(false)}
+          loading={deleting}
+        />
       )}
 
-      {/* ─── Stats row ───────────────────────────────────────────────────── */}
-      {(post.likedBy.length > 0 || post.comments.length > 0 || post.shareCount > 0) && (
+      {/* Stats bar */}
+      {(post.likeCount > 0 || post.commentCount > 0) && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-b border-[#f4ede9]">
-          {/* Likes */}
-          <button
-            onClick={() => setShowComments(s => !s)}
-            className="flex items-center gap-1.5 hover:underline"
-          >
-            {post.likedBy.length > 0 && (
-              <span
-                className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-                style={{ background: '#a04100', color: '#fff' }}
-              >
+          {post.likeCount > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-brand-orange text-white">
                 ❤
               </span>
-            )}
-            {post.likedBy.length > 0 && (
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
-                {post.likedBy.length} lượt thích
-              </span>
-            )}
-          </button>
-
-          <div className="flex items-center gap-4">
-            {post.comments.length > 0 && (
-              <button
-                onClick={() => setShowComments(s => !s)}
-                className="hover:underline"
-                style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}
-              >
-                {post.comments.length} bình luận
-              </button>
-            )}
-            {post.shareCount > 0 && (
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
-                {post.shareCount} chia sẻ
-              </span>
-            )}
-          </div>
+              <span className="text-[13px] text-brand-body">{post.likeCount}</span>
+            </div>
+          )}
+          {post.commentCount > 0 && (
+            <button
+              onClick={() => setShowComments((s) => !s)}
+              className="ml-auto flex items-center gap-1 text-[13px] text-brand-body hover:text-brand-teal transition-colors"
+            >
+              {post.commentCount} bình luận
+            </button>
+          )}
         </div>
       )}
 
-      {/* ─── Action buttons ────────────────────────────────────────────────── */}
+      {/* Action buttons */}
       <div className="flex items-center px-2 py-1 border-b border-[#f4ede9]">
-        <ActionBtn
-          icon={
-            <Heart
-              size={17}
-              fill={liked ? '#c0392b' : 'none'}
-              color={liked ? '#c0392b' : '#584238'}
-              className={likeAnim ? 'scale-125' : ''}
-              style={{ transition: 'transform 0.2s' }}
+        {/* Like */}
+        <button
+          onClick={handleLikeToggle}
+          disabled={liking}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all hover:bg-[#f4f0ee] text-[13px]
+            ${post.hasLiked ? "text-[#c0392b] font-bold" : "text-brand-body font-medium"}`}
+        >
+          <Heart
+            size={17}
+            fill={post.hasLiked ? "#c0392b" : "none"}
+            color={post.hasLiked ? "#c0392b" : "currentColor"}
+            className={`transition-transform ${liking ? "scale-125" : ""}`}
+          />
+          Thích
+          {post.likeCount > 0 && (
+            <span className="text-xs text-brand-muted font-normal">({post.likeCount})</span>
+          )}
+        </button>
+
+        {/* Comment */}
+        <button
+          onClick={() => setShowComments((s) => !s)}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all hover:bg-[#f4f0ee] text-[13px]
+            ${showComments ? "text-brand-teal font-bold" : "text-brand-body font-medium"}`}
+        >
+          <MessageCircle size={17} />
+          Bình luận
+          {post.commentCount > 0 && (
+            <span className="text-xs text-brand-muted font-normal">({post.commentCount})</span>
+          )}
+          {post.commentCount > 0 && (
+            <ChevronDown
+              size={13}
+              className={`transition-transform ${showComments ? "rotate-180" : ""}`}
             />
-          }
-          label="Thích"
-          active={liked}
-          activeColor="#c0392b"
-          onClick={handleLike}
-        />
-        <ActionBtn
-          icon={<MessageCircle size={17} color={showComments ? '#006a65' : '#584238'} />}
-          label="Bình luận"
-          active={showComments}
-          activeColor="#006a65"
-          count={post.comments.length}
-          onClick={() => setShowComments(s => !s)}
-        />
-        <ActionBtn
-          icon={<Share2 size={17} color="#584238" />}
-          label="Chia sẻ"
-          onClick={handleShare}
-        />
-        <ActionBtn
-          icon={<Bookmark size={17} fill={saved ? '#a04100' : 'none'} color={saved ? '#a04100' : '#584238'} />}
-          label="Lưu"
-          active={saved}
-          activeColor="#a04100"
-          onClick={handleSave}
-        />
+          )}
+        </button>
       </div>
 
-      {/* ─── Comment section ───────────────────────────────────────────────── */}
+      {/* Comments */}
       {showComments && (
         <div className="pt-3">
-          <CommentSection post={post} />
+          <CommentSection postId={post.id} onCountChange={handleCommentCountChange} />
         </div>
       )}
-    </div>
+    </article>
   );
 }

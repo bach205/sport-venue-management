@@ -1,6 +1,13 @@
-import type { Sport, SkillLevel } from '../../discover/types/discover.types';
+/**
+ * Profile types — field names match PUT /api/v1/users/profile and GET /api/v1/users/me responses exactly.
+ *
+ * API profile fields:
+ *   _id, user_id, name, age, gender, sport_preference, skill_level, location, reputation_score
+ */
 
 export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
+export type SkillLevel = 'casual' | 'intermediate' | 'competitive';
+export type Sport = 'badminton' | 'tennis' | 'pickleball' | 'football' | 'basketball' | 'volleyball' | 'swimming' | 'table_tennis';
 
 export interface Achievement {
   id: string;
@@ -9,9 +16,9 @@ export interface Achievement {
   description: string;
   category: 'booking' | 'social' | 'skill' | 'loyalty';
   xp: number;
-  unlockedAt: string | null; // null = locked
-  progress?: number;          // 0–100 for locked achievements
-  requirement?: string;       // e.g. "Make 5 bookings"
+  unlockedAt: string | null;
+  progress?: number;    // 0–100 for locked achievements
+  requirement?: string;
 }
 
 export interface ActivityItem {
@@ -23,25 +30,31 @@ export interface ActivityItem {
   icon: string;
 }
 
+/**
+ * Extended profile — wraps the API profile fields and adds FE-only display data.
+ * API fields use snake_case to match server exactly.
+ */
 export interface UserProfile {
-  userId: string;
-  displayName: string;
-  bio: string;
-  avatarUrl: string;
-  coverUrl: string;
+  // ── API fields (from GET /api/v1/users/me & PUT /api/v1/users/profile) ──
+  _id: string;
+  user_id: string;
+  name: string;               // was displayName
   age: number | null;
   gender: Gender;
-  city: string;
-  sportPreferences: Sport[];
-  skillLevel: SkillLevel;
+  sport_preference: Sport[];  // was sportPreferences
+  skill_level: SkillLevel;    // was skillLevel
+  location: string;           // was city
+  reputation_score: number;   // was xp/level
+
+  // ── FE-only display fields (not from API) ──
+  avatarUrl: string;
+  coverUrl: string;
   totalBookings: number;
   totalMatchesPlayed: number;
   rating: number;
   reviewCount: number;
   joinedAt: string;
-  isVerified: boolean;
-  level: number;   // 1–50
-  xp: number;
+  is_verified: boolean;       // mirrors user.is_verified
   achievements: Achievement[];
   recentActivity: ActivityItem[];
 }

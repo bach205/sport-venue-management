@@ -1,39 +1,57 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Rss, TrendingUp, Flame } from "lucide-react";
-import { getPosts, subscribeFeed } from "../store/feedStore";
-import type { FeedPost, Sport } from "../types/feed.types";
+import { Plus, Rss, RefreshCw, Loader2 } from "lucide-react";
+import { getFeed } from "../api/socialApi";
+import type { ApiPost, Pagination } from "../types/feed.types";
 import { PostCard } from "../components/PostCard";
 import { CreatePostModal } from "../components/CreatePostModal";
 import { getCurrentUser } from "../../auth/store/authStore";
-
-// ─── Sport filter tabs ────────────────────────────────────────────────────────
-const SPORT_TABS: { value: Sport | null; label: string; emoji: string }[] = [
-  { value: null, label: "Tất cả", emoji: "☀️" },
-  { value: "badminton", label: "Badminton", emoji: "🏸" },
-  { value: "tennis", label: "Tennis", emoji: "🎾" },
-  { value: "pickleball", label: "Pickleball", emoji: "🏓" },
-  { value: "football", label: "Football", emoji: "⚽" },
-  { value: "basketball", label: "Basketball", emoji: "🏀" },
-  { value: "swimming", label: "Swimming", emoji: "🏊" },
-  { value: "volleyball", label: "Volleyball", emoji: "🏐" },
-];
+import { toast } from "sonner";
 
 export default function FeedPage() {
   const user = getCurrentUser();
-  const [posts, setPosts] = useState<FeedPost[]>(() => getPosts());
-  const [activeSport, setActiveSport] = useState<Sport | null>(null);
+  const [posts, setPosts] = useState<ApiPost[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [tick, setTick] = useState(0);
 
-  const refresh = useCallback(() => {
-    setPosts(getPosts(activeSport));
-    setTick((n) => n + 1);
-  }, [activeSport]);
+  const loadFeed = useCallback(async (page = 1, append = false) => {
+    if (page === 1) setLoading(true);
+    else setLoadingMore(true);
+    const result = await getFeed(page, 20);
+    if (result.success && result.data) {
+      setPosts((prev) => (append ? [...prev, ...result.data!.items] : result.data!.items));
+      setPagination(result.data.pagination);
+    } else {
+      toast.error(result.message);
+    }
+    if (page === 1) setLoading(false);
+    else setLoadingMore(false);
+  }, []);
 
   useEffect(() => {
-    refresh();
-    return subscribeFeed(refresh);
-  }, [refresh]);
+    loadFeed(1);
+  }, [loadFeed]);
+
+  const handlePostCreated = () => {
+    setShowCreateModal(false);
+    loadFeed(1); // refresh from top
+  };
+
+  const handlePostUpdated = (updated: ApiPost) => {
+    setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  };
+
+  const handlePostDeleted = (postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    setPagination((prev) => (prev ? { ...prev, total: Math.max(0, prev.total - 1) } : prev));
+  };
+
+  const handleLoadMore = () => {
+    if (pagination && pagination.page < pagination.pages) {
+      loadFeed(pagination.page + 1, true);
+    }
+  };
 
   const initials =
     user?.name
@@ -43,127 +61,114 @@ export default function FeedPage() {
       .join("") ?? "U";
 
   return (
-    <div className="min-h-screen bg-[#f2ede9]">
+    <div className="min-h-screen bg-brand-surface">
       <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-4">
-        {/* ─── Page header ───────────────────────────────────────────────── */}
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#006a65] to-[#00a896]">
-                <Rss size={18} className="text-white" />
-              </div>
-              <h1 className="font-['Lexend'] text-[22px] font-extrabold text-[#241914]">
-                Cộng đồng <span className="text-[#006a65]">thể thao</span>
-              </h1>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center gradient-teal shrink-0">
+              <Rss size={18} className="text-white" />
             </div>
-            <p className="font-['Inter'] text-[13px] text-[#8b7266] mt-1 pl-px">
-              {posts.length} bài đăng mới nhất
-            </p>
+            <div>
+              <h1 className="font-heading text-[22px] font-extrabold text-brand-dark leading-tight">
+                Cộng đồng <span className="text-brand-teal">thể thao</span>
+              </h1>
+              {pagination && (
+                <p className="text-[13px] text-brand-muted">{pagination.total} bài đăng</p>
+              )}
+            </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-2.5 h-9 rounded-xl border-[1.5px] border-[#dfc0b3] bg-white text-[#a04100] font-['Inter'] text-[13px] transition-colors hover:bg-[#fff1eb]">
-              <TrendingUp size={14} /> Nổi bật
-            </button>
-          </div>
+          <button
+            onClick={() => loadFeed(1)}
+            disabled={loading}
+            className="p-2 rounded-xl border border-brand-border bg-white hover:bg-brand-surface-orange transition-colors text-brand-muted disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
 
-        {/* ─── Create post box ───────────────────────────────────────────── */}
+        {/* Create post box */}
         <div
-          className="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer bg-white border border-[#e8e0dc] hover:shadow-md transition-shadow"
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white border border-brand-border cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setShowCreateModal(true)}
         >
           {user ? (
-            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold font-['Lexend'] text-white bg-gradient-to-br from-[#006a65] to-[#00a896]">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-teal-diag font-heading">
               {initials}
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-[#f4ded5] text-[#8b7266]">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-brand-surface-warm text-brand-muted">
               <Rss size={18} />
             </div>
           )}
-
-          <span className="flex-1 font-['Inter'] text-[14px] text-[#8b7266]">
-            Bạn muốn chia sẻ gì hôm nay?
-          </span>
-
+          <span className="flex-1 text-sm text-brand-muted">Bạn muốn chia sẻ gì hôm nay?</span>
           <button
-            className="flex items-center gap-1.5 h-9 px-4 rounded-xl shrink-0 bg-gradient-to-r from-[#006a65] to-[#00a896] font-['Lexend'] text-[13px] font-bold text-white border-none shadow-[0_2px_8px_rgba(0,106,101,0.35)] hover:opacity-90 transition-opacity"
             onClick={(e) => {
               e.stopPropagation();
               setShowCreateModal(true);
             }}
+            className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-teal text-sm font-bold text-white font-heading hover:opacity-90 transition-opacity shrink-0"
+            style={{ boxShadow: "0 2px 8px rgba(0,106,101,0.35)" }}
           >
             <Plus size={15} /> Đăng
           </button>
         </div>
 
-        {/* ─── Sport filter tabs ─────────────────────────────────────────── */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none]">
-          {SPORT_TABS.map((tab) => {
-            const active = activeSport === tab.value;
-            return (
-              <button
-                key={String(tab.value)}
-                onClick={() => setActiveSport(tab.value)}
-                className={[
-                  "flex items-center gap-1.5 px-4 h-9 rounded-full whitespace-nowrap transition-all shrink-0 font-['Inter'] text-[13px] border-[1.5px]",
-                  active
-                    ? "bg-[#006a65] border-[#006a65] font-bold text-white shadow-[0_2px_8px_rgba(0,106,101,0.3)]"
-                    : "bg-white border-[#dfc0b3] font-medium text-[#584238]",
-                ].join(" ")}
-              >
-                <span className="text-[14px]">{tab.emoji}</span>
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ─── Posts ─────────────────────────────────────────────────────── */}
-        {posts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 rounded-2xl bg-white border-[1.5px] border-dashed border-[#dfc0b3]">
-            <Flame size={40} className="text-[#dfc0b3] mb-3" />
-            <p className="font-['Lexend'] text-[16px] text-[#241914] mb-1.5">
-              Chưa có bài đăng nào
-            </p>
-            <p className="font-['Inter'] text-[13px] text-[#8b7266] mb-4">
-              Hãy là người đầu tiên chia sẻ về {activeSport ?? "thể thao"}!
-            </p>
+        {/* Feed */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 size={32} className="animate-spin text-brand-teal" />
+            <p className="text-sm text-brand-muted">Đang tải bài đăng...</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 rounded-2xl bg-white border-2 border-dashed border-brand-border">
+            <span className="text-4xl mb-3">🔥</span>
+            <p className="font-heading text-base text-brand-dark mb-1.5">Chưa có bài đăng nào</p>
+            <p className="text-[13px] text-brand-muted mb-4">Hãy là người đầu tiên chia sẻ!</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 h-10 px-5 rounded-xl bg-gradient-to-r from-[#006a65] to-[#00a896] font-['Lexend'] text-[14px] font-bold text-white border-none"
+              className="flex items-center gap-2 h-10 px-5 rounded-xl gradient-teal text-sm font-bold text-white font-heading"
             >
               <Plus size={15} /> Tạo bài đăng
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {posts.map((post) => (
-              <PostCard key={`${post.id}-${tick}`} post={post} onUpdate={refresh} />
-            ))}
-          </div>
-        )}
+          <>
+            <div className="flex flex-col gap-3">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onUpdated={handlePostUpdated}
+                  onDeleted={handlePostDeleted}
+                />
+              ))}
+            </div>
 
-        {/* Load more hint */}
-        {posts.length > 0 && (
-          <div className="text-center py-4">
-            <p className="font-['Inter'] text-[13px] text-[#8b7266]">
-              Bạn đã xem hết {posts.length} bài đăng 🎉
-            </p>
-          </div>
+            {pagination && pagination.page < pagination.pages && (
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="flex items-center justify-center gap-2 h-11 rounded-xl border border-brand-border bg-white hover:bg-brand-surface-orange transition-colors text-sm text-brand-body disabled:opacity-60"
+              >
+                {loadingMore ? <Loader2 size={16} className="animate-spin" /> : null}
+                {loadingMore
+                  ? "Đang tải..."
+                  : `Tải thêm (còn ${pagination.total - posts.length} bài)`}
+              </button>
+            )}
+
+            {pagination && pagination.page >= pagination.pages && posts.length > 0 && (
+              <p className="text-center py-4 text-[13px] text-brand-muted">
+                Bạn đã xem hết {pagination.total} bài đăng 🎉
+              </p>
+            )}
+          </>
         )}
       </div>
 
-      {/* ─── Create Post Modal ─────────────────────────────────────────────── */}
       {showCreateModal && (
-        <CreatePostModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            refresh();
-            setActiveSport(null);
-          }}
-        />
+        <CreatePostModal onClose={() => setShowCreateModal(false)} onSuccess={handlePostCreated} />
       )}
     </div>
   );
