@@ -197,7 +197,7 @@ export default function ForgotPasswordPage() {
 
         <div className="text-center mt-6">
           <Link
-            to="/auth/login"
+            to="/login"
             className="text-[#8b7266] hover:text-[#a04100] transition-colors"
             style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}
           >

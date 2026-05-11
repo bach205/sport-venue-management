@@ -25,11 +25,11 @@ import OwnerLayout from "@/shared/components/OwnerLayout";
 
 export const router = createBrowserRouter([
   // ─── Auth (no layout) ──────────────────────────────────────────────────────
-  { path: "/auth/login", element: <LoginPage /> },
-  { path: "/auth/register", element: <RegisterPage /> },
-  { path: "/auth/verify-email", element: <VerifyEmailPage /> },
-  { path: "/auth/forgot-password", element: <ForgotPasswordPage /> },
-  { path: "/auth/reset-password", element: <ResetPasswordPage /> },
+  { path: "/login", element: <LoginPage /> },
+  { path: "/register", element: <RegisterPage /> },
+  { path: "/verify-email", element: <VerifyEmailPage /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },
+  { path: "/reset-password", element: <ResetPasswordPage /> },
 
   // ─── Player / General (AppLayout) ──────────────────────────────────────────
   {
