@@ -84,7 +84,7 @@ export default function VerifyEmailPage() {
           </p>
         </div>
         <Link
-          to="/auth/login"
+          to="/login"
           className="text-brand-muted hover:text-brand-orange transition-colors text-[13px]"
         >
           ← Quay lại đăng nhập
@@ -122,7 +122,7 @@ export default function VerifyEmailPage() {
           Email của bạn đã được xác thực. Bây giờ bạn có thể đăng nhập và bắt đầu tìm trận.
         </p>
         <Button
-          onClick={() => navigate("/auth/login")}
+          onClick={() => navigate("/login")}
           className="w-full h-12 rounded-lg border-0 gap-2 gradient-orange font-heading text-sm font-bold text-white"
         >
           Đăng Nhập Ngay <ArrowRight size={16} />
@@ -147,7 +147,7 @@ export default function VerifyEmailPage() {
       <div className="flex flex-col gap-3">
         {isUsed && (
           <Button
-            onClick={() => navigate("/auth/login")}
+            onClick={() => navigate("/login")}
             className="w-full h-11 rounded-lg border-0 gap-2 gradient-orange font-heading text-sm font-bold text-white"
           >
             Đăng Nhập Ngay <ArrowRight size={15} />
@@ -155,14 +155,14 @@ export default function VerifyEmailPage() {
         )}
         {(isExpired || !isUsed) && (
           <Button
-            onClick={() => navigate("/auth/register")}
+            onClick={() => navigate("/register")}
             className="w-full h-11 rounded-lg border-0 gap-2 gradient-orange font-heading text-sm font-bold text-white"
           >
             <RefreshCw size={15} /> Đăng Ký Lại
           </Button>
         )}
         <Link
-          to="/auth/login"
+          to="/login"
           className="text-brand-muted hover:text-brand-orange transition-colors text-[13px]"
         >
           ← Quay lại đăng nhập

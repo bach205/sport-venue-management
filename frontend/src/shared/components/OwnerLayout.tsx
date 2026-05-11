@@ -27,14 +27,14 @@ export default function OwnerLayout() {
   // Redirect if not owner
   useEffect(() => {
     if (!user || user.role !== 'owner') {
-      navigate('/auth/login');
+      navigate('/login');
     }
   }, [user]);
 
   const handleLogout = () => {
     logout();
     toast.success('Đã đăng xuất');
-    navigate('/auth/login');
+    navigate('/login');
   };
 
   const isActive = (to: string) => pathname.startsWith(to);

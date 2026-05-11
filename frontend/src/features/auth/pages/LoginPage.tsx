@@ -179,7 +179,7 @@ export default function LoginPage() {
               Password
             </Label>
             <Link
-              to="/auth/forgot-password"
+              to="/forgot-password"
               className="text-brand-orange hover:text-brand-orange-light transition-colors text-[13px] font-medium"
             >
               Forgot Password?
@@ -266,7 +266,7 @@ export default function LoginPage() {
       <p className="text-center mt-6 text-brand-body text-sm">
         Don't have an account?{" "}
         <Link
-          to="/auth/register"
+          to="/register"
           className="text-brand-orange hover:text-brand-orange-light transition-colors font-semibold"
         >
           Sign Up

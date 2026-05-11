@@ -41,7 +41,7 @@ export default function RegisterPage() {
     const result = await registerApi({ email: data.email, password: data.password });
     if (result.success) {
       toast.success(result.message);
-      navigate("/auth/verify-email");
+      navigate("/verify-email");
     } else {
       toast.error(result.message);
     }
@@ -160,7 +160,7 @@ export default function RegisterPage() {
       <p className="text-center mt-5 text-brand-body text-sm">
         Đã có tài khoản?{" "}
         <Link
-          to="/auth/login"
+          to="/login"
           className="text-brand-orange hover:text-brand-orange-light transition-colors font-semibold"
         >
           Đăng Nhập
