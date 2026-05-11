@@ -1,6 +1,7 @@
 const { HTTP_STATUS } = require("../../constants");
 const venueService = require("./service");
 const {
+  validateCreateVenuePayload,
   validateObjectIdParam,
   validatePaginationQuery,
   validateSlotsQuery,
@@ -17,6 +18,27 @@ const {
 } = require("../../validations/venue.validation");
 
 class VenueController {
+  async createVenue(req, res) {
+    const { isValid, errors, value } = validateCreateVenuePayload(req.body);
+
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+    }
+
+    try {
+      const data = await venueService.createVenue(req.user.id, value);
+
+      return res.status(HTTP_STATUS.CREATED).json({
+        message: "Venue created successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
   async listVenues(req, res) {
     const { isValid, errors, value } = validatePaginationQuery(req.query);
 
@@ -254,6 +276,27 @@ class VenueController {
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Venue updated successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async deleteVenue(req, res) {
+    const { isValid, errors } = validateObjectIdParam(req.params.venueId, "Venue");
+
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+    }
+
+    try {
+      const data = await venueService.deleteVenue(req.user.id, req.params.venueId);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Venue deleted successfully.",
         data,
       });
     } catch (error) {

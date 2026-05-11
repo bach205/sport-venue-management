@@ -45,6 +45,20 @@ const getDayOfWeek = (dateString) => {
 const buildSlotKey = (date, startTime, endTime) => `${date}|${startTime}|${endTime}`;
 
 class VenueService {
+  async createVenue(ownerId, payload) {
+    const venue = await Venue.create({
+      owner_id: ownerId,
+      name: payload.name,
+      location: payload.location,
+      description: payload.description,
+      slot_price: payload.slot_price,
+      slot_duration_minutes: payload.slot_duration_minutes,
+      weekly_schedule: payload.weekly_schedule,
+    });
+
+    return this.formatVenue(venue);
+  }
+
   async listVenues(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
     const [venues, total] = await Promise.all([
@@ -346,6 +360,27 @@ class VenueService {
     await venue.save();
 
     return this.formatVenue(venue);
+  }
+
+  async deleteVenue(ownerId, venueId) {
+    const venue = await this.getOwnedVenueOrThrow(ownerId, venueId);
+    const relatedBookingCount = await Booking.countDocuments({ venue_id: venue._id });
+
+    if (relatedBookingCount > 0) {
+      throw createHttpError(
+        HTTP_STATUS.BAD_REQUEST,
+        "This venue cannot be deleted because it already has booking history."
+      );
+    }
+
+    await Promise.all([
+      VenueAvailabilityOverride.deleteMany({ venue_id: venue._id }),
+      Venue.deleteOne({ _id: venue._id }),
+    ]);
+
+    return {
+      id: String(venue._id),
+    };
   }
 
   async updateVenueSchedule(ownerId, venueId, payload) {
