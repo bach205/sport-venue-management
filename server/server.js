@@ -4,7 +4,7 @@ const http = require("http");
 
 const app = require("./app");
 const connectDb = require("./src/configs/db");
-const connectRedis = require("./src/configs/redis");
+const { connectRedis } = require("./src/configs/redis");
 const createSocketServer = require("./src/configs/socket");
 const registerSocketHandlers = require("./src/sockets");
 
