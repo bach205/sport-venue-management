@@ -1,4 +1,4 @@
-const { User, Profile } = require("./model");
+const { User, Profile, UserRole } = require("./model");
 
 class UserService {
     async getUserProfile(userId) {
@@ -42,6 +42,12 @@ class UserService {
             user_id: userId,
             name: defaultName,
         });
+    }
+
+    async getUserRole(userId) {
+        const userRole = await UserRole.findOne({ user_id: userId });
+        console.log(userRole);
+        return userRole ? userRole.role : "user";
     }
 
     async deleteProfileByUserId(userId) {

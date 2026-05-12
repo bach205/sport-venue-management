@@ -57,6 +57,7 @@ const MOCK_USER_PLAYER = {
   email: 'player@demo.com',
   status: 'active' as const,
   is_verified: true,
+  role: 'player',
 };
 const MOCK_PROFILE_PLAYER = {
   _id: 'prof-player',
@@ -75,6 +76,7 @@ const MOCK_USER_OWNER = {
   email: 'owner@demo.com',
   status: 'active' as const,
   is_verified: true,
+  role: 'owner',
 };
 const MOCK_PROFILE_OWNER = {
   _id: 'prof-owner',
@@ -93,6 +95,7 @@ const MOCK_USER_ADMIN = {
   email: 'admin@demo.com',
   status: 'active' as const,
   is_verified: true,
+  role: 'admin',
 };
 const MOCK_PROFILE_ADMIN = {
   _id: 'prof-admin',
