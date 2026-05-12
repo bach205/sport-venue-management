@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
   CalendarDays,
@@ -7,805 +7,446 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
-  Lock,
   LockOpen,
   Ban,
   CheckCircle2,
   XCircle,
   Loader2,
-  Clock,
-  RotateCcw,
   AlertTriangle,
-  Star,
   MapPin,
   Users,
+  Save,
+  Trash2,
+  Sparkles,
+  Clock3,
+  Wallet,
 } from "lucide-react";
-import { fetchVenueById, generateSlots } from "../../venues/api/venuesApi";
-import {
-  getBookings,
-  requestRefund,
-  ownerApproveRefund,
-  getRefundWindowRemaining,
-  REFUND_WINDOW_MS,
-} from "../../venues/store/bookingStore";
-import {
-  getOverridesForVenueDate,
-  setSlotOverride,
-  clearSlotOverride,
-  subscribeOwner,
-  type SlotOverride,
-} from "../store/ownerStore";
-import type { Venue, VenueSlot, Booking } from "../../venues/types/venues.types";
-import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { toast } from "sonner";
 
+import {
+  deleteOwnerVenue,
+  fetchOwnerRefundRequests,
+  fetchOwnerVenueBookings,
+  fetchOwnerVenues,
+  fetchVenueSlotsByDate,
+  resolveOwnerRefund,
+  updateOwnerAvailability,
+  updateOwnerVenue,
+  updateOwnerVenueSchedule,
+  type OwnerBooking,
+  type OwnerRefundRequest,
+  type OwnerSlot,
+  type OwnerVenue,
+  type UpdateVenuePayload,
+} from "@/features/owner/api/ownerVenueApi";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+
 type Tab = "bookings" | "schedule" | "settings";
+type SlotAction = "unavailable" | "open";
+
+type SettingsForm = {
+  name: string;
+  location: string;
+  description: string;
+  slotPrice: number;
+  slotDurationMinutes: number;
+  weeklySchedule: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+  }>;
+};
+
+const DAY_LABELS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
 function formatPrice(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n) + "₫";
 }
+
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-GB", {
+  return new Date(`${d}T00:00:00`).toLocaleDateString("vi-VN", {
     weekday: "short",
     day: "numeric",
     month: "short",
   });
 }
-function formatCountdown(ms: number) {
-  const s = Math.ceil(ms / 1000);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-function addDays(b: Date, n: number) {
-  const d = new Date(b);
-  d.setDate(d.getDate() + n);
+
+function addDays(base: Date, amount: number) {
+  const d = new Date(base);
+  d.setDate(d.getDate() + amount);
   return d;
 }
+
 function toISO(d: Date) {
   return d.toISOString().split("T")[0];
 }
 
-const SPORT_EMOJI: Record<string, string> = {
-  tennis: "🎾",
-  basketball: "🏀",
-  badminton: "🏸",
-  football: "⚽",
-  pickleball: "🏓",
-  volleyball: "🏐",
-};
-
-// ─── Booking Status Chip ─────────────────────────────────────────────────────
-function StatusChip({ status }: { status: Booking["status"] }) {
-  const MAP = {
-    confirmed: { bg: "#e7f8f7", color: "#006a65", label: "Confirmed" },
-    processing_refund: { bg: "#fff3cd", color: "#856404", label: "Refunding" },
-    refunded: { bg: "#f4ded5", color: "#8b7266", label: "Refunded" },
-    cancelled: { bg: "#f4ded5", color: "#8b7266", label: "Cancelled" },
+function toSettingsForm(venue: OwnerVenue): SettingsForm {
+  return {
+    name: venue.name,
+    location: venue.location,
+    description: venue.description,
+    slotPrice: venue.slotPrice,
+    slotDurationMinutes: venue.slotDurationMinutes,
+    weeklySchedule: venue.weeklySchedule.length
+      ? venue.weeklySchedule
+      : [{ dayOfWeek: 1, startTime: "06:00", endTime: "22:00" }],
   };
-  const s = MAP[status];
+}
+
+function StatusChip({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    hold: { bg: "#fff3cd", color: "#856404", label: "Hold" },
+    payment_pending: { bg: "#fff3cd", color: "#856404", label: "Pending" },
+    confirmed: { bg: "#e7f8f7", color: "#006a65", label: "Confirmed" },
+    refund_processing: { bg: "#fff3cd", color: "#856404", label: "Refunding" },
+    refunded: { bg: "#f4ded5", color: "#8b7266", label: "Refunded" },
+    refund_rejected: { bg: "#fbe9e7", color: "#ba1a1a", label: "Rejected" },
+    expired: { bg: "#f4ded5", color: "#8b7266", label: "Expired" },
+  };
+  const item = map[status] ?? { bg: "#f4ded5", color: "#8b7266", label: status };
   return (
     <span
-      className="px-2.5 py-1 rounded-full"
-      style={{
-        background: s.bg,
-        color: s.color,
-        fontFamily: "Inter, sans-serif",
-        fontSize: "11px",
-        fontWeight: 700,
-        textTransform: "uppercase",
-      }}
+      className="rounded-full px-2.5 py-1"
+      style={{ background: item.bg, color: item.color, fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}
     >
-      {s.label}
+      {item.label}
     </span>
   );
 }
 
-// ─── Booking Card (owner view) ────────────────────────────────────────────────
-function OwnerBookingCard({
+function BookingCard({
   booking,
-  onAutoRefund,
-  onManualRefund,
-  onRejectRefund,
+  refundRequest,
+  onApprove,
+  onReject,
 }: {
-  booking: Booking;
-  onAutoRefund: (b: Booking) => void;
-  onManualRefund: (b: Booking) => void;
-  onRejectRefund: (b: Booking) => void;
+  booking: OwnerBooking;
+  refundRequest?: OwnerRefundRequest;
+  onApprove: (refund: OwnerRefundRequest) => void;
+  onReject: (refund: OwnerRefundRequest) => void;
 }) {
-  const [remaining, setRemaining] = useState(() => getRefundWindowRemaining(booking));
-  const [actLoading, setActLoading] = useState<"auto" | "manual" | "reject" | null>(null);
-
-  useEffect(() => {
-    if (remaining <= 0 || booking.status !== "confirmed") return;
-    const t = setInterval(() => {
-      const r = getRefundWindowRemaining(booking);
-      setRemaining(r);
-      if (r <= 0) clearInterval(t);
-    }, 500);
-    return () => clearInterval(t);
-  }, [booking]);
-
-  const isAutoWindow = booking.status === "confirmed" && remaining > 0;
-  const canManualRefund = booking.status === "confirmed" && remaining <= 0;
-  const isRefunding = booking.status === "processing_refund";
-
-  const handleAuto = async () => {
-    setActLoading("auto");
-    await new Promise((r) => setTimeout(r, 800));
-    onAutoRefund(booking);
-    setActLoading(null);
-  };
-  const handleManual = async () => {
-    setActLoading("manual");
-    await new Promise((r) => setTimeout(r, 800));
-    onManualRefund(booking);
-    setActLoading(null);
-  };
-  const handleReject = async () => {
-    setActLoading("reject");
-    await new Promise((r) => setTimeout(r, 600));
-    onRejectRefund(booking);
-    setActLoading(null);
-  };
+  const hasManualRefund = refundRequest?.status === "pending_manual";
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{ background: "#fff", border: "1px solid #dfc0b3" }}
-    >
-      <div className="flex items-start gap-4 p-4 border-b border-[#f4ded5]">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl"
-          style={{ background: "#fff1eb" }}
-        >
-          {SPORT_EMOJI[booking.sport]}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#241914",
-              }}
-            >
-              {booking.playerName} · #{booking.id.slice(-6).toUpperCase()}
+    <div className="overflow-hidden rounded-[24px] border bg-white" style={{ borderColor: "#dfc0b3" }}>
+      <div className="flex flex-wrap items-start gap-4 border-b p-4" style={{ borderColor: "#f4ded5" }}>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
+              {booking.user?.name || "Người chơi"} · #{booking.id.slice(-6).toUpperCase()}
             </p>
             <StatusChip status={booking.status} />
           </div>
-          <p
-            style={{
-              fontFamily: "Inter, sans-serif",
-              fontSize: "13px",
-              color: "#584238",
-              marginTop: 2,
-            }}
-          >
-            📅 {formatDate(booking.date)} &nbsp;|&nbsp; ⏰{" "}
-            {booking.slots.map((s) => s.startTime).join(", ")}
+          <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", marginTop: 4 }}>
+            📅 {formatDate(booking.slot.date)} | ⏰ {booking.slot.startTime} - {booking.slot.endTime}
           </p>
-          {booking.notes && (
-            <p
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "12px",
-                color: "#8b7266",
-                marginTop: 2,
-                fontStyle: "italic",
-              }}
-            >
-              "{booking.notes}"
-            </p>
-          )}
+          <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266", marginTop: 4 }}>
+            {booking.user?.email || "Không có email"}
+          </p>
         </div>
+
         <div className="shrink-0 text-right">
-          <p
-            style={{
-              fontFamily: "Lexend, sans-serif",
-              fontSize: "16px",
-              fontWeight: 800,
-              color: "#a04100",
-            }}
-          >
-            {formatPrice(booking.totalPrice)}
+          <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "16px", fontWeight: 800, color: "#a04100" }}>
+            {formatPrice(booking.amount)}
           </p>
-          <p
-            style={{
-              fontFamily: "Inter, sans-serif",
-              fontSize: "11px",
-              color: "#8b7266",
-              textTransform: "capitalize",
-            }}
-          >
-            via {booking.paymentMethod}
+          <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266" }}>
+            {booking.payment?.status || "no payment"}
           </p>
         </div>
       </div>
 
-      {/* Auto-refund window */}
-      {isAutoWindow && (
-        <div className="px-4 py-3 flex flex-col gap-2" style={{ background: "#e7f8f7" }}>
-          <div className="flex items-center justify-between">
+      {hasManualRefund && refundRequest && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3" style={{ background: "#fff3cd" }}>
+          <div>
             <div className="flex items-center gap-2">
-              <Clock size={14} style={{ color: "#006a65" }} />
-              <span
-                style={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: "13px",
-                  color: "#006a65",
-                  fontWeight: 500,
-                }}
-              >
-                Auto-refund window
+              <AlertTriangle size={14} style={{ color: "#856404" }} />
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#856404", fontWeight: 600 }}>
+                Yêu cầu hoàn tiền thủ công
               </span>
             </div>
-            <span
-              style={{
-                fontFamily: "Lexend, sans-serif",
-                fontSize: "16px",
-                fontWeight: 800,
-                color: remaining < 60000 ? "#ba1a1a" : "#006a65",
-              }}
-            >
-              {formatCountdown(remaining)}
-            </span>
-          </div>
-          <div
-            className="w-full rounded-full overflow-hidden"
-            style={{ height: 5, background: "rgba(0,0,0,0.1)" }}
-          >
-            <div
-              style={{
-                height: "100%",
-                width: `${((REFUND_WINDOW_MS - remaining) / REFUND_WINDOW_MS) * 100}%`,
-                borderRadius: "9999px",
-                background: remaining < 60000 ? "#ba1a1a" : "#006a65",
-                transition: "width 0.5s",
-              }}
-            />
-          </div>
-          <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#006a65" }}>
-            Nếu khách yêu cầu, bạn có thể <strong>tự động hoàn tiền</strong> ngay lập tức trong cửa
-            sổ này.
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={handleAuto}
-              disabled={actLoading !== null}
-              className="flex items-center gap-1.5 px-4 h-9 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
-              style={{
-                background: "#006a65",
-                color: "#fff",
-                border: "none",
-                fontFamily: "Inter, sans-serif",
-                fontSize: "13px",
-              }}
-            >
-              {actLoading === "auto" ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <RotateCcw size={14} />
-              )}
-              Approve Auto Refund
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Manual refund (> 5 min) */}
-      {canManualRefund && (
-        <div
-          className="px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
-          style={{ background: "#fff3cd" }}
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={14} style={{ color: "#856404" }} />
-            <span
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "13px",
-                color: "#856404",
-                fontWeight: 500,
-              }}
-            >
-              Yêu cầu hoàn tiền thủ công (quá 5 phút)
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleReject}
-              disabled={actLoading !== null}
-              className="flex items-center gap-1.5 px-3 h-9 rounded-xl"
-              style={{
-                background: "#f4ded5",
-                color: "#ba1a1a",
-                border: "1px solid #e8c4b3",
-                fontFamily: "Inter, sans-serif",
-                fontSize: "12px",
-                fontWeight: 600,
-              }}
-            >
-              {actLoading === "reject" ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <XCircle size={13} />
-              )}
-              Từ chối
-            </button>
-            <button
-              onClick={handleManual}
-              disabled={actLoading !== null}
-              className="flex items-center gap-1.5 px-3 h-9 rounded-xl"
-              style={{
-                background: "#a04100",
-                color: "#fff",
-                border: "none",
-                fontFamily: "Inter, sans-serif",
-                fontSize: "12px",
-                fontWeight: 600,
-              }}
-            >
-              {actLoading === "manual" ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <CheckCircle2 size={13} />
-              )}
-              Duyệt Hoàn Tiền
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Processing refund */}
-      {isRefunding && (
-        <div className="px-4 py-3 flex items-center gap-2" style={{ background: "#fff3cd" }}>
-          <Loader2 size={14} className="animate-spin" style={{ color: "#856404" }} />
-          <span style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#856404" }}>
-            Đang hoàn tiền — {formatPrice(booking.totalPrice)} sẽ về tài khoản khách trong 1–3 ngày.
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Owner Slot Grid ──────────────────────────────────────────────────────────
-type SlotAction = "lock" | "unavailable" | "open";
-
-function OwnerSlotGrid({
-  venueId,
-  date,
-  onAction,
-  triggerRefresh,
-}: {
-  venueId: string;
-  date: string;
-  onAction: (startTime: string, action: SlotAction) => void;
-  triggerRefresh: number;
-}) {
-  const [slots, setSlots] = useState<VenueSlot[]>([]);
-  const [overrides, setOverrides] = useState<Map<string, SlotOverride>>(new Map());
-  const [contextMenu, setContextMenu] = useState<{
-    startTime: string;
-    x: number;
-    y: number;
-  } | null>(null);
-
-  const load = useCallback(() => {
-    setSlots(generateSlots(venueId, date));
-    setOverrides(getOverridesForVenueDate(venueId, date));
-  }, [venueId, date]);
-
-  useEffect(() => {
-    load();
-  }, [load, triggerRefresh]);
-  useEffect(() => subscribeOwner(load), [load]);
-
-  const handleSlotClick = (slot: VenueSlot, e: React.MouseEvent) => {
-    e.preventDefault();
-    if (slot.status === "closed") return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setContextMenu({ startTime: slot.startTime, x: rect.left, y: rect.bottom + 4 });
-  };
-
-  const handleAction = (action: SlotAction) => {
-    if (!contextMenu) return;
-    onAction(contextMenu.startTime, action);
-    setContextMenu(null);
-  };
-
-  const getSlotDisplay = (slot: VenueSlot) => {
-    const override = overrides.get(slot.startTime);
-    if (override === "locked")
-      return {
-        bg: "#241914",
-        border: "#241914",
-        label: "🔒 Locked",
-        color: "#fff",
-        textColor: "#fff",
-      };
-    if (override === "unavailable")
-      return {
-        bg: "#f4ded5",
-        border: "#dfc0b3",
-        label: "⚠️ Unavail.",
-        color: "#8b7266",
-        textColor: "#8b7266",
-      };
-    if (slot.status === "booked")
-      return {
-        bg: "#e7f8f7",
-        border: "#7de0cc",
-        label: "✅ Booked",
-        color: "#006a65",
-        textColor: "#006a65",
-      };
-    if (slot.status === "closed")
-      return {
-        bg: "#f7f0ed",
-        border: "#dfc0b3",
-        label: "⛔ Closed",
-        color: "#c0a090",
-        textColor: "#c0a090",
-      };
-    return {
-      bg: "#fff",
-      border: "#dfc0b3",
-      label: formatPrice(slot.price),
-      color: "#a04100",
-      textColor: "#241914",
-    };
-  };
-
-  return (
-    <div className="relative">
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-        {slots.map((slot) => {
-          const d = getSlotDisplay(slot);
-          const isClosed = slot.status === "closed";
-          return (
-            <button
-              key={slot.id}
-              onClick={(e) => !isClosed && handleSlotClick(slot, e)}
-              disabled={isClosed}
-              className="rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all border-2"
-              style={{
-                height: 64,
-                background: d.bg,
-                borderColor: d.border,
-                cursor: isClosed ? "not-allowed" : "pointer",
-              }}
-              title={isClosed ? "Past slot" : "Click to manage"}
-            >
-              <span
-                style={{
-                  fontFamily: "Lexend, sans-serif",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: d.textColor,
-                }}
-              >
-                {slot.startTime}
-              </span>
-              <span style={{ fontFamily: "Inter, sans-serif", fontSize: "10px", color: d.color }}>
-                {d.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Context Menu */}
-      {contextMenu && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setContextMenu(null)} />
-          <div
-            className="fixed z-40 rounded-xl overflow-hidden shadow-xl"
-            style={{
-              left: Math.min(contextMenu.x, window.innerWidth - 200),
-              top: Math.min(contextMenu.y, window.innerHeight - 180),
-              background: "#fff",
-              border: "1.5px solid #dfc0b3",
-              width: 190,
-              boxShadow: "0 8px 24px rgba(36,25,20,0.2)",
-            }}
-          >
-            <div className="px-4 py-2.5 border-b border-[#f4ded5]">
-              <p
-                style={{
-                  fontFamily: "Lexend, sans-serif",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: "#241914",
-                }}
-              >
-                Slot {contextMenu.startTime}
+            {refundRequest.note && (
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#856404", marginTop: 4 }}>
+                {refundRequest.note}
               </p>
-            </div>
-            {[
-              {
-                action: "lock" as SlotAction,
-                icon: <Lock size={14} />,
-                label: "Khoá slot",
-                color: "#241914",
-                bg: "#fff",
-              },
-              {
-                action: "unavailable" as SlotAction,
-                icon: <Ban size={14} />,
-                label: "Đánh dấu Unavailable",
-                color: "#856404",
-                bg: "#fff",
-              },
-              {
-                action: "open" as SlotAction,
-                icon: <LockOpen size={14} />,
-                label: "Mở lại slot",
-                color: "#006a65",
-                bg: "#fff",
-              },
-            ].map((item) => (
-              <button
-                key={item.action}
-                onClick={() => handleAction(item.action)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#fff1eb] transition-colors text-left"
-                style={{
-                  fontFamily: "Inter, sans-serif",
-                  fontSize: "13px",
-                  color: item.color,
-                  fontWeight: 500,
-                  background: item.bg,
-                }}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            ))}
+            )}
           </div>
-        </>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={() => onReject(refundRequest)} className="h-9 rounded-xl border-[#e8c4b3] bg-[#f4ded5] px-3 text-[#ba1a1a] hover:bg-[#f0d5c8]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
+              <XCircle size={13} />
+              Từ chối
+            </Button>
+            <Button onClick={() => onApprove(refundRequest)} className="h-9 rounded-xl border-0 px-3" style={{ background: "#a04100", color: "#fff", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
+              <CheckCircle2 size={13} />
+              Duyệt hoàn tiền
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-// ─── Settings Tab ─────────────────────────────────────────────────────────────
-function SettingsTab({ venue }: { venue: Venue }) {
-  const [form, setForm] = useState({
-    name: venue.name,
-    description: venue.description,
-    openHours: venue.openHours,
-    priceFrom: venue.priceFrom,
-    fullAddress: venue.fullAddress,
-  });
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = async () => {
-    await new Promise((r) => setTimeout(r, 700));
-    setSaved(true);
-    toast.success("Cập nhật thông tin sân thành công!");
-    setTimeout(() => setSaved(false), 3000);
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    border: "1.5px solid #dfc0b3",
-    borderRadius: 10,
-    padding: "10px 14px",
-    fontFamily: "Inter, sans-serif",
-    fontSize: "14px",
-    color: "#241914",
-    background: "#fff",
-    outline: "none",
-    boxSizing: "border-box",
-  };
-
-  const Label = ({ children }: { children: React.ReactNode }) => (
-    <label
-      style={{
-        fontFamily: "Inter, sans-serif",
-        fontSize: "13px",
-        fontWeight: 600,
-        color: "#241914",
-        display: "block",
-        marginBottom: 6,
-      }}
-    >
-      {children}
-    </label>
-  );
+function SettingsTab({
+  form,
+  onChange,
+  onSave,
+  onDelete,
+  saving,
+  deleting,
+}: {
+  form: SettingsForm;
+  onChange: React.Dispatch<React.SetStateAction<SettingsForm>>;
+  onSave: () => void;
+  onDelete: () => void;
+  saving: boolean;
+  deleting: boolean;
+}) {
+  const firstRange = form.weeklySchedule[0];
 
   return (
-    <div className="flex flex-col gap-5 max-w-2xl">
-      <div>
-        <Label>Tên sân</Label>
-        <input
-          style={inputStyle}
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          onFocus={(e) => {
-            e.target.style.borderColor = "#006a65";
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = "#dfc0b3";
-          }}
-        />
-      </div>
-      <div>
-        <Label>Địa chỉ đầy đủ</Label>
-        <input
-          style={inputStyle}
-          value={form.fullAddress}
-          onChange={(e) => setForm((f) => ({ ...f, fullAddress: e.target.value }))}
-          onFocus={(e) => {
-            e.target.style.borderColor = "#006a65";
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = "#dfc0b3";
-          }}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Giờ mở cửa</Label>
-          <input
-            style={inputStyle}
-            value={form.openHours}
-            onChange={(e) => setForm((f) => ({ ...f, openHours: e.target.value }))}
-            placeholder="06:00 – 22:00"
-            onFocus={(e) => {
-              e.target.style.borderColor = "#006a65";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#dfc0b3";
-            }}
-          />
+    <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+      <div className="rounded-[24px] border bg-white p-6" style={{ borderColor: "#dfc0b3" }}>
+        <div className="mb-5">
+          <p className="text-[#a04100] uppercase tracking-[0.18em]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
+            Venue Settings
+          </p>
+          <h3 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700 }}>
+            Chỉnh sửa thông tin sân
+          </h3>
         </div>
-        <div>
-          <Label>Giá từ (₫/giờ)</Label>
-          <input
-            style={inputStyle}
-            type="number"
-            value={form.priceFrom}
-            onChange={(e) => setForm((f) => ({ ...f, priceFrom: Number(e.target.value) }))}
-            onFocus={(e) => {
-              e.target.style.borderColor = "#006a65";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#dfc0b3";
-            }}
-          />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Tên sân</Label>
+            <Input value={form.name} onChange={(e) => onChange((prev) => ({ ...prev, name: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Địa điểm</Label>
+            <Input value={form.location} onChange={(e) => onChange((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Giá mỗi slot</Label>
+            <Input type="number" value={form.slotPrice} onChange={(e) => onChange((prev) => ({ ...prev, slotPrice: Number(e.target.value) || 0 }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Thời lượng slot</Label>
+            <Input type="number" value={form.slotDurationMinutes} onChange={(e) => onChange((prev) => ({ ...prev, slotDurationMinutes: Number(e.target.value) || 60 }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Thứ hoạt động</Label>
+            <select value={firstRange.dayOfWeek} onChange={(e) => onChange((prev) => ({ ...prev, weeklySchedule: [{ ...prev.weeklySchedule[0], dayOfWeek: Number(e.target.value) }] }))} className="h-11 w-full rounded-xl border px-3" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}>
+              {DAY_LABELS.map((label, index) => <option key={label} value={index}>{label}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Khung giờ</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input value={firstRange.startTime} onChange={(e) => onChange((prev) => ({ ...prev, weeklySchedule: [{ ...prev.weeklySchedule[0], startTime: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              <Input value={firstRange.endTime} onChange={(e) => onChange((prev) => ({ ...prev, weeklySchedule: [{ ...prev.weeklySchedule[0], endTime: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+            </div>
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label>Mô tả</Label>
+            <textarea value={form.description} onChange={(e) => onChange((prev) => ({ ...prev, description: e.target.value }))} rows={5} className="min-h-[120px] w-full rounded-xl border px-3 py-3 outline-none transition-colors focus:border-[#006a65]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#241914" }} />
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Button onClick={onSave} disabled={saving} className="h-11 rounded-xl border-0 px-5" style={{ background: "linear-gradient(90deg,#a04100,#ff7e36)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}>
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            Lưu thay đổi
+          </Button>
+          <Button onClick={onDelete} disabled={deleting} variant="outline" className="h-11 rounded-xl border-[#f0c5c5] bg-[#fff] px-5 text-[#ba1a1a] hover:bg-[#fff3f3]" style={{ fontFamily: "Inter, sans-serif", fontWeight: 700 }}>
+            {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+            Xóa venue
+          </Button>
         </div>
       </div>
-      <div>
-        <Label>Mô tả</Label>
-        <textarea
-          style={{ ...inputStyle, resize: "none" }}
-          rows={4}
-          value={form.description}
-          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          onFocus={(e) => {
-            e.target.style.borderColor = "#006a65";
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor = "#dfc0b3";
-          }}
-        />
+
+      <div className="space-y-4">
+        <div className="rounded-[24px] border bg-white p-5" style={{ borderColor: "#dfc0b3" }}>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "#dfc0b3", background: "#fff1eb" }}>
+            <Sparkles size={14} className="text-[#a04100]" />
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700, color: "#a04100", textTransform: "uppercase", letterSpacing: "0.18em" }}>
+              Preview
+            </span>
+          </div>
+          <h4 style={{ fontFamily: "Lexend, sans-serif", fontSize: "20px", fontWeight: 700, color: "#241914" }}>{form.name || "Tên sân"}</h4>
+          <p className="mt-2" style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", lineHeight: 1.6 }}>{form.description || "Mô tả venue sẽ hiển thị tại đây."}</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl p-3" style={{ background: "#fef4ef" }}>
+              <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "16px", fontWeight: 700, color: "#241914" }}>{formatPrice(form.slotPrice || 0)}</p>
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>mỗi slot</span>
+            </div>
+            <div className="rounded-2xl p-3" style={{ background: "#eefbf7" }}>
+              <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "16px", fontWeight: 700, color: "#241914" }}>{form.slotDurationMinutes} phút</p>
+              <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>thời lượng</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <button
-        onClick={handleSave}
-        className="self-start flex items-center gap-2 h-11 px-6 rounded-xl transition-opacity hover:opacity-90"
-        style={{
-          background: "linear-gradient(90deg,#a04100,#ff7e36)",
-          fontFamily: "Lexend, sans-serif",
-          fontSize: "14px",
-          fontWeight: 700,
-          color: "#fff",
-          border: "none",
-          boxShadow: "0 4px 14px rgba(160,65,0,0.3)",
-        }}
-      >
-        {saved ? (
-          <>
-            <CheckCircle2 size={16} /> Đã lưu!
-          </>
-        ) : (
-          "Lưu thay đổi"
-        )}
-      </button>
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VenueManagePage() {
   const { venueId } = useParams<{ venueId: string }>();
   const navigate = useNavigate();
-  const [venue, setVenue] = useState<Venue | null>(null);
-  const [tab, setTab] = useState<Tab>("bookings");
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [slotRefresh, setSlotRefresh] = useState(0);
 
-  // Date picker for schedule
+  const [venue, setVenue] = useState<OwnerVenue | null>(null);
+  const [settingsForm, setSettingsForm] = useState<SettingsForm | null>(null);
+  const [tab, setTab] = useState<Tab>("bookings");
+  const [bookings, setBookings] = useState<OwnerBooking[]>([]);
+  const [refundRequests, setRefundRequests] = useState<OwnerRefundRequest[]>([]);
+  const [slots, setSlots] = useState<OwnerSlot[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   const today = new Date();
   const [weekOffset, setWeekOffset] = useState(0);
   const [dayIdx, setDayIdx] = useState(0);
   const dateTabs = Array.from({ length: 7 }, (_, i) => addDays(addDays(today, weekOffset * 7), i));
   const selectedDateStr = toISO(dateTabs[dayIdx]);
 
-  // Load venue
-  useEffect(() => {
+  const loadVenue = useCallback(async () => {
     if (!venueId) return;
-    fetchVenueById(venueId).then((r) => setVenue(r.data));
+    const items = await fetchOwnerVenues();
+    const currentVenue = items.find((item) => item.id === venueId) || null;
+    setVenue(currentVenue);
+    if (currentVenue) setSettingsForm(toSettingsForm(currentVenue));
   }, [venueId]);
 
-  // Load bookings
-  const refreshBookings = useCallback(() => {
+  const loadBookingsAndRefunds = useCallback(async () => {
     if (!venueId) return;
-    setBookings(getBookings().filter((b) => b.venueId === venueId));
-  }, [venueId]);
+    const [bookingData, refundData] = await Promise.all([
+      fetchOwnerVenueBookings(venueId, { date: selectedDateStr }),
+      fetchOwnerRefundRequests(venueId, { status: "pending_manual" }),
+    ]);
+    setBookings(bookingData.items);
+    setRefundRequests(refundData);
+  }, [venueId, selectedDateStr]);
+
+  const loadSlots = useCallback(async () => {
+    if (!venueId) return;
+    const slotData = await fetchVenueSlotsByDate(venueId, selectedDateStr);
+    setSlots(slotData.slots);
+  }, [venueId, selectedDateStr]);
 
   useEffect(() => {
-    refreshBookings();
-  }, [refreshBookings]);
+    const load = async () => {
+      if (!venueId) return;
+      try {
+        setLoading(true);
+        await Promise.all([loadVenue(), loadBookingsAndRefunds(), loadSlots()]);
+      } catch (error: any) {
+        toast.error(error?.response?.data?.message || "Không thể tải dữ liệu venue.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [venueId, loadVenue, loadBookingsAndRefunds, loadSlots]);
+
   useEffect(() => {
-    const t = setInterval(refreshBookings, 5000);
-    return () => clearInterval(t);
-  }, [refreshBookings]);
-
-  // Slot actions
-  const handleSlotAction = (startTime: string, action: SlotAction) => {
     if (!venueId) return;
-    if (action === "open") {
-      clearSlotOverride(venueId, selectedDateStr, startTime);
-      toast.success(`Slot ${startTime} đã được mở lại`);
-    } else {
-      setSlotOverride(
-        venueId,
-        selectedDateStr,
-        startTime,
-        action === "lock" ? "locked" : "unavailable"
-      );
-      toast.success(`Slot ${startTime} → ${action === "lock" ? "🔒 Khoá" : "⚠️ Unavailable"}`);
-    }
-    setSlotRefresh((n) => n + 1);
-  };
+    loadBookingsAndRefunds().catch(() => undefined);
+    loadSlots().catch(() => undefined);
+  }, [selectedDateStr, venueId, loadBookingsAndRefunds, loadSlots]);
 
-  // Booking refund actions
-  const handleAutoRefund = (b: Booking) => {
-    const updated = requestRefund(b.id);
-    if (updated) {
-      toast.success(`Hoàn tiền tự động thành công — ${formatPrice(b.totalPrice)}`);
-      refreshBookings();
-    } else {
-      toast.error("Cửa sổ hoàn tiền đã hết hạn");
+  const handleSlotAction = async (slot: OwnerSlot, action: SlotAction) => {
+    if (!venueId) return;
+    try {
+      await updateOwnerAvailability(venueId, {
+        date: selectedDateStr,
+        start_time: slot.startTime,
+        end_time: slot.endTime,
+        status: action === "open" ? "available" : "unavailable",
+      });
+      await loadSlots();
+      toast.success(action === "open" ? `Đã mở lại slot ${slot.startTime}` : `Đã chặn slot ${slot.startTime}`);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể cập nhật trạng thái slot.");
     }
   };
 
-  const handleManualRefund = (b: Booking) => {
-    const updated = ownerApproveRefund(b.id);
-    if (updated) {
-      toast.success(`Đã duyệt hoàn tiền thủ công — ${formatPrice(b.totalPrice)}`);
-    } else {
-      toast.error("Không thể duyệt hoàn tiền cho booking này");
+  const handleSaveSettings = async () => {
+    if (!venueId || !settingsForm) return;
+    try {
+      setSaving(true);
+      const payload: UpdateVenuePayload = {
+        name: settingsForm.name,
+        location: settingsForm.location,
+        description: settingsForm.description,
+      };
+      await updateOwnerVenue(venueId, payload);
+      await updateOwnerVenueSchedule(venueId, {
+        slot_price: settingsForm.slotPrice,
+        slot_duration_minutes: settingsForm.slotDurationMinutes,
+        weekly_schedule: settingsForm.weeklySchedule.map((item) => ({
+          day_of_week: item.dayOfWeek,
+          start_time: item.startTime,
+          end_time: item.endTime,
+        })),
+      });
+      await loadVenue();
+      await loadSlots();
+      toast.success("Cập nhật thông tin sân thành công.");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể cập nhật thông tin sân.");
+    } finally {
+      setSaving(false);
     }
-    refreshBookings();
   };
 
-  const handleRejectRefund = (b: Booking) => {
-    toast.info(`Đã từ chối yêu cầu hoàn tiền cho #${b.id.slice(-6).toUpperCase()}`);
+  const handleDeleteVenue = async () => {
+    if (!venue) return;
+    const confirmed = window.confirm(`Xóa sân ${venue.name}?`);
+    if (!confirmed) return;
+    try {
+      setDeleting(true);
+      await deleteOwnerVenue(venue.id);
+      toast.success(`Đã xóa ${venue.name}.`);
+      navigate("/owner/venues");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể xóa sân này.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  const TABS = [
-    {
-      id: "bookings" as Tab,
-      icon: <ClipboardList size={16} />,
-      label: `Bookings (${bookings.length})`,
-    },
+  const handleResolveRefund = async (refund: OwnerRefundRequest, action: "approve" | "reject") => {
+    try {
+      await resolveOwnerRefund(refund.id, { action });
+      await loadBookingsAndRefunds();
+      await loadSlots();
+      toast.success(action === "approve" ? "Đã duyệt hoàn tiền." : "Đã từ chối hoàn tiền.");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể xử lý refund request.");
+    }
+  };
+
+  const summary = useMemo(() => {
+    const confirmedCount = bookings.filter((booking) => booking.status === "confirmed").length;
+    const refundingCount = bookings.filter((booking) => booking.status === "refund_processing").length;
+    const manualRefundCount = refundRequests.filter((refund) => refund.status === "pending_manual").length;
+    const revenue = bookings.filter((booking) => booking.status === "confirmed").reduce((sum, booking) => sum + booking.amount, 0);
+    return { confirmedCount, refundingCount, manualRefundCount, revenue };
+  }, [bookings, refundRequests]);
+
+  const refundMap = useMemo(() => new Map(refundRequests.map((refund) => [refund.bookingId, refund])), [refundRequests]);
+
+  const tabs = [
+    { id: "bookings" as Tab, icon: <ClipboardList size={16} />, label: `Bookings (${bookings.length})` },
     { id: "schedule" as Tab, icon: <CalendarDays size={16} />, label: "Lịch & Slots" },
     { id: "settings" as Tab, icon: <Settings2 size={16} />, label: "Cài đặt sân" },
   ];
 
-  if (!venue) {
+  if (loading || !venue || !settingsForm) {
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 size={28} className="animate-spin" style={{ color: "#a04100" }} />
@@ -813,422 +454,165 @@ export default function VenueManagePage() {
     );
   }
 
-  const confirmedCount = bookings.filter((b) => b.status === "confirmed").length;
-  const refundingCount = bookings.filter((b) => b.status === "processing_refund").length;
-
   return (
-    <div className="flex flex-col min-h-full" style={{ background: "#fff8f6" }}>
-      {/* Hero */}
-      <div className="relative w-full overflow-hidden" style={{ height: 200 }}>
-        <ImageWithFallback
-          src={venue.imageUrl}
-          alt={venue.name}
-          className="w-full h-full object-cover"
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(36,25,20,0.75))" }}
-        />
-        <button
-          onClick={() => navigate("/owner/venues")}
-          className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-2 rounded-xl"
-          style={{
-            background: "rgba(255,255,255,0.15)",
-            backdropFilter: "blur(8px)",
-            color: "#fff",
-            fontFamily: "Inter, sans-serif",
-            fontSize: "14px",
-            border: "1px solid rgba(255,255,255,0.25)",
-          }}
-        >
-          <ArrowLeft size={16} /> Venues
-        </button>
-        <div className="absolute bottom-5 left-6 right-6">
-          <h1
-            style={{
-              fontFamily: "Lexend, sans-serif",
-              fontSize: "24px",
-              fontWeight: 800,
-              color: "#fff",
-            }}
-          >
-            {venue.name}
-          </h1>
-          <div className="flex items-center gap-4 mt-1 flex-wrap">
-            <span
-              className="flex items-center gap-1"
-              style={{
-                color: "rgba(255,255,255,0.85)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: "13px",
-              }}
-            >
-              <MapPin size={12} /> {venue.shortAddress}
+    <div className="min-h-full bg-[#fff8f6]">
+      <div className="relative overflow-hidden" style={{ height: 260 }}>
+        <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#ffd9c6] to-[#fff1eb] text-8xl">🏟️</div>
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom,rgba(0,0,0,0.08),rgba(36,25,20,0.78))" }} />
+        <div className="absolute left-6 right-6 top-5 flex items-center justify-between gap-3">
+          <Button asChild variant="outline" className="h-10 rounded-xl border-white/30 bg-white/10 px-4 text-white hover:bg-white/20">
+            <Link to="/owner/venues">
+              <ArrowLeft size={16} />
+              Venues
+            </Link>
+          </Button>
+          <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "rgba(255,255,255,0.24)", background: "rgba(255,255,255,0.14)" }}>
+            <Sparkles size={14} className="text-white" />
+            <span style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700, color: "#fff", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+              Owner Venue Studio
             </span>
-            <span
-              className="flex items-center gap-1"
-              style={{
-                color: "rgba(255,255,255,0.85)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: "13px",
-              }}
-            >
-              <Star size={12} fill="#ffcc00" color="#ffcc00" /> {venue.rating} ({venue.reviewCount})
+          </div>
+        </div>
+        <div className="absolute bottom-6 left-6 right-6">
+          <h1 style={{ fontFamily: "Lexend, sans-serif", fontSize: "30px", fontWeight: 800, color: "#fff" }}>{venue.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-4">
+            <span style={{ color: "rgba(255,255,255,0.85)", fontFamily: "Inter, sans-serif", fontSize: "13px" }} className="inline-flex items-center gap-1">
+              <MapPin size={12} /> {venue.location}
             </span>
-            <span
-              className="flex items-center gap-1"
-              style={{
-                color: "rgba(255,255,255,0.85)",
-                fontFamily: "Inter, sans-serif",
-                fontSize: "13px",
-              }}
-            >
-              <Users size={12} /> {venue.courtCount} courts
+            <span style={{ color: "rgba(255,255,255,0.85)", fontFamily: "Inter, sans-serif", fontSize: "13px" }} className="inline-flex items-center gap-1">
+              <Users size={12} /> {venue.weeklySchedule.length} ca / tuần
             </span>
           </div>
         </div>
       </div>
 
-      {/* Mini stats bar */}
-      <div className="flex border-b border-[#dfc0b3]" style={{ background: "#fff" }}>
-        {[
-          { label: "Total Bookings", value: bookings.length, color: "#241914" },
-          { label: "Confirmed", value: confirmedCount, color: "#006a65" },
-          { label: "Refunding", value: refundingCount, color: "#856404" },
-          {
-            label: "Revenue",
-            value: formatPrice(
-              bookings.filter((b) => b.status === "confirmed").reduce((s, b) => s + b.totalPrice, 0)
-            ),
-            color: "#a04100",
-          },
-        ].map((s, i) => (
-          <div
-            key={i}
-            className="flex-1 px-4 py-3 text-center border-r border-[#f4ded5] last:border-r-0"
-          >
-            <p
-              style={{
-                fontFamily: "Lexend, sans-serif",
-                fontSize: "18px",
-                fontWeight: 800,
-                color: s.color,
-              }}
-            >
-              {s.value}
-            </p>
-            <p
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "11px",
-                color: "#8b7266",
-                marginTop: 1,
-              }}
-            >
-              {s.label}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-[#dfc0b3] px-6" style={{ background: "#fff" }}>
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className="flex items-center gap-2 px-4 py-3.5 relative transition-colors"
-            style={{
-              fontFamily: "Inter, sans-serif",
-              fontSize: "14px",
-              fontWeight: tab === t.id ? 700 : 400,
-              color: tab === t.id ? "#a04100" : "#584238",
-              borderBottom: tab === t.id ? "2.5px solid #a04100" : "2.5px solid transparent",
-              marginBottom: -1,
-            }}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      <div className="max-w-screen-xl mx-auto w-full px-6 py-6">
-        {/* ─── Bookings Tab ─── */}
-        {tab === "bookings" && (
-          <div className="flex flex-col gap-4">
-            {/* Filter bar */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#584238" }}>
-                {bookings.length === 0
-                  ? "Chưa có booking nào cho sân này"
-                  : `${bookings.length} booking${bookings.length > 1 ? "s" : ""} tổng cộng`}
-              </p>
-              {refundingCount > 0 && (
-                <span
-                  className="px-2.5 py-1 rounded-full flex items-center gap-1"
-                  style={{
-                    background: "#fff3cd",
-                    color: "#856404",
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                  }}
-                >
-                  <AlertTriangle size={12} />
-                  {refundingCount} cần xử lý
-                </span>
-              )}
+      <div className="mx-auto -mt-10 max-w-screen-xl px-6 pb-8">
+        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Total Bookings", value: bookings.length, color: "#241914", icon: <ClipboardList size={16} /> },
+            { label: "Confirmed", value: summary.confirmedCount, color: "#006a65", icon: <CheckCircle2 size={16} /> },
+            { label: "Manual Refund", value: summary.manualRefundCount, color: "#856404", icon: <AlertTriangle size={16} /> },
+            { label: "Revenue", value: formatPrice(summary.revenue), color: "#a04100", icon: <Wallet size={16} /> },
+          ].map((item) => (
+            <div key={item.label} className="rounded-[24px] border bg-white p-5" style={{ borderColor: "#dfc0b3", boxShadow: "0 14px 30px rgba(36,25,20,0.06)" }}>
+              <div className="mb-2 text-[#8b7266]">{item.icon}</div>
+              <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "22px", fontWeight: 800, color: item.color }}>{item.value}</p>
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266", marginTop: 4 }}>{item.label}</p>
             </div>
+          ))}
+        </div>
 
-            {bookings.length === 0 ? (
-              <div
-                className="flex flex-col items-center justify-center py-16 rounded-2xl"
-                style={{ background: "#fff", border: "1.5px dashed #dfc0b3" }}
-              >
-                <CalendarDays size={48} style={{ color: "#dfc0b3", marginBottom: 12 }} />
-                <p style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", color: "#8b7266" }}>
-                  Chưa có booking nào
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                {bookings.map((b) => (
-                  <OwnerBookingCard
-                    key={b.id}
-                    booking={b}
-                    onAutoRefund={handleAutoRefund}
-                    onManualRefund={handleManualRefund}
-                    onRejectRefund={handleRejectRefund}
-                  />
-                ))}
+        <div className="overflow-hidden rounded-[28px] border bg-white" style={{ borderColor: "#dfc0b3", boxShadow: "0 20px 40px rgba(36,25,20,0.06)" }}>
+          <div className="flex flex-wrap border-b px-6" style={{ borderColor: "#dfc0b3", background: "#fff" }}>
+            {tabs.map((item) => (
+              <button key={item.id} onClick={() => setTab(item.id)} className="flex items-center gap-2 px-4 py-4" style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", fontWeight: tab === item.id ? 700 : 500, color: tab === item.id ? "#a04100" : "#584238", borderBottom: tab === item.id ? "2.5px solid #a04100" : "2.5px solid transparent", marginBottom: -1 }}>
+                {item.icon}
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-6">
+            {tab === "bookings" && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#584238" }}>
+                    {bookings.length === 0 ? "Chưa có booking nào cho sân này" : `${bookings.length} booking trong ngày ${selectedDateStr}`}
+                  </p>
+                  {summary.manualRefundCount > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1" style={{ background: "#fff1eb", color: "#a04100", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
+                      <ClipboardList size={12} /> {summary.manualRefundCount} yêu cầu thủ công
+                    </span>
+                  )}
+                </div>
+
+                {bookings.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-[24px] border border-dashed py-16" style={{ borderColor: "#dfc0b3" }}>
+                    <CalendarDays size={48} style={{ color: "#dfc0b3", marginBottom: 12 }} />
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", color: "#8b7266" }}>Chưa có booking nào</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {bookings.map((booking) => (
+                      <BookingCard key={booking.id} booking={booking} refundRequest={refundMap.get(booking.id)} onApprove={(refund) => handleResolveRefund(refund, "approve")} onReject={(refund) => handleResolveRefund(refund, "reject")} />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* ─── Schedule Tab ─── */}
-        {tab === "schedule" && (
-          <div className="flex flex-col gap-5">
-            {/* Date picker */}
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{ background: "#fff", border: "1px solid #dfc0b3" }}
-            >
-              <div className="px-5 py-4 border-b border-[#f4ded5] flex items-center justify-between">
-                <h3
-                  style={{
-                    fontFamily: "Lexend, sans-serif",
-                    fontSize: "16px",
-                    fontWeight: 700,
-                    color: "#241914",
-                  }}
-                >
-                  Quản lý lịch sân
-                </h3>
-                <span
-                  style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#8b7266" }}
-                >
-                  Click slot để lock / mở / đánh dấu unavailable
-                </span>
-              </div>
-              <div className="px-5 py-4">
-                <div className="flex items-center gap-2 mb-5">
-                  <button
-                    onClick={() => {
-                      setWeekOffset((w) => w - 1);
-                      setDayIdx(0);
-                    }}
-                    disabled={weekOffset <= 0}
-                    className="p-1.5 rounded-lg hover:bg-[#fff1eb] disabled:opacity-30"
-                    style={{ color: "#584238" }}
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <div className="flex-1 flex gap-2 overflow-x-auto pb-1">
-                    {dateTabs.map((d, i) => {
-                      const isToday = weekOffset === 0 && i === 0;
-                      const isSel = i === dayIdx;
-                      return (
-                        <button
-                          key={i}
-                          onClick={() => setDayIdx(i)}
-                          className="shrink-0 flex flex-col items-center px-3 py-2 rounded-xl transition-all"
-                          style={{
-                            background: isSel ? "#a04100" : "#fff",
-                            border: `1.5px solid ${isSel ? "#a04100" : "#dfc0b3"}`,
-                            minWidth: 68,
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontFamily: "Lexend, sans-serif",
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              color: isSel ? "#fff" : "#8b7266",
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {isToday
-                              ? "Hôm nay"
-                              : d.toLocaleDateString("vi-VN", { weekday: "short" })}
-                          </span>
-                          <span
-                            style={{
-                              fontFamily: "Lexend, sans-serif",
-                              fontSize: "18px",
-                              fontWeight: 800,
-                              color: isSel ? "#fff" : "#241914",
-                              lineHeight: 1.1,
-                            }}
-                          >
-                            {d.getDate()}
-                          </span>
-                          <span
-                            style={{
-                              fontFamily: "Inter, sans-serif",
-                              fontSize: "10px",
-                              color: isSel ? "rgba(255,255,255,0.7)" : "#8b7266",
-                            }}
-                          >
-                            {d.toLocaleDateString("en-US", { month: "short" })}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button
-                    onClick={() => {
-                      setWeekOffset((w) => w + 1);
-                      setDayIdx(0);
-                    }}
-                    className="p-1.5 rounded-lg hover:bg-[#fff1eb]"
-                    style={{ color: "#584238" }}
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-wrap items-center gap-4 mb-4">
-                  {[
-                    { bg: "#fff", border: "#dfc0b3", label: "Available" },
-                    { bg: "#e7f8f7", border: "#7de0cc", label: "Booked" },
-                    { bg: "#241914", border: "#241914", label: "🔒 Locked" },
-                    { bg: "#f4ded5", border: "#dfc0b3", label: "⚠️ Unavail." },
-                    { bg: "#f7f0ed", border: "#dfc0b3", label: "Closed" },
-                  ].map((l) => (
-                    <div key={l.label} className="flex items-center gap-1.5">
-                      <div
-                        className="w-3.5 h-3.5 rounded"
-                        style={{ background: l.bg, border: `1.5px solid ${l.border}` }}
-                      />
-                      <span
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "12px",
-                          color: "#8b7266",
-                        }}
-                      >
-                        {l.label}
-                      </span>
+            {tab === "schedule" && (
+              <div className="space-y-5">
+                <div className="overflow-hidden rounded-[24px] border" style={{ background: "#fff", borderColor: "#dfc0b3" }}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: "#f4ded5" }}>
+                    <div>
+                      <h3 style={{ fontFamily: "Lexend, sans-serif", fontSize: "18px", fontWeight: 700, color: "#241914" }}>Quản lý lịch sân</h3>
+                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#8b7266", marginTop: 4 }}>
+                        Dữ liệu slot được lấy trực tiếp từ API `GET /venues/:venueId/slots`.
+                      </p>
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                <OwnerSlotGrid
-                  venueId={venue.id}
-                  date={selectedDateStr}
-                  onAction={handleSlotAction}
-                  triggerRefresh={slotRefresh}
-                />
+                  <div className="px-5 py-4">
+                    <div className="mb-5 flex items-center gap-2">
+                      <button onClick={() => { setWeekOffset((value) => value - 1); setDayIdx(0); }} disabled={weekOffset <= 0} className="rounded-lg p-1.5 hover:bg-[#fff1eb] disabled:opacity-30" style={{ color: "#584238" }}>
+                        <ChevronLeft size={16} />
+                      </button>
+                      <div className="flex flex-1 gap-2 overflow-x-auto pb-1">
+                        {dateTabs.map((date, index) => {
+                          const isToday = weekOffset === 0 && index === 0;
+                          const isSelected = index === dayIdx;
+                          return (
+                            <button key={index} onClick={() => setDayIdx(index)} className="flex min-w-[72px] shrink-0 flex-col items-center rounded-xl px-3 py-2" style={{ background: isSelected ? "#a04100" : "#fff", border: `1.5px solid ${isSelected ? "#a04100" : "#dfc0b3"}` }}>
+                              <span style={{ fontFamily: "Lexend, sans-serif", fontSize: "11px", fontWeight: 600, color: isSelected ? "#fff" : "#8b7266", textTransform: "uppercase" }}>
+                                {isToday ? "Hôm nay" : date.toLocaleDateString("vi-VN", { weekday: "short" })}
+                              </span>
+                              <span style={{ fontFamily: "Lexend, sans-serif", fontSize: "18px", fontWeight: 800, color: isSelected ? "#fff" : "#241914", lineHeight: 1.1 }}>{date.getDate()}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button onClick={() => { setWeekOffset((value) => value + 1); setDayIdx(0); }} className="rounded-lg p-1.5 hover:bg-[#fff1eb]" style={{ color: "#584238" }}>
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
 
-                {/* Quick actions */}
-                <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-[#f4ded5]">
-                  <p
-                    style={{
-                      fontFamily: "Inter, sans-serif",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#241914",
-                      marginRight: 4,
-                    }}
-                  >
-                    Thao tác nhanh:
-                  </p>
-                  <button
-                    onClick={() => {
-                      const slots = generateSlots(venue.id, selectedDateStr);
-                      slots
-                        .filter((s) => s.status === "available")
-                        .forEach((s) => {
-                          setSlotOverride(venue.id, selectedDateStr, s.startTime, "locked");
-                        });
-                      setSlotRefresh((n) => n + 1);
-                      toast.success("Đã khoá tất cả slot còn trống");
-                    }}
-                    className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold hover:opacity-80 transition-opacity"
-                    style={{ background: "#241914", color: "#fff" }}
-                  >
-                    <Lock size={12} /> Khoá tất cả
-                  </button>
-                  <button
-                    onClick={() => {
-                      const slots = generateSlots(venue.id, selectedDateStr);
-                      slots.forEach((s) =>
-                        clearSlotOverride(venue.id, selectedDateStr, s.startTime)
-                      );
-                      setSlotRefresh((n) => n + 1);
-                      toast.success("Đã mở lại tất cả slot");
-                    }}
-                    className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold hover:opacity-80 transition-opacity"
-                    style={{ background: "#006a65", color: "#fff" }}
-                  >
-                    <LockOpen size={12} /> Mở tất cả
-                  </button>
-                  <button
-                    onClick={() => {
-                      const slots = generateSlots(venue.id, selectedDateStr);
-                      slots
-                        .filter((s) => s.status === "available")
-                        .forEach((s) => {
-                          setSlotOverride(venue.id, selectedDateStr, s.startTime, "unavailable");
-                        });
-                      setSlotRefresh((n) => n + 1);
-                      toast.success("Đã đánh dấu tất cả slot Unavailable");
-                    }}
-                    className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold hover:opacity-80 transition-opacity"
-                    style={{ background: "#856404", color: "#fff" }}
-                  >
-                    <Ban size={12} /> Mark all Unavailable
-                  </button>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+                      {slots.map((slot) => {
+                        const isUnavailable = slot.status === "unavailable";
+                        const isBooked = slot.status === "booked" || slot.status === "held" || slot.status === "refund_processing";
+                        const isAvailable = slot.status === "available";
+                        const bg = isUnavailable ? "#f4ded5" : isBooked ? "#e7f8f7" : "#fff";
+                        const border = isUnavailable ? "#dfc0b3" : isBooked ? "#7de0cc" : "#dfc0b3";
+                        const color = isUnavailable ? "#8b7266" : isBooked ? "#006a65" : "#241914";
+
+                        return (
+                          <button key={`${slot.startTime}-${slot.endTime}`} onClick={() => isAvailable ? handleSlotAction(slot, "unavailable") : isUnavailable ? handleSlotAction(slot, "open") : undefined} disabled={!isAvailable && !isUnavailable} className="flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl border-2 transition-all disabled:cursor-not-allowed disabled:opacity-70" style={{ background: bg, borderColor: border }}>
+                            <span style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color }}>{slot.startTime}</span>
+                            <span style={{ fontFamily: "Inter, sans-serif", fontSize: "10px", color }}>{slot.status}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: "#f4ded5" }}>
+                      <Button onClick={async () => { for (const slot of slots.filter((item) => item.status === "available")) { await updateOwnerAvailability(venue.id, { date: selectedDateStr, start_time: slot.startTime, end_time: slot.endTime, status: "unavailable" }); } await loadSlots(); toast.success("Đã chặn tất cả slot trống"); }} className="h-9 rounded-xl border-0 px-3" style={{ background: "#856404", color: "#fff", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
+                        <Ban size={12} /> Block all available
+                      </Button>
+                      <Button onClick={async () => { for (const slot of slots.filter((item) => item.status === "unavailable")) { await updateOwnerAvailability(venue.id, { date: selectedDateStr, start_time: slot.startTime, end_time: slot.endTime, status: "available" }); } await loadSlots(); toast.success("Đã mở lại toàn bộ slot unavailable"); }} className="h-9 rounded-xl border-0 px-3" style={{ background: "#006a65", color: "#fff", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
+                        <LockOpen size={12} /> Open all unavailable
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* ─── Settings Tab ─── */}
-        {tab === "settings" && (
-          <div
-            className="rounded-2xl p-6"
-            style={{ background: "#fff", border: "1px solid #dfc0b3" }}
-          >
-            <h3
-              style={{
-                fontFamily: "Lexend, sans-serif",
-                fontSize: "16px",
-                fontWeight: 700,
-                color: "#241914",
-                marginBottom: 20,
-              }}
-            >
-              Thông tin sân
-            </h3>
-            <SettingsTab venue={venue} />
+            {tab === "settings" && (
+              <SettingsTab form={settingsForm} onChange={setSettingsForm} onSave={handleSaveSettings} onDelete={handleDeleteVenue} saving={saving} deleting={deleting} />
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

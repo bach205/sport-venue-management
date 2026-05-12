@@ -1,441 +1,374 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import {
-  Building2,
+  Plus,
+  MapPin,
+  Clock3,
+  ArrowRight,
+  Pencil,
   CalendarDays,
-  TrendingUp,
-  DollarSign,
-  ChevronRight,
-  Star,
-  Users,
-  Clock,
-  AlertCircle,
+  Wallet,
+  Trash2,
+  Search,
+  Sparkles,
+  Building2,
+  X,
 } from "lucide-react";
-import { getCurrentUser } from "../../auth/store/authStore";
-import { MOCK_VENUES } from "../../venues/api/venuesApi";
-import { getBookings, getRefundWindowRemaining } from "../../venues/store/bookingStore";
-import type { Booking } from "../../venues/types/venues.types";
-import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
+import { toast } from "sonner";
 
-function formatPrice(n: number) {
-  return new Intl.NumberFormat("vi-VN").format(n) + "₫";
-}
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Label } from "@/shared/components/ui/label";
+import {
+  createOwnerVenue,
+  deleteOwnerVenue,
+  fetchOwnerVenues,
+  type CreateVenuePayload,
+  type OwnerVenue,
+} from "@/features/owner/api/ownerVenueApi";
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
-
-const SPORT_EMOJI: Record<string, string> = {
-  tennis: "🎾",
-  basketball: "🏀",
-  badminton: "🏸",
-  football: "⚽",
-  pickleball: "🏓",
-  volleyball: "🏐",
+const EMPTY_FORM: CreateVenuePayload = {
+  name: "",
+  location: "",
+  description: "",
+  slot_price: 120000,
+  slot_duration_minutes: 60,
+  weekly_schedule: [
+    {
+      day_of_week: 1,
+      start_time: "06:00",
+      end_time: "22:00",
+    },
+  ],
 };
 
+const DAY_OPTIONS = [
+  { value: 0, label: "CN" },
+  { value: 1, label: "T2" },
+  { value: 2, label: "T3" },
+  { value: 3, label: "T4" },
+  { value: 4, label: "T5" },
+  { value: 5, label: "T6" },
+  { value: 6, label: "T7" },
+];
+
+function formatPrice(value: number) {
+  return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
+}
+
+function summarizeSchedule(venue: OwnerVenue) {
+  if (!venue.weeklySchedule.length) return "Chưa có lịch";
+  const first = venue.weeklySchedule[0];
+  return `${DAY_OPTIONS.find((day) => day.value === first.dayOfWeek)?.label ?? "T2"} · ${first.startTime} - ${first.endTime}`;
+}
+
 export default function VenueOwnerDashboard() {
-  const navigate = useNavigate();
-  const user = getCurrentUser();
-  const ownedIds = user?.ownedVenueIds ?? [];
-  const venues = MOCK_VENUES.filter((v) => ownedIds.includes(v.id));
-  const [allBookings, setAllBookings] = useState<Booking[]>(() => getBookings());
+  const [venues, setVenues] = useState<OwnerVenue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [form, setForm] = useState<CreateVenuePayload>(EMPTY_FORM);
+
+  const loadVenues = async () => {
+    try {
+      setLoading(true);
+      const items = await fetchOwnerVenues();
+      setVenues(items);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể tải danh sách venue.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const t = setInterval(() => setAllBookings([...getBookings()]), 5000);
-    return () => clearInterval(t);
+    loadVenues();
   }, []);
 
-  // Bookings that belong to owner's venues
-  const myBookings = allBookings.filter((b) => ownedIds.includes(b.venueId));
-  const confirmedBookings = myBookings.filter((b) => b.status === "confirmed");
-  const pendingRefunds = myBookings.filter((b) => b.status === "processing_refund");
-  const totalRevenue = myBookings
-    .filter((b) => b.status === "confirmed" || b.status === "processing_refund")
-    .reduce((s, b) => s + b.totalPrice, 0);
+  const filteredVenues = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return venues;
+    return venues.filter(
+      (venue) =>
+        venue.name.toLowerCase().includes(keyword) ||
+        venue.location.toLowerCase().includes(keyword) ||
+        venue.description.toLowerCase().includes(keyword)
+    );
+  }, [search, venues]);
 
-  // Bookings needing attention (refund window still open = auto-refundable)
-  const autoRefundable = confirmedBookings.filter((b) => getRefundWindowRemaining(b) > 0);
+  const stats = useMemo(() => {
+    const totalRanges = venues.reduce((sum, venue) => sum + venue.weeklySchedule.length, 0);
+    const avgPrice = venues.length
+      ? Math.round(venues.reduce((sum, venue) => sum + venue.slotPrice, 0) / venues.length)
+      : 0;
 
-  const stats = [
-    {
-      icon: <Building2 size={20} />,
-      label: "Venues",
-      value: venues.length,
-      sub: "Active",
-      bg: "#fff1eb",
-      color: "#a04100",
-    },
-    {
-      icon: <CalendarDays size={20} />,
-      label: "Total Bookings",
-      value: myBookings.length,
-      sub: `${confirmedBookings.length} confirmed`,
-      bg: "#e7f8f7",
-      color: "#006a65",
-    },
-    {
-      icon: <DollarSign size={20} />,
-      label: "Revenue",
-      value: formatPrice(totalRevenue),
-      sub: "All time",
-      bg: "#fff1eb",
-      color: "#a04100",
-      wide: true,
-    },
-    {
-      icon: <AlertCircle size={20} />,
-      label: "Pending Refunds",
-      value: pendingRefunds.length,
-      sub: autoRefundable.length > 0 ? `${autoRefundable.length} auto` : "None",
-      bg: pendingRefunds.length > 0 ? "#fff3cd" : "#f4ded5",
-      color: pendingRefunds.length > 0 ? "#856404" : "#8b7266",
-    },
-  ];
+    return [
+      { label: "Tổng sân", value: String(venues.length).padStart(2, "0"), icon: "🏟️" },
+      { label: "Ca hoạt động", value: String(totalRanges).padStart(2, "0"), icon: "📅" },
+      { label: "Giá trung bình", value: avgPrice ? formatPrice(avgPrice) : "0đ", icon: "💰" },
+    ];
+  }, [venues]);
+
+  const handleCreateVenue = async () => {
+    if (!form.name.trim() || !form.location.trim()) {
+      toast.error("Vui lòng nhập tên sân và địa điểm.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const created = await createOwnerVenue(form);
+      setVenues((current) => [created, ...current]);
+      setForm(EMPTY_FORM);
+      setShowCreateForm(false);
+      toast.success("Đã tạo sân mới thành công.");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể tạo sân mới.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteVenue = async (venue: OwnerVenue) => {
+    const confirmed = window.confirm(`Xóa sân ${venue.name}?`);
+    if (!confirmed) return;
+
+    setDeletingId(venue.id);
+    try {
+      await deleteOwnerVenue(venue.id);
+      setVenues((current) => current.filter((item) => item.id !== venue.id));
+      toast.success(`Đã xóa ${venue.name}.`);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Không thể xóa sân này.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
-    <div className="px-6 py-8 max-w-screen-xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1
-          style={{
-            fontFamily: "Lexend, sans-serif",
-            fontSize: "28px",
-            fontWeight: 700,
-            color: "#241914",
-          }}
+    <div className="min-h-screen bg-[#fffaf7] px-6 py-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+        <section
+          className="overflow-hidden rounded-[28px] border bg-white"
+          style={{ borderColor: "#dfc0b3", boxShadow: "0 20px 40px rgba(36,25,20,0.08)" }}
         >
-          Xin chào, {user?.name?.split(" ")[0]} 👋
-        </h1>
-        <p
-          style={{
-            fontFamily: "Inter, sans-serif",
-            fontSize: "14px",
-            color: "#584238",
-            marginTop: 4,
-          }}
-        >
-          Đây là tổng quan hoạt động các sân của bạn hôm nay
-        </p>
-      </div>
+          <div className="grid gap-0 lg:grid-cols-[1.4fr_0.9fr]">
+            <div className="p-7 lg:p-9">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "#dfc0b3", background: "#fff1eb" }}>
+                <Sparkles size={14} className="text-[#a04100]" />
+                <span className="uppercase tracking-[0.18em] text-[#a04100]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
+                  Owner Control Center
+                </span>
+              </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((s, i) => (
-          <div
-            key={i}
-            className="rounded-2xl p-5"
-            style={{ background: s.bg, border: `1px solid ${s.color}22` }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ background: s.color + "22", color: s.color }}
-              >
-                {s.icon}
+              <h1 className="text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "34px", fontWeight: 700, lineHeight: 1.15 }}>
+                Quản lý venue bằng dữ liệu thật từ backend.
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-[#584238]" style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", lineHeight: 1.7 }}>
+                Danh sách sân, tạo sân mới và xóa sân hiện đang gọi trực tiếp owner API thay vì mock data.
+              </p>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Button
+                  onClick={() => setShowCreateForm((value) => !value)}
+                  className="h-12 rounded-xl px-5 gap-2 border-0"
+                  style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}
+                >
+                  {showCreateForm ? <X size={18} /> : <Plus size={18} />}
+                  {showCreateForm ? "Đóng form tạo sân" : "Tạo sân mới"}
+                </Button>
+
+                <div className="relative min-w-[280px] flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b7266]" size={16} />
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Tìm theo tên sân hoặc địa điểm"
+                    className="h-12 border-[#dfc0b3] pl-9 focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                    style={{ fontFamily: "Inter, sans-serif" }}
+                  />
+                </div>
               </div>
             </div>
-            <p
-              style={{
-                fontFamily: "Lexend, sans-serif",
-                fontSize: s.wide ? "18px" : "26px",
-                fontWeight: 800,
-                color: "#241914",
-                lineHeight: 1.1,
-              }}
-            >
-              {s.value}
-            </p>
-            <p
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "13px",
-                color: "#584238",
-                marginTop: 4,
-              }}
-            >
-              {s.label}
-            </p>
-            <p
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "12px",
-                color: s.color,
-                marginTop: 2,
-                fontWeight: 500,
-              }}
-            >
-              {s.sub}
-            </p>
-          </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ─── My Venues ─────────────────────────────────────── */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h2
-              style={{
-                fontFamily: "Lexend, sans-serif",
-                fontSize: "18px",
-                fontWeight: 700,
-                color: "#241914",
-              }}
-            >
-              Sân của tôi
-            </h2>
-            <button
-              onClick={() => navigate("/owner/venues")}
-              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontSize: "13px",
-                color: "#a04100",
-                fontWeight: 600,
-              }}
-            >
-              Xem tất cả <ChevronRight size={14} />
-            </button>
-          </div>
-
-          {venues.length === 0 ? (
-            <div
-              className="rounded-2xl p-8 text-center"
-              style={{ background: "#fff", border: "1.5px dashed #dfc0b3" }}
-            >
-              <Building2 size={36} style={{ color: "#dfc0b3", margin: "0 auto 12px" }} />
-              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#8b7266" }}>
-                Chưa có sân nào. Hãy thêm sân đầu tiên!
-              </p>
+            <div className="border-t p-7 lg:border-l lg:border-t-0 lg:p-9" style={{ borderColor: "#f4ded5", background: "linear-gradient(180deg, #fff8f3 0%, #fff 100%)" }}>
+              <div className="grid grid-cols-1 gap-3">
+                {stats.map((item) => (
+                  <div key={item.label} className="rounded-2xl border bg-white p-4" style={{ borderColor: "#dfc0b3" }}>
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-2xl">{item.icon}</span>
+                      <span className="rounded-full px-2 py-1" style={{ background: "#fff1eb", border: "1px solid #dfc0b3", color: "#a04100", fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
+                        API
+                      </span>
+                    </div>
+                    <h3 style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700, color: "#241914" }}>{item.value}</h3>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238" }}>{item.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            venues.map((venue) => {
-              const vBookings = myBookings.filter((b) => b.venueId === venue.id);
-              const vRevenue = vBookings
-                .filter((b) => b.status === "confirmed")
-                .reduce((s, b) => s + b.totalPrice, 0);
-              return (
-                <div
-                  key={venue.id}
-                  className="rounded-2xl overflow-hidden flex gap-0 cursor-pointer hover:shadow-md transition-shadow"
-                  style={{ background: "#fff", border: "1px solid #dfc0b3" }}
-                  onClick={() => navigate(`/owner/venues/${venue.id}`)}
+          </div>
+        </section>
+
+        {showCreateForm && (
+          <section className="rounded-[28px] border bg-white p-6 lg:p-7" style={{ borderColor: "#dfc0b3" }}>
+            <div className="mb-5">
+              <p className="text-[#a04100] uppercase tracking-[0.18em]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
+                Create Venue
+              </p>
+              <h2 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700 }}>
+                Tạo venue mới
+              </h2>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Tên sân</Label>
+                <Input value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Địa điểm</Label>
+                <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Giá mỗi slot</Label>
+                <Input type="number" value={form.slot_price} onChange={(e) => setForm((prev) => ({ ...prev, slot_price: Number(e.target.value) || 0 }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Thời lượng slot (phút)</Label>
+                <Input type="number" value={form.slot_duration_minutes} onChange={(e) => setForm((prev) => ({ ...prev, slot_duration_minutes: Number(e.target.value) || 60 }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Thứ hoạt động</Label>
+                <select
+                  value={form.weekly_schedule[0]?.day_of_week ?? 1}
+                  onChange={(e) => setForm((prev) => ({ ...prev, weekly_schedule: [{ ...prev.weekly_schedule[0], day_of_week: Number(e.target.value) }] }))}
+                  className="h-11 w-full rounded-xl border px-3"
+                  style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}
                 >
-                  <div className="relative shrink-0 overflow-hidden" style={{ width: 130 }}>
-                    <ImageWithFallback
-                      src={venue.imageUrl}
-                      alt={venue.name}
-                      className="w-full h-full object-cover"
-                      style={{ height: "100%", minHeight: 110 }}
-                    />
-                    <div className="absolute bottom-2 left-2">
-                      <span
-                        className="px-2 py-0.5 rounded-md capitalize"
-                        style={{
-                          background: "rgba(36,25,20,0.6)",
-                          backdropFilter: "blur(4px)",
-                          color: "#fff",
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "11px",
-                        }}
-                      >
-                        {SPORT_EMOJI[venue.sports[0]]} {venue.sports[0]}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 p-4 flex flex-col gap-2">
-                    <div className="flex items-start justify-between">
-                      <h3
-                        style={{
-                          fontFamily: "Lexend, sans-serif",
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          color: "#241914",
-                        }}
-                      >
-                        {venue.name}
-                      </h3>
-                      <span className="flex items-center gap-1">
-                        <Star size={12} fill="#a04100" color="#a04100" />
-                        <span
-                          style={{
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: "12px",
-                            color: "#241914",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {venue.rating}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <span
-                        className="flex items-center gap-1"
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "12px",
-                          color: "#584238",
-                        }}
-                      >
-                        <CalendarDays size={12} style={{ color: "#a04100" }} />
-                        {vBookings.length} bookings
-                      </span>
-                      <span
-                        className="flex items-center gap-1"
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "12px",
-                          color: "#584238",
-                        }}
-                      >
-                        <Users size={12} style={{ color: "#a04100" }} />
-                        {venue.courtCount} courts
-                      </span>
-                      <span
-                        className="flex items-center gap-1"
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "12px",
-                          color: "#584238",
-                        }}
-                      >
-                        <Clock size={12} style={{ color: "#a04100" }} />
-                        {venue.openHours}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-auto pt-2 border-t border-[#f4ded5]">
-                      <span
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "12px",
-                          color: "#8b7266",
-                        }}
-                      >
-                        Revenue
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "Lexend, sans-serif",
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          color: "#a04100",
-                        }}
-                      >
-                        {formatPrice(vRevenue)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center pr-4" style={{ color: "#dfc0b3" }}>
-                    <ChevronRight size={18} />
-                  </div>
+                  {DAY_OPTIONS.map((day) => (
+                    <option key={day.value} value={day.value}>{day.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Khung giờ</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input value={form.weekly_schedule[0]?.start_time ?? "06:00"} onChange={(e) => setForm((prev) => ({ ...prev, weekly_schedule: [{ ...prev.weekly_schedule[0], start_time: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+                  <Input value={form.weekly_schedule[0]?.end_time ?? "22:00"} onChange={(e) => setForm((prev) => ({ ...prev, weekly_schedule: [{ ...prev.weekly_schedule[0], end_time: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
                 </div>
-              );
-            })
-          )}
-        </div>
+              </div>
+              <div className="space-y-1.5 lg:col-span-2">
+                <Label>Mô tả</Label>
+                <textarea value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} className="min-h-[120px] w-full rounded-xl border px-3 py-3 outline-none transition-colors focus:border-[#006a65]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#241914" }} />
+              </div>
+            </div>
 
-        {/* ─── Recent Bookings ────────────────────────────────── */}
-        <div className="flex flex-col gap-4">
-          <h2
-            style={{
-              fontFamily: "Lexend, sans-serif",
-              fontSize: "18px",
-              fontWeight: 700,
-              color: "#241914",
-            }}
-          >
-            Booking gần đây
-          </h2>
-          {myBookings.length === 0 ? (
-            <div
-              className="rounded-2xl p-6 text-center"
-              style={{ background: "#fff", border: "1.5px dashed #dfc0b3" }}
-            >
-              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#8b7266" }}>
-                Chưa có booking nào
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button onClick={handleCreateVenue} disabled={submitting} className="h-11 rounded-xl px-5 border-0" style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}>
+                {submitting ? "Đang tạo..." : "Lưu venue mới"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => { setForm(EMPTY_FORM); setShowCreateForm(false); }} className="h-11 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]" style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}>
+                Hủy
+              </Button>
+            </div>
+          </section>
+        )}
+
+        <section>
+          <div className="mb-4 flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-[#a04100] uppercase tracking-[0.18em]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
+                Venue Library
+              </p>
+              <h2 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "28px", fontWeight: 700 }}>
+                Danh sách venue của bạn
+              </h2>
+            </div>
+            <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}>
+              {filteredVenues.length} venue hiển thị
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="rounded-[28px] border bg-white p-10 text-center" style={{ borderColor: "#dfc0b3" }}>
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#8b7266" }}>Đang tải venues...</p>
+            </div>
+          ) : filteredVenues.length === 0 ? (
+            <div className="rounded-[28px] border bg-white p-10 text-center" style={{ borderColor: "#dfc0b3" }}>
+              <Building2 size={40} className="mx-auto mb-3 text-[#dfc0b3]" />
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", color: "#584238" }}>
+                Không tìm thấy venue phù hợp.
               </p>
             </div>
           ) : (
-            <div
-              className="rounded-2xl overflow-hidden flex flex-col divide-y divide-[#f4ded5]"
-              style={{ background: "#fff", border: "1px solid #dfc0b3" }}
-            >
-              {myBookings.slice(0, 6).map((b) => {
-                const STATUS_COLOR: Record<string, string> = {
-                  confirmed: "#006a65",
-                  processing_refund: "#856404",
-                  refunded: "#8b7266",
-                  cancelled: "#8b7266",
-                };
-                const STATUS_BG: Record<string, string> = {
-                  confirmed: "#e7f8f7",
-                  processing_refund: "#fff3cd",
-                  refunded: "#f4ded5",
-                  cancelled: "#f4ded5",
-                };
-                return (
-                  <div key={b.id} className="flex items-center gap-3 px-4 py-3">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg"
-                      style={{ background: "#fff1eb" }}
-                    >
-                      {SPORT_EMOJI[b.sport]}
+            <div className="grid gap-5 lg:grid-cols-2">
+              {filteredVenues.map((venue) => (
+                <article key={venue.id} className="overflow-hidden rounded-[28px] border bg-white" style={{ borderColor: "#dfc0b3", boxShadow: "0 14px 32px rgba(36,25,20,0.06)" }}>
+                  <div className="flex h-48 items-center justify-center bg-gradient-to-br from-[#ffd9c6] to-[#fff1eb] text-6xl">🏟️</div>
+                  <div className="p-5">
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div>
+                        <h3 style={{ fontFamily: "Lexend, sans-serif", fontSize: "22px", fontWeight: 700, color: "#241914" }}>{venue.name}</h3>
+                        <div className="mt-1 flex items-center gap-1 text-[#584238]">
+                          <MapPin size={15} />
+                          <span style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}>{venue.location}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Link to={`/owner/venues/${venue.id}`}>
+                          <button className="flex h-10 w-10 items-center justify-center rounded-xl border transition-colors hover:bg-[#fff1eb]" style={{ borderColor: "#dfc0b3" }}>
+                            <Pencil size={16} className="text-[#a04100]" />
+                          </button>
+                        </Link>
+                        <button onClick={() => handleDeleteVenue(venue)} disabled={deletingId === venue.id} className="flex h-10 w-10 items-center justify-center rounded-xl border transition-colors hover:bg-[#fff0f0] disabled:opacity-50" style={{ borderColor: "#f0c5c5" }}>
+                          <Trash2 size={16} className="text-[#ba1a1a]" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="truncate"
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          color: "#241914",
-                        }}
-                      >
-                        {b.venueName}
-                      </p>
-                      <p
-                        style={{
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "12px",
-                          color: "#8b7266",
-                        }}
-                      >
-                        {formatDate(b.date)} · {b.slots.length} slot{b.slots.length > 1 ? "s" : ""}
-                      </p>
+
+                    <div className="mb-5 grid grid-cols-3 gap-3">
+                      <div className="rounded-2xl p-3" style={{ background: "#fef4ef" }}>
+                        <Wallet size={16} className="mb-2 text-[#a04100]" />
+                        <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>{formatPrice(venue.slotPrice)}</p>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>mỗi slot</span>
+                      </div>
+                      <div className="rounded-2xl p-3" style={{ background: "#eefbf7" }}>
+                        <Clock3 size={16} className="mb-2 text-[#006a65]" />
+                        <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>{venue.slotDurationMinutes}m</p>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>thời lượng</span>
+                      </div>
+                      <div className="rounded-2xl p-3" style={{ background: "#f3f7ff" }}>
+                        <CalendarDays size={16} className="mb-2 text-[#1a5fb4]" />
+                        <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>{venue.weeklySchedule.length}</p>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>ca / tuần</span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span
-                        className="px-2 py-0.5 rounded-full"
-                        style={{
-                          background: STATUS_BG[b.status],
-                          color: STATUS_COLOR[b.status],
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {b.status === "processing_refund" ? "Refunding" : b.status}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "Lexend, sans-serif",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          color: "#a04100",
-                        }}
-                      >
-                        {formatPrice(b.totalPrice)}
-                      </span>
+
+                    <div className="mb-4 rounded-2xl px-3 py-2" style={{ background: "#fff8f3" }}>
+                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>Lịch mẫu</p>
+                      <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>{summarizeSchedule(venue)}</p>
+                    </div>
+
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", lineHeight: 1.6 }}>{venue.description}</p>
+
+                    <div className="mt-5 flex items-center gap-3">
+                      <Link to={`/owner/venues/${venue.id}`} className="flex-1">
+                        <Button className="h-11 w-full rounded-xl gap-2 border-0" style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}>
+                          Quản lý sân
+                          <ArrowRight size={16} />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
-                );
-              })}
+                </article>
+              ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
