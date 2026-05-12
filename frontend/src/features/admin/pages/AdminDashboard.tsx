@@ -25,9 +25,9 @@ function timeAgo(d: string) {
 }
 
 const ROLE_STYLE: Record<UserRole, { bg: string; color: string; label: string }> = {
-  player:  { bg: '#d0f5ee', color: '#00785e', label: 'Người chơi' },
-  owner:   { bg: '#ddeeff', color: '#1a5fb4', label: 'Chủ sân' },
-  admin:   { bg: '#ffd6d6', color: '#c0392b', label: 'Admin' },
+  user:  { bg: '#d0f5ee', color: '#00785e', label: 'Người chơi' },
+  owner: { bg: '#ddeeff', color: '#1a5fb4', label: 'Chủ sân' },
+  admin: { bg: '#ffd6d6', color: '#c0392b', label: 'Admin' },
 };
 
 const STATUS_STYLE: Record<UserStatus, { bg: string; color: string; label: string; icon: React.ReactNode }> = {
@@ -81,7 +81,7 @@ function ActionMenu({ user, onClose, onAction }: {
         {/* Role change */}
         <div className="px-3 py-2 border-b border-[#f4ded5]">
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 4, paddingLeft: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Change Role</p>
-          {(['player', 'owner', 'admin'] as UserRole[]).filter(r => r !== user.role).map(role => (
+          {(['user', 'owner', 'admin'] as UserRole[]).filter(r => r !== user.role).map(role => (
             <button
               key={role}
               onClick={() => { onAction(`role:${role}`, user); onClose(); }}
@@ -414,7 +414,7 @@ export default function AdminDashboard() {
             {/* Role filter */}
             <select value={roleFilter} onChange={e => setRoleFilter(e.target.value as any)} style={selectStyle}>
               <option value="all">All Roles</option>
-              <option value="player">Người chơi</option>
+              <option value="user">Người chơi</option>
               <option value="owner">Chủ sân</option>
               <option value="admin">Admin</option>
             </select>
@@ -487,7 +487,7 @@ export default function AdminDashboard() {
           </span>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              {(['player', 'owner', 'admin'] as UserRole[]).map(role => (
+              {(['user', 'owner', 'admin'] as UserRole[]).map(role => (
                 <span key={role} className="flex items-center gap-1.5" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>
                   <span className="w-2 h-2 rounded-full inline-block" style={{ background: ROLE_STYLE[role].color }} />
                   {ROLE_STYLE[role].label}: {users.filter(u => u.role === role).length}

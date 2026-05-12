@@ -22,55 +22,68 @@ import FeedPage from "../features/feed/pages/FeedPage";
 import AppLayout from "@/shared/components/AppLayout";
 import AdminLayout from "@/shared/components/AdminLayout";
 import OwnerLayout from "@/shared/components/OwnerLayout";
+import ProtectedRoute from "./ProtectedRoute";
+import RoleGuard from "./RoleGuard";
 
 export const router = createBrowserRouter([
-  // ─── Auth (no layout) ──────────────────────────────────────────────────────
   { path: "/login", element: <LoginPage /> },
   { path: "/register", element: <RegisterPage /> },
   { path: "/verify-email", element: <VerifyEmailPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
 
-  // ─── Player / General (AppLayout) ──────────────────────────────────────────
   {
-    path: "/",
-    element: <AppLayout />,
+    element: <ProtectedRoute />,
     children: [
-      { index: true, element: <Navigate to="/discover" replace /> },
-      { path: "discover", element: <DiscoverPage /> },
-      { path: "messages", element: <MessagesPage /> },
-      { path: "venues", element: <VenuesPage /> },
-      { path: "venues/:venueId", element: <VenueDetailPage /> },
-      { path: "bookings", element: <BookingsPage /> },
-      { path: "profile", element: <ProfilePage /> },
-      { path: "feed", element: <FeedPage /> },
-    ],
-  },
+      {
+        path: "/",
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <Navigate to="/discover" replace /> },
+          { path: "discover", element: <DiscoverPage /> },
+          { path: "messages", element: <MessagesPage /> },
+          { path: "venues", element: <VenuesPage /> },
+          { path: "venues/:venueId", element: <VenueDetailPage /> },
+          { path: "bookings", element: <BookingsPage /> },
+          { path: "profile", element: <ProfilePage /> },
+          { path: "feed", element: <FeedPage /> },
+        ],
+      },
 
-  // ─── Venue Owner Portal (OwnerLayout) ──────────────────────────────────────
-  {
-    path: "/owner",
-    element: <OwnerLayout />,
-    children: [
-      { index: true, element: <Navigate to="/owner/venues" replace /> },
-      { path: "venues", element: <VenueOwnerDashboard /> },
-      { path: "venues/:venueId", element: <VenueManagePage /> },
-      { path: "bookings", element: <VenueOwnerDashboard /> },
-      { path: "analytics", element: <VenueOwnerDashboard /> },
-      { path: "settings", element: <VenueOwnerDashboard /> },
-    ],
-  },
+      {
+        element: <RoleGuard allowedRoles={["owner", "admin"]} />,
+        children: [
+          {
+            path: "/owner",
+            element: <OwnerLayout />,
+            children: [
+              { index: true, element: <Navigate to="/owner/venues" replace /> },
+              { path: "venues", element: <VenueOwnerDashboard /> },
+              { path: "venues/:venueId", element: <VenueManagePage /> },
+              { path: "bookings", element: <VenueOwnerDashboard /> },
+              { path: "analytics", element: <VenueOwnerDashboard /> },
+              { path: "settings", element: <VenueOwnerDashboard /> },
+            ],
+          },
+        ],
+      },
 
-  // ─── Admin Portal (AdminLayout) ────────────────────────────────────────────
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      { index: true, element: <AdminDashboard /> },
-      { path: "users", element: <AdminDashboard /> },
-      { path: "reports", element: <AdminDashboard /> },
-      { path: "analytics", element: <AdminDashboard /> },
-      { path: "settings", element: <AdminDashboard /> },
+      {
+        element: <RoleGuard allowedRoles={["admin"]} />,
+        children: [
+          {
+            path: "/admin",
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <AdminDashboard /> },
+              { path: "users", element: <AdminDashboard /> },
+              { path: "reports", element: <AdminDashboard /> },
+              { path: "analytics", element: <AdminDashboard /> },
+              { path: "settings", element: <AdminDashboard /> },
+            ],
+          },
+        ],
+      },
     ],
   },
 ]);

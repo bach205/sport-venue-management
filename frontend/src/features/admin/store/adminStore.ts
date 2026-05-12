@@ -49,7 +49,7 @@ export interface AdminStats {
 // ─── Mock data ────────────────────────────────────────────────────────────────
 let _users: AdminUser[] = [
   {
-    id: 'u-player', name: 'Alex Nguyen', email: 'player@demo.com', role: 'player',
+    id: 'u-player', name: 'Alex Nguyen', email: 'player@demo.com', role: 'user',
     status: 'active', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Alex',
     city: 'Ho Chi Minh City', joinedAt: '2026-03-01', lastActiveAt: '2026-05-08',
     totalBookings: 4, totalRevenue: 0, sportPreferences: ['badminton', 'tennis'], ownedVenueCount: 0, isFlagged: false,
@@ -67,19 +67,19 @@ let _users: AdminUser[] = [
     totalBookings: 0, totalRevenue: 0, sportPreferences: [], ownedVenueCount: 0, isFlagged: false,
   },
   {
-    id: 'u-004', name: 'Linh Pham', email: 'linh.pham@gmail.com', role: 'player',
+    id: 'u-004', name: 'Linh Pham', email: 'linh.pham@gmail.com', role: 'user',
     status: 'active', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Linh',
     city: 'Hanoi', joinedAt: '2026-01-15', lastActiveAt: '2026-05-06',
     totalBookings: 8, totalRevenue: 0, sportPreferences: ['badminton', 'volleyball'], ownedVenueCount: 0, isFlagged: false,
   },
   {
-    id: 'u-005', name: 'Tuan Vo', email: 'tuanvo.hcm@email.com', role: 'player',
+    id: 'u-005', name: 'Tuan Vo', email: 'tuanvo.hcm@email.com', role: 'user',
     status: 'active', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Tuan',
     city: 'Ho Chi Minh City', joinedAt: '2026-02-20', lastActiveAt: '2026-05-05',
     totalBookings: 2, totalRevenue: 0, sportPreferences: ['football', 'basketball'], ownedVenueCount: 0, isFlagged: false,
   },
   {
-    id: 'u-006', name: 'Hoa Nguyen', email: 'hoa.nguyen@ymail.com', role: 'player',
+    id: 'u-006', name: 'Hoa Nguyen', email: 'hoa.nguyen@ymail.com', role: 'user',
     status: 'suspended', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Hoa',
     city: 'Da Nang', joinedAt: '2026-01-05', lastActiveAt: '2026-04-10',
     totalBookings: 1, totalRevenue: 0, sportPreferences: ['tennis'], ownedVenueCount: 0,
@@ -93,13 +93,13 @@ let _users: AdminUser[] = [
     isFlagged: false,
   },
   {
-    id: 'u-008', name: 'Phuong Trinh', email: 'phuongtrinh@outlook.com', role: 'player',
+    id: 'u-008', name: 'Phuong Trinh', email: 'phuongtrinh@outlook.com', role: 'user',
     status: 'active', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Phuong',
     city: 'Ho Chi Minh City', joinedAt: '2026-03-10', lastActiveAt: '2026-05-07',
     totalBookings: 6, totalRevenue: 0, sportPreferences: ['pickleball', 'tennis'], ownedVenueCount: 0, isFlagged: false,
   },
   {
-    id: 'u-009', name: 'Nam Bui', email: 'nambui.athlete@gmail.com', role: 'player',
+    id: 'u-009', name: 'Nam Bui', email: 'nambui.athlete@gmail.com', role: 'user',
     status: 'active', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Nam',
     city: 'Can Tho', joinedAt: '2026-02-14', lastActiveAt: '2026-05-04',
     totalBookings: 3, totalRevenue: 0, sportPreferences: ['football'], ownedVenueCount: 0, isFlagged: false,
@@ -111,13 +111,13 @@ let _users: AdminUser[] = [
     totalBookings: 5, totalRevenue: 8_400_000, sportPreferences: ['volleyball'], ownedVenueCount: 2, isFlagged: false,
   },
   {
-    id: 'u-011', name: 'Khoa Dang', email: 'khoadang.hcm@icloud.com', role: 'player',
+    id: 'u-011', name: 'Khoa Dang', email: 'khoadang.hcm@icloud.com', role: 'user',
     status: 'active', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Khoa',
     city: 'Binh Duong', joinedAt: '2026-04-01', lastActiveAt: '2026-05-03',
     totalBookings: 1, totalRevenue: 0, sportPreferences: ['basketball'], ownedVenueCount: 0, isFlagged: false,
   },
   {
-    id: 'u-012', name: 'My Hanh', email: 'myhanh.badminton@gmail.com', role: 'player',
+    id: 'u-012', name: 'My Hanh', email: 'myhanh.badminton@gmail.com', role: 'user',
     status: 'suspended', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=My',
     city: 'Ho Chi Minh City', joinedAt: '2026-01-20', lastActiveAt: '2026-03-15',
     totalBookings: 0, totalRevenue: 0, sportPreferences: ['badminton'],
@@ -130,14 +130,14 @@ let _users: AdminUser[] = [
     totalBookings: 20, totalRevenue: 32_500_000, sportPreferences: ['volleyball', 'football'], ownedVenueCount: 1, isFlagged: false,
   },
   {
-    id: 'u-014', name: 'Lan Anh', email: 'lananh.tennis@gmail.com', role: 'player',
+    id: 'u-014', name: 'Lan Anh', email: 'lananh.tennis@gmail.com', role: 'user',
     status: 'pending_verification', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Lan',
     city: 'Ha Noi', joinedAt: '2026-05-01', lastActiveAt: '2026-05-01',
     totalBookings: 0, totalRevenue: 0, sportPreferences: ['tennis'],
     ownedVenueCount: 0, isFlagged: false,
   },
   {
-    id: 'u-015', name: 'Duy Anh', email: 'duyanh.sports@gmail.com', role: 'player',
+    id: 'u-015', name: 'Duy Anh', email: 'duyanh.sports@gmail.com', role: 'user',
     status: 'active', avatar: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Duy',
     city: 'Ho Chi Minh City', joinedAt: '2026-03-22', lastActiveAt: '2026-05-07',
     totalBookings: 7, totalRevenue: 0, sportPreferences: ['pickleball', 'badminton'], ownedVenueCount: 0, isFlagged: false,
@@ -163,7 +163,7 @@ export function getAdminStats(): AdminStats {
     activeUsers: _users.filter(u => u.status === 'active').length,
     suspendedUsers: _users.filter(u => u.status === 'suspended').length,
     newThisWeek: 3,
-    totalPlayers: _users.filter(u => u.role === 'player').length,
+    totalPlayers: _users.filter(u => u.role === 'user').length,
     totalOwners: _users.filter(u => u.role === 'owner').length,
     totalAdmins: _users.filter(u => u.role === 'admin').length,
     totalBookings: _users.reduce((s, u) => s + u.totalBookings, 0),
