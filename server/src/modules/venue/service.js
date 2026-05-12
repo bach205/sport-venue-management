@@ -12,6 +12,7 @@ const { Profile } = require("../user/model");
 const HOLD_TTL_MS = 5 * 60 * 1000;
 const AUTO_REFUND_WINDOW_MS = 5 * 60 * 1000;
 const EXPIRED_BOOKING_STATUSES = ["hold", "payment_pending"];
+const ACTIVE_BOOKING_QUERY_STATUSES = ["hold", "payment_pending", "confirmed", "refund_processing"];
 const BOOKING_STATUS_TO_SLOT_STATUS = {
   hold: "held",
   payment_pending: "booked",
@@ -59,7 +60,7 @@ class VenueService {
     return this.formatVenue(venue);
   }
 
-  async listVenues(page = 1, limit = 20) {
+  async listVenues(page = 1, limit = 20, date) {
     const skip = (page - 1) * limit;
     const [venues, total] = await Promise.all([
       Venue.find({})
@@ -69,8 +70,56 @@ class VenueService {
       Venue.countDocuments({}),
     ]);
 
+    if (!date) {
+      return {
+        items: venues.map((venue) => this.formatVenue(venue)),
+        pagination: buildPagination(page, limit, total),
+      };
+    }
+
+    await this.expireStaleBookings({ date });
+
+    const venueIds = venues.map((venue) => venue._id);
+    const [overrides, activeBookings] = await Promise.all([
+      VenueAvailabilityOverride.find({
+        venue_id: { $in: venueIds },
+        date,
+      }),
+      Booking.find({
+        venue_id: { $in: venueIds },
+        date,
+        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+      }),
+    ]);
+
+    const overridesByVenueId = new Map();
+    const bookingsByVenueId = new Map();
+
+    overrides.forEach((override) => {
+      const key = String(override.venue_id);
+      const current = overridesByVenueId.get(key) || [];
+      current.push(override);
+      overridesByVenueId.set(key, current);
+    });
+
+    activeBookings.forEach((booking) => {
+      const key = String(booking.venue_id);
+      const current = bookingsByVenueId.get(key) || [];
+      current.push(booking);
+      bookingsByVenueId.set(key, current);
+    });
+
     return {
-      items: venues.map((venue) => this.formatVenue(venue)),
+      items: venues.map((venue) => {
+        const venueOverrides = overridesByVenueId.get(String(venue._id)) || [];
+        const venueBookings = bookingsByVenueId.get(String(venue._id)) || [];
+        const slots = this.buildSlotsForDate(venue, date, venueOverrides, venueBookings);
+
+        return {
+          ...this.formatVenue(venue),
+          availabilitySummary: this.buildAvailabilitySummary(date, slots),
+        };
+      }),
       pagination: buildPagination(page, limit, total),
     };
   }
@@ -84,7 +133,7 @@ class VenueService {
       Booking.find({
         venue_id: venueId,
         date,
-        status: { $in: ["hold", "payment_pending", "confirmed", "refund_processing"] },
+        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
       }),
     ]);
 
@@ -124,7 +173,7 @@ class VenueService {
       date: payload.date,
       start_time: payload.start_time,
       end_time: payload.end_time,
-      status: { $in: ["hold", "payment_pending", "confirmed", "refund_processing"] },
+      status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
     });
 
     if (activeBooking) {
@@ -209,39 +258,126 @@ class VenueService {
     const booking = await this.getBookingOrThrow(payment.booking_id);
     this.assertOwnership(booking.user_id, userId, "You can only confirm your own payment.");
 
+    return this.processPaymentSettlement({
+      paymentId,
+      provider: payment.provider,
+      provider_reference: payload.provider_reference,
+      status: payload.status,
+      paid_at: payload.paid_at,
+    });
+  }
+
+  async handlePaymentWebhook(provider, payload) {
+    return this.processPaymentSettlement({
+      paymentId: payload.payment_id,
+      provider,
+      provider_reference: payload.provider_reference,
+      status: payload.status,
+      paid_at: payload.paid_at,
+    });
+  }
+
+  async processPaymentSettlement(payload) {
+    const payment = await this.resolvePaymentForSettlement(payload);
+    const booking = await this.getBookingOrThrow(payment.booking_id);
+
     await this.expireStaleBookings({ _id: booking._id });
 
     const latestBooking = await this.getBookingOrThrow(booking._id);
-    if (latestBooking.status !== "payment_pending") {
-      throw createHttpError(
-        HTTP_STATUS.BAD_REQUEST,
-        "This payment can no longer be confirmed for the current booking state."
-      );
+    const latestPayment = await Payment.findById(payment._id);
+    const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+
+    if (payload.status === "paid") {
+      return this.settleSuccessfulPayment(latestBooking, latestPayment, venue, payload);
     }
 
-    if (payment.status !== "pending") {
-      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Payment is not pending anymore.");
+    return this.settleFailedPayment(latestBooking, latestPayment, venue);
+  }
+
+  async resolvePaymentForSettlement(payload) {
+    if (payload.paymentId) {
+      const payment = await Payment.findById(payload.paymentId);
+      if (!payment) {
+        throw createHttpError(HTTP_STATUS.NOT_FOUND, "Payment not found.");
+      }
+      return payment;
     }
 
-    if (latestBooking.hold_expires_at.getTime() < Date.now()) {
-      latestBooking.status = "expired";
+    if (payload.provider_reference) {
+      const payment = await Payment.findOne({
+        provider: payload.provider,
+        provider_reference: payload.provider_reference,
+      });
+      if (!payment) {
+        throw createHttpError(HTTP_STATUS.NOT_FOUND, "Payment not found.");
+      }
+      return payment;
+    }
+
+    throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Payment reference is required.");
+  }
+
+  async settleSuccessfulPayment(booking, payment, venue, payload) {
+    if (payment.status === "paid" && booking.status === "confirmed") {
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
+    }
+
+    if (booking.status !== "payment_pending" || payment.status !== "pending") {
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
+    }
+
+    if (booking.hold_expires_at.getTime() < Date.now()) {
+      booking.status = "expired";
       payment.status = "failed";
-      await Promise.all([latestBooking.save(), payment.save()]);
-      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This booking hold has expired.");
+      await Promise.all([booking.save(), payment.save()]);
+
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
     }
 
     payment.status = "paid";
-    payment.provider_reference =
-      payload.provider_reference || payment.provider_reference || payment.id;
-    payment.paid_at = new Date();
-    latestBooking.status = "confirmed";
+    payment.provider_reference = payload.provider_reference || payment.provider_reference || payment.id;
+    payment.paid_at = payload.paid_at ? new Date(payload.paid_at) : (payment.paid_at || new Date());
+    booking.status = "confirmed";
 
-    await Promise.all([payment.save(), latestBooking.save()]);
-
-    const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+    await Promise.all([payment.save(), booking.save()]);
 
     return {
-      booking: this.formatBooking(latestBooking, { venue }),
+      acknowledged: true,
+      booking: this.formatBooking(booking, { venue }),
+      payment: this.formatPayment(payment),
+    };
+  }
+
+  async settleFailedPayment(booking, payment, venue) {
+    if (["failed", "refunded"].includes(payment.status) || booking.status === "expired") {
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
+    }
+
+    if (booking.status === "payment_pending" && payment.status === "pending") {
+      payment.status = "failed";
+      booking.status = "expired";
+      await Promise.all([payment.save(), booking.save()]);
+    }
+
+    return {
+      acknowledged: true,
+      booking: this.formatBooking(booking, { venue }),
       payment: this.formatPayment(payment),
     };
   }
@@ -406,7 +542,7 @@ class VenueService {
         date: payload.date,
         start_time: payload.start_time,
         end_time: payload.end_time,
-        status: { $in: ["hold", "payment_pending", "confirmed", "refund_processing"] },
+        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
       });
 
       if (activeBooking) {
@@ -651,6 +787,34 @@ class VenueService {
         bookingId: booking ? String(booking._id) : null,
       };
     });
+  }
+
+  buildAvailabilitySummary(date, slots = []) {
+    return slots.reduce(
+      (summary, slot) => {
+        summary.totalSlots += 1;
+
+        if (slot.status === "available") {
+          summary.availableSlots += 1;
+        } else if (slot.status === "held") {
+          summary.heldSlots += 1;
+        } else if (slot.status === "booked" || slot.status === "refund_processing") {
+          summary.bookedSlots += 1;
+        } else if (slot.status === "unavailable") {
+          summary.unavailableSlots += 1;
+        }
+
+        return summary;
+      },
+      {
+        date,
+        totalSlots: 0,
+        availableSlots: 0,
+        heldSlots: 0,
+        bookedSlots: 0,
+        unavailableSlots: 0,
+      }
+    );
   }
 
   generateScheduleSlots(venue, date) {

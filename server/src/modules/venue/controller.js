@@ -3,10 +3,11 @@ const venueService = require("./service");
 const {
   validateCreateVenuePayload,
   validateObjectIdParam,
-  validatePaginationQuery,
+  validateVenueListQuery,
   validateSlotsQuery,
   validateCreateHoldPayload,
   validateCreatePaymentPayload,
+  validatePaymentWebhookPayload,
   validateRefundPayload,
   validateBookingHistoryQuery,
   validateVenueUpdatePayload,
@@ -40,14 +41,14 @@ class VenueController {
   }
 
   async listVenues(req, res) {
-    const { isValid, errors, value } = validatePaginationQuery(req.query);
+    const { isValid, errors, value } = validateVenueListQuery(req.query);
 
     if (!isValid) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
     }
 
     try {
-      const data = await venueService.listVenues(value.page, value.limit);
+      const data = await venueService.listVenues(value.page, value.limit, value.date);
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Venues fetched successfully.",
@@ -59,6 +60,31 @@ class VenueController {
       });
     }
   }
+
+  async handlePaymentWebhook(req, res) {
+    const payloadValidation = validatePaymentWebhookPayload(req.body);
+
+    if (!payloadValidation.isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors: payloadValidation.errors });
+    }
+
+    try {
+      const data = await venueService.handlePaymentWebhook(
+        req.params.provider,
+        payloadValidation.value
+      );
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Payment webhook processed successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
 
   async getVenueSlots(req, res) {
     const idValidation = validateObjectIdParam(req.params.venueId, "Venue");
@@ -138,7 +164,11 @@ class VenueController {
 
   async confirmPayment(req, res) {
     const idValidation = validateObjectIdParam(req.params.paymentId, "Payment");
-    const payloadValidation = validateCreatePaymentPayload(req.body);
+    const payloadValidation = validatePaymentWebhookPayload({
+      ...req.body,
+      payment_id: req.params.paymentId,
+      status: req.body?.status || "paid",
+    });
 
     if (!idValidation.isValid || !payloadValidation.isValid) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
