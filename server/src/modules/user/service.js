@@ -40,7 +40,6 @@ class UserService {
 
         // Create default role alongside profile
         const result = await UserRole.create({ user_id: userId, role: "user" });
-        console.log(result);
         return Profile.create({
             user_id: userId,
             name: defaultName,

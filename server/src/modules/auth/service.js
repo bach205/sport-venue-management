@@ -89,13 +89,10 @@ class AuthService {
             );
         }
 
-        const userJson = user.toJSON();
-        userJson.role = role;
-
         return {
             message: "Registration successful. Please verify your email before logging in.",
             data: {
-                user: userJson,
+                user: user.toJSON(),
             },
         };
     }
