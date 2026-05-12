@@ -1,27 +1,48 @@
-export type Sport = 'badminton' | 'tennis' | 'pickleball' | 'football' | 'basketball' | 'volleyball' | 'swimming' | 'table_tennis';
-
-export interface FeedComment {
+/** Author object embedded in every post and comment */
+export interface ApiAuthor {
   id: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar: string;
-  content: string;
-  createdAt: string;
-  likedBy: string[];
+  email: string;
+  name: string;
 }
 
-export interface FeedPost {
+/** Single post as returned by GET /social/feed and POST /social/posts */
+export interface ApiPost {
   id: string;
-  authorId: string;
-  authorName: string;
-  authorAvatar: string;
-  sport: Sport | null;
-  location: string;
   content: string;
-  images: string[];
-  likedBy: string[];    // user IDs
-  savedBy: string[];    // user IDs
-  comments: FeedComment[];
-  shareCount: number;
+  author: ApiAuthor;
   createdAt: string;
+  updatedAt: string;
+  likeCount: number;
+  commentCount: number;
+  isOwner: boolean;
+  hasLiked: boolean;
+}
+
+/** Single comment as returned by GET/POST /social/posts/:id/comments */
+export interface ApiComment {
+  id: string;
+  postId: string;
+  content: string;
+  author: ApiAuthor;
+  createdAt: string;
+  updatedAt: string;
+  isOwner: boolean;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface FeedData {
+  items: ApiPost[];
+  pagination: Pagination;
+  meta: { scope: string };
+}
+
+export interface CommentsData {
+  items: ApiComment[];
+  pagination: Pagination;
 }

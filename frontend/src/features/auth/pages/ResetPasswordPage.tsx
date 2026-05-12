@@ -112,7 +112,7 @@ export default function ResetPasswordPage() {
             Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.
           </p>
           <Link
-            to="/auth/forgot-password"
+            to="/forgot-password"
             className="inline-flex items-center justify-center w-full h-11 rounded-lg gap-2 text-white"
             style={{
               fontFamily: "Lexend, sans-serif",
@@ -334,7 +334,7 @@ export default function ResetPasswordPage() {
               </p>
             </div>
             <Button
-              onClick={() => navigate("/auth/login")}
+              onClick={() => navigate("/login")}
               className="w-full h-12 rounded-lg border-0"
               style={{
                 fontFamily: "Lexend, sans-serif",
@@ -352,7 +352,7 @@ export default function ResetPasswordPage() {
         {!success && (
           <div className="text-center mt-6">
             <Link
-              to="/auth/login"
+              to="/login"
               className="text-[#8b7266] hover:text-[#a04100] transition-colors"
               style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}
             >

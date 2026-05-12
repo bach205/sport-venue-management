@@ -7,9 +7,9 @@ import { Mail, ArrowRight, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { MatchillLogo } from "../components/AuthLayout";
 import { forgotPassword } from "../api/authApi";
-import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { Button } from "@/shared/components/ui/button";
 
 const schema = z.object({
   email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
@@ -197,7 +197,7 @@ export default function ForgotPasswordPage() {
 
         <div className="text-center mt-6">
           <Link
-            to="/auth/login"
+            to="/login"
             className="text-[#8b7266] hover:text-[#a04100] transition-colors"
             style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}
           >
