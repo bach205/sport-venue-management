@@ -1,4 +1,5 @@
 // axiosBase.ts
+import { getToken } from "@/features/auth/store/authStore";
 import axios, { AxiosInstance } from "axios";
 
 export const createAxiosInstance = (baseURL: string): AxiosInstance => {
@@ -12,7 +13,7 @@ export const createAxiosInstance = (baseURL: string): AxiosInstance => {
 
   // attach token
   instance.interceptors.request.use((config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
