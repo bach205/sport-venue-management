@@ -337,8 +337,8 @@ export default function ProfilePage() {
     { id: 'activity'     as Tab, label: 'Activity',                                                   icon: <Calendar size={15} /> },
   ];
 
-  const ROLE_BADGE = { player: 'bg-[#d0f5ee] text-[#00785e]', owner: 'bg-[#ddeeff] text-brand-navy', admin: 'bg-[#ffd6d6] text-brand-red' };
-  const ROLE_LABEL = { player: 'Người chơi', owner: 'Chủ sân', admin: 'Admin' };
+  const ROLE_BADGE = { user: 'bg-[#d0f5ee] text-[#00785e]', owner: 'bg-[#ddeeff] text-brand-navy', admin: 'bg-[#ffd6d6] text-brand-red' };
+  const ROLE_LABEL = { user: 'Người chơi', owner: 'Chủ sân', admin: 'Admin' };
 
   return (
     <div className="flex flex-col min-h-full bg-brand-surface">
