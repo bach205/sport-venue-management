@@ -1,28 +1,11 @@
-/**
- * Auth Store — thin bridge over the Redux store.
- *
- * PURPOSE: Provides imperative getters/setters for non-React contexts
- *   (API files, utility modules) that cannot use React hooks.
- *
- * React components should use the typed hooks instead:
- *   useAppSelector(state => state.auth.user)
- *   useAppDispatch() + loginSuccess / logout / patchUser actions
- *
- * IMPORTANT: Do NOT add local state here. All state lives in Redux.
- */
-
+import { store } from "../../../app/store";
 import { loginSuccess, logout as logoutAction, patchUser } from "./authSlice";
 import type { ApiUser, ApiProfile } from "../types/auth.types";
-
-// ─── Re-exports (so existing imports stay unchanged) ─────────────────────────
 
 export type { AuthUser, UserRole } from "./authSlice";
 export type { UserStatus } from "../types/auth.types";
 
-// ─── Demo accounts (mock API shaped to AuthUser) ──────────────────────────────
-
-import type { AuthUser } from "./authSlice";
-import { store } from "@/app/store";
+import type { AuthUser, UserRole } from "./authSlice";
 
 export const DEMO_ACCOUNTS: Record<string, AuthUser> = {
   "player@demo.com": {
@@ -33,7 +16,7 @@ export const DEMO_ACCOUNTS: Record<string, AuthUser> = {
     name: "Alex Nguyen",
     sport_preference: ["badminton", "tennis", "pickleball"],
     reputation_score: 755,
-    role: "player",
+    role: "user",
     avatar: "https://api.dicebear.com/8.x/avataaars/svg?seed=Alex",
     ownedVenueIds: [],
   },
@@ -63,36 +46,22 @@ export const DEMO_ACCOUNTS: Record<string, AuthUser> = {
   },
 };
 
-// ─── Non-React getters (for API files / utilities) ────────────────────────────
-
-/** Read JWT from Redux state — for use in Axios auth headers. */
 export function getToken(): string | null {
   return store.getState().auth.token;
 }
 
-/** Read current user from Redux state — for use in mock API handlers. */
 export function getCurrentUser(): AuthUser | null {
   return store.getState().auth.user;
 }
 
-/**
- * Subscribe to any Redux state change.
- * Returns an unsubscribe function (matches the original pub-sub API).
- * Note: fires on ALL store changes, not just auth. Prefer useAppSelector in React.
- */
+// Fires on ALL store changes — prefer useAppSelector in React components.
 export function subscribeAuth(fn: () => void): () => void {
   return store.subscribe(fn);
 }
 
-// ─── Auth actions (dispatch wrappers) ────────────────────────────────────────
-
-/**
- * Maps { ApiUser + ApiProfile } from login response → AuthUser,
- * then dispatches loginSuccess to Redux (persisted to localStorage).
- */
 export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfile): AuthUser {
   // Map server role "user" to frontend role "player"
-  let role: UserRole = "player";
+  let role: UserRole = "user";
   if (user.role === "admin") role = "admin";
   if (user.role === "owner") role = "owner";
 
@@ -104,7 +73,7 @@ export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfi
     name: profile.name,
     sport_preference: profile.sport_preference,
     reputation_score: profile.reputation_score,
-    role,
+    role: user.role ?? "user",
     avatar: `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
     ownedVenueIds: [],
   };
@@ -112,32 +81,18 @@ export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfi
   return authUser;
 }
 
-/**
- * Demo shortcut — bypasses API, logs in as a demo account.
- * Dispatches loginSuccess with a fake JWT token.
- */
 export function loginAs(email: string): AuthUser | null {
   const user = DEMO_ACCOUNTS[email.toLowerCase()] ?? null;
   if (user) {
-    store.dispatch(
-      loginSuccess({
-        token: `mock_demo_${user._id}_${Date.now()}`,
-        user,
-      })
-    );
+    store.dispatch(loginSuccess({ token: `mock_demo_${user._id}_${Date.now()}`, user }));
   }
   return user;
 }
 
-/**
- * Log out — dispatches logout action.
- * Profile slice will auto-clear via its extraReducers.
- */
 export function logout(): void {
   store.dispatch(logoutAction());
 }
 
-/** Patch a subset of the current user in Redux (e.g. after profile update). */
 export function patchCurrentUser(patch: Partial<AuthUser>): void {
   store.dispatch(patchUser(patch));
 }
