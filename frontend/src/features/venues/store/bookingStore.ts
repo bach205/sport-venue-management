@@ -120,12 +120,24 @@ export function ownerApproveRefund(bookingId: string): Booking | null {
   const booking = bookings[idx];
   if (booking.status !== 'confirmed') return null;
 
-  // Release slots
   for (const slot of booking.slots) {
     bookedSlots.delete(makeSlotKey(booking.venueId, booking.date, slot.startTime));
   }
 
   const updated: Booking = { ...booking, status: 'processing_refund' };
+  bookings = [...bookings];
+  bookings[idx] = updated;
+  return updated;
+}
+
+export function ownerRejectRefund(bookingId: string): Booking | null {
+  const idx = bookings.findIndex(b => b.id === bookingId);
+  if (idx === -1) return null;
+
+  const booking = bookings[idx];
+  if (booking.status !== 'confirmed') return null;
+
+  const updated: Booking = { ...booking, status: 'confirmed' };
   bookings = [...bookings];
   bookings[idx] = updated;
   return updated;

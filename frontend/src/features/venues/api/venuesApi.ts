@@ -12,15 +12,40 @@
  *   GET  /api/bookings                            → { success, data: Booking[] }
  */
 
-import { isMockApi } from '../../../shared/constants/api';
+import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
 import { isSlotBooked } from '../store/bookingStore';
 import { getSlotOverride } from '../../owner/store/ownerStore';
 import type { Venue, VenueSlot, Sport } from '../types/venues.types';
 
+export interface UpsertVenuePayload {
+  name: string;
+  shortAddress: string;
+  fullAddress: string;
+  sports: Sport[];
+  imageUrl: string;
+  priceFrom: number;
+  facilities: string[];
+  openHours: string;
+  description: string;
+  courtCount: number;
+  district: string;
+}
+
+const venueListeners = new Set<() => void>();
+
+function emitVenuesChanged() {
+  venueListeners.forEach((listener) => listener());
+}
+
+export function subscribeVenues(listener: () => void) {
+  venueListeners.add(listener);
+  return () => venueListeners.delete(listener);
+}
+
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 // ─── Mock venues ─────────────────────────────────────────────────────────────
-export const MOCK_VENUES: Venue[] = [
+export let MOCK_VENUES: Venue[] = [
   {
     id: 'v-001',
     name: 'District 1 Tennis Club',
@@ -192,7 +217,7 @@ export async function fetchVenues(filters?: {
   }
   const params = new URLSearchParams();
   if (filters?.sport && filters.sport !== 'all') params.set('sport', filters.sport);
-  const res = await fetch(`/api/venues?${params}`);
+  const res = await fetch(`${API_BASE_URL}/venues?${params}`);
   return res.json();
 }
 
@@ -202,7 +227,7 @@ export async function fetchVenueById(venueId: string): Promise<{ success: boolea
     const venue = MOCK_VENUES.find(v => v.id === venueId) ?? null;
     return { success: true, data: venue };
   }
-  const res = await fetch(`/api/venues/${venueId}`);
+  const res = await fetch(`${API_BASE_URL}/venues/${venueId}`);
   return res.json();
 }
 
@@ -214,6 +239,82 @@ export async function fetchSlots(
     await delay(200);
     return { success: true, data: generateSlots(venueId, date) };
   }
-  const res = await fetch(`/api/venues/${venueId}/slots?date=${date}`);
+  const res = await fetch(`${API_BASE_URL}/venues/${venueId}/slots?date=${date}`);
+  return res.json();
+}
+
+export async function createVenue(payload: UpsertVenuePayload): Promise<{ success: boolean; data: Venue }> {
+  if (isMockApi) {
+    await delay(250);
+    const districtLabel = payload.district.trim() || 'Unknown district';
+    const venue: Venue = {
+      id: `v-${Date.now()}`,
+      name: payload.name,
+      shortAddress: `${districtLabel}, HCMC`,
+      fullAddress: payload.fullAddress,
+      sports: payload.sports,
+      rating: 4.8,
+      reviewCount: 0,
+      imageUrl: payload.imageUrl,
+      priceFrom: payload.priceFrom,
+      facilities: payload.facilities,
+      openHours: payload.openHours,
+      description: payload.description,
+      courtCount: payload.courtCount,
+      district: districtLabel,
+    };
+    MOCK_VENUES = [venue, ...MOCK_VENUES];
+    emitVenuesChanged();
+    return { success: true, data: venue };
+  }
+
+  const res = await fetch(`${API_BASE_URL}/owner/venues`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function updateVenue(
+  venueId: string,
+  payload: UpsertVenuePayload
+): Promise<{ success: boolean; data: Venue | null }> {
+  if (isMockApi) {
+    await delay(250);
+    const idx = MOCK_VENUES.findIndex((venue) => venue.id === venueId);
+    if (idx === -1) return { success: false, data: null };
+
+    const districtLabel = payload.district.trim() || MOCK_VENUES[idx].district;
+    const updated: Venue = {
+      ...MOCK_VENUES[idx],
+      ...payload,
+      shortAddress: `${districtLabel}, HCMC`,
+      district: districtLabel,
+    };
+
+    MOCK_VENUES = [...MOCK_VENUES];
+    MOCK_VENUES[idx] = updated;
+    emitVenuesChanged();
+    return { success: true, data: updated };
+  }
+
+  const res = await fetch(`${API_BASE_URL}/owner/venues/${venueId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function deleteVenue(venueId: string): Promise<{ success: boolean }> {
+  if (isMockApi) {
+    await delay(200);
+    MOCK_VENUES = MOCK_VENUES.filter((venue) => venue.id !== venueId);
+    emitVenuesChanged();
+    return { success: true };
+  }
+
+  const res = await fetch(`${API_BASE_URL}/owner/venues/${venueId}`, { method: 'DELETE' });
   return res.json();
 }
