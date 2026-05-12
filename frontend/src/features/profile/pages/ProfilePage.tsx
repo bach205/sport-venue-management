@@ -3,6 +3,7 @@ import {
   Camera, Edit3, MapPin, Trophy, Star,
   Calendar, Zap, CheckCircle2, Lock, Loader2,
   BadgeCheck, Save, X,
+  Verified,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../app/hooks';
 import { patchUser } from '../../auth/store/authSlice';
@@ -337,6 +338,17 @@ export default function ProfilePage() {
     { id: 'activity'     as Tab, label: 'Activity',                                                   icon: <Calendar size={15} /> },
   ];
 
+  const labelMap: Record<string, string> = {
+    name: "Họ tên",
+    age: "Tuổi",
+    gender: "Giới tính",
+    location: "Địa chỉ",
+    skill_level: "Trình độ",
+    reputation_score: "Điểm uy tín",
+    is_verified: "Xác minh",
+    joinedAt: "Ngày tham gia",
+  };
+
   const ROLE_BADGE = { user: 'bg-[#d0f5ee] text-[#00785e]', owner: 'bg-[#ddeeff] text-brand-navy', admin: 'bg-[#ffd6d6] text-brand-red' };
   const ROLE_LABEL = { user: 'Người chơi', owner: 'Chủ sân', admin: 'Admin' };
 
@@ -400,7 +412,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
             { icon: '🏸', label: 'Sport',         value: profile.sport_preference.slice(0, 2).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') || '–' },
             { icon: '⚡', label: 'Skill Level',    value: profile.skill_level.charAt(0).toUpperCase() + profile.skill_level.slice(1) },
@@ -415,10 +427,10 @@ export default function ProfilePage() {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
 
         {/* Level / reputation bar */}
-        <div className="rounded-2xl p-5 mb-6 flex items-center gap-5 bg-white border border-brand-border">
+        {/* <div className="rounded-2xl p-5 mb-6 flex items-center gap-5 bg-white border border-brand-border">
           <div className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 gradient-orange"
             style={{ boxShadow: '0 4px 12px rgba(160,65,0,0.35)' }}>
             <span className="font-heading text-lg font-black text-white leading-none">{xpInfo.level}</span>
@@ -447,7 +459,7 @@ export default function ProfilePage() {
             </div>
             <span className="text-[11px] text-brand-muted">Achievements</span>
           </div>
-        </div>
+        </div> */}
 
         {/* Tabs */}
         <div className="flex border-b border-brand-border mb-6">
@@ -480,22 +492,55 @@ export default function ProfilePage() {
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-y-5 gap-x-8">
-                      {[
-                        { label: 'name',             value: profile.name },
-                        { label: 'age',              value: profile.age ? `${profile.age} years old` : '—' },
-                        { label: 'gender',           value: profile.gender === 'prefer_not_to_say' ? 'Prefer not to say' : (profile.gender?.charAt(0).toUpperCase() + profile.gender?.slice(1) || '—') },
-                        { label: 'location',         value: profile.location || '—' },
-                        { label: 'skill_level',      value: profile.skill_level?.charAt(0).toUpperCase() + profile.skill_level?.slice(1) || '—' },
-                        { label: 'reputation_score', value: `${profile.reputation_score} pts` },
-                        { label: 'is_verified',      value: profile.is_verified ? '✅ Verified' : '⚠️ Unverified' },
-                        { label: 'joinedAt',         value: formatDate(profile.joinedAt) },
-                      ].map((item, i) => (
-                        <div key={i}>
-                          <p className="font-mono text-[11px] text-brand-muted mb-1">{item.label}</p>
-                          <p className="text-sm font-semibold text-brand-dark">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
+                    {[
+                      { label: "name", value: profile.name },
+                      {
+                        label: "age",
+                        value: profile.age ? `${profile.age} tuổi` : "—",
+                      },
+                      {
+                        label: "gender",
+                        value:
+                          profile.gender === "prefer_not_to_say"
+                            ? "Không muốn tiết lộ"
+                            : profile.gender?.charAt(0).toUpperCase() +
+                                profile.gender?.slice(1) || "—",
+                      },
+                      {
+                        label: "location",
+                        value: profile.location || "—",
+                      },
+                      {
+                        label: "skill_level",
+                        value:
+                          profile.skill_level?.charAt(0).toUpperCase() +
+                            profile.skill_level?.slice(1) || "—",
+                      },
+                      {
+                        label: "reputation_score",
+                        value: `${profile.reputation_score} điểm`,
+                      },
+                      {
+                        label: "is_verified",
+                        value: profile.is_verified
+                          ? <div className='flex items-center gap-2 text-teal-500'><Verified /> Đã xác minh</div>
+                          : <div className='flex items-center gap-2 text-red-500'><X /> Chưa xác minh</div>,
+                      },
+                      {
+                        label: "joinedAt",
+                        value: formatDate(profile.joinedAt),
+                      },
+                    ].map((item, i) => (
+                      <div key={i}>
+                        <p className="font-mono text-sm text-brand-muted mb-1">
+                          {labelMap[item.label]}
+                        </p>
+                        <p className="text-sm font-semibold text-brand-dark">
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                   </div>
 
                   <div className="rounded-2xl p-5 bg-white border border-brand-border">

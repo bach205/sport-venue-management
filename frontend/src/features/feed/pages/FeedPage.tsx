@@ -6,6 +6,7 @@ import { PostCard } from "../components/PostCard";
 import { CreatePostModal } from "../components/CreatePostModal";
 import { getCurrentUser } from "../../auth/store/authStore";
 import { toast } from "sonner";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 
 export default function FeedPage() {
   const user = getCurrentUser();
@@ -66,16 +67,10 @@ export default function FeedPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center gradient-teal shrink-0">
-              <Rss size={18} className="text-white" />
-            </div>
             <div>
               <h1 className="font-heading text-[22px] font-extrabold text-brand-dark leading-tight">
                 Cộng đồng <span className="text-brand-teal">thể thao</span>
               </h1>
-              {pagination && (
-                <p className="text-[13px] text-brand-muted">{pagination.total} bài đăng</p>
-              )}
             </div>
           </div>
           <button
@@ -93,7 +88,7 @@ export default function FeedPage() {
           onClick={() => setShowCreateModal(true)}
         >
           {user ? (
-            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-teal-diag font-heading">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-orange-diag font-heading">
               {initials}
             </div>
           ) : (
@@ -107,7 +102,7 @@ export default function FeedPage() {
               e.stopPropagation();
               setShowCreateModal(true);
             }}
-            className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-teal text-sm font-bold text-white font-heading hover:opacity-90 transition-opacity shrink-0"
+            className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading hover:opacity-90 transition-opacity shrink-0"
             style={{ boxShadow: "0 2px 8px rgba(0,106,101,0.35)" }}
           >
             <Plus size={15} /> Đăng
@@ -116,9 +111,40 @@ export default function FeedPage() {
 
         {/* Feed */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 size={32} className="animate-spin text-brand-teal" />
-            <p className="text-sm text-brand-muted">Đang tải bài đăng...</p>
+          <div className="flex flex-col gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-brand-border bg-white p-5 space-y-4"
+              >
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-[90%]" />
+                  <Skeleton className="h-4 w-[75%]" />
+                </div>
+
+                {/* Image placeholder */}
+                <Skeleton className="h-52 w-full rounded-xl" />
+
+                {/* Footer actions */}
+                <div className="flex gap-4 pt-2">
+                  <Skeleton className="h-9 w-20 rounded-lg" />
+                  <Skeleton className="h-9 w-20 rounded-lg" />
+                  <Skeleton className="h-9 w-20 rounded-lg" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 rounded-2xl bg-white border-2 border-dashed border-brand-border">
@@ -127,7 +153,7 @@ export default function FeedPage() {
             <p className="text-[13px] text-brand-muted mb-4">Hãy là người đầu tiên chia sẻ!</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 h-10 px-5 rounded-xl gradient-teal text-sm font-bold text-white font-heading"
+              className="flex items-center gap-2 h-10 px-5 rounded-xl gradient-orange text-sm font-bold text-white font-heading"
             >
               <Plus size={15} /> Tạo bài đăng
             </button>
@@ -160,7 +186,7 @@ export default function FeedPage() {
 
             {pagination && pagination.page >= pagination.pages && posts.length > 0 && (
               <p className="text-center py-4 text-[13px] text-brand-muted">
-                Bạn đã xem hết {pagination.total} bài đăng 🎉
+                Bạn đã xem hết {pagination.total} bài đăng.
               </p>
             )}
           </>
