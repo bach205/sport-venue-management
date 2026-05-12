@@ -66,6 +66,11 @@ const DEMO_ROLES = [
 
 /** Maps { ApiUser + ApiProfile } from login response → AuthUser. */
 function buildAuthUser(user: ApiUser, profile: ApiProfile): AuthUser {
+  // Map server role "user" to frontend role "player"
+  let role: UserRole = "player";
+  if (user.role === "admin") role = "admin";
+  if (user.role === "owner") role = "owner";
+
   return {
     _id: user._id,
     email: user.email,
@@ -74,7 +79,7 @@ function buildAuthUser(user: ApiUser, profile: ApiProfile): AuthUser {
     name: profile.name,
     sport_preference: profile.sport_preference,
     reputation_score: profile.reputation_score,
-    role: "player",
+    role,
     avatar: `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
     ownedVenueIds: [],
   };
@@ -95,15 +100,21 @@ export default function LoginPage() {
   // ── Real / mock email+password login ────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
     const result = await login({ email: data.email, password: data.password });
+    console.log(result)
     if (result.success && result.data) {
+      const authUser = buildAuthUser(result.data.user, result.data.profile);
       dispatch(
         loginSuccess({
           token: result.data.token,
-          user: buildAuthUser(result.data.user, result.data.profile),
+          user: authUser,
         })
       );
       toast.success(result.message);
-      navigate("/");
+      if (authUser.role === "owner") {
+        navigate("/owner/venues");
+      } else {
+        navigate("/discover");
+      }
     } else {
       toast.error(result.message);
     }

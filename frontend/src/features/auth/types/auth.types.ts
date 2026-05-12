@@ -8,6 +8,7 @@ export interface ApiUser {
   email: string;
   status: UserStatus;
   is_verified: boolean;
+  role?: string; // Add this
   createdAt?: string;
   updatedAt?: string;
 }

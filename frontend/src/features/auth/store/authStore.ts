@@ -91,6 +91,11 @@ export function subscribeAuth(fn: () => void): () => void {
  * then dispatches loginSuccess to Redux (persisted to localStorage).
  */
 export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfile): AuthUser {
+  // Map server role "user" to frontend role "player"
+  let role: UserRole = "player";
+  if (user.role === "admin") role = "admin";
+  if (user.role === "owner") role = "owner";
+
   const authUser: AuthUser = {
     _id: user._id,
     email: user.email,
@@ -99,7 +104,7 @@ export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfi
     name: profile.name,
     sport_preference: profile.sport_preference,
     reputation_score: profile.reputation_score,
-    role: "player",
+    role,
     avatar: `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
     ownedVenueIds: [],
   };
