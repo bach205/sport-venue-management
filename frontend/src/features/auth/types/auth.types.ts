@@ -1,6 +1,7 @@
 // ─── API exact types (match server response field names 1-to-1) ───────────────
 
 export type UserStatus = 'active' | 'warning' | 'banned';
+export type UserRole = 'user' | 'owner' | 'admin';
 
 /** Returned inside data.user from login / register / verify-email / get-me */
 export interface ApiUser {
@@ -8,7 +9,7 @@ export interface ApiUser {
   email: string;
   status: UserStatus;
   is_verified: boolean;
-  role?: string; // Add this
+  role?: UserRole;
   createdAt?: string;
   updatedAt?: string;
 }
