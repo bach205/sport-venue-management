@@ -23,6 +23,10 @@ router.post(
   asyncHandler((req, res) => venueController.createPayment(req, res))
 );
 router.post(
+  "/webhooks/payments/:provider",
+  asyncHandler((req, res) => venueController.handlePaymentWebhook(req, res))
+);
+router.post(
   "/payments/:paymentId/confirm",
   authMiddleware,
   asyncHandler((req, res) => venueController.confirmPayment(req, res))

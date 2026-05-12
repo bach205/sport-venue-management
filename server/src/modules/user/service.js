@@ -48,7 +48,6 @@ class UserService {
 
     async getUserRole(userId) {
         const userRole = await UserRole.findOne({ user_id: userId });
-        console.log(userRole);
         return userRole ? userRole.role : "user";
     }
 

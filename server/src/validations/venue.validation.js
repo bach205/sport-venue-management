@@ -53,6 +53,65 @@ const validatePaginationQuery = (query = {}) => {
   };
 };
 
+const validateVenueListQuery = (query = {}) => {
+  const pagination = validatePaginationQuery(query);
+  const errors = [...pagination.errors];
+
+  if (query.date !== undefined) {
+    validateDate(query.date, "Date", errors);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      ...pagination.value,
+      date: query.date ? String(query.date) : undefined,
+    },
+  };
+};
+
+const validatePaymentWebhookPayload = (payload = {}) => {
+  const providerReference = normalizeOptionalString(payload.provider_reference) || "";
+  const paymentId = normalizeOptionalString(payload.payment_id) || "";
+  const status = normalizeOptionalString(payload.status);
+  const paidAt = normalizeOptionalString(payload.paid_at);
+  const errors = [];
+
+  if (!providerReference && !paymentId) {
+    errors.push("Provider reference or payment id is required.");
+  }
+
+  if (providerReference.length > 120) {
+    errors.push("Provider reference must not exceed 120 characters.");
+  }
+
+  if (paymentId && !mongoose.Types.ObjectId.isValid(paymentId)) {
+    errors.push("Payment id is invalid.");
+  }
+
+  if (!status) {
+    errors.push("Status is required.");
+  } else if (!["paid", "failed"].includes(status)) {
+    errors.push("Status must be either paid or failed.");
+  }
+
+  if (paidAt && Number.isNaN(new Date(paidAt).getTime())) {
+    errors.push("Paid at must be a valid datetime.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      provider_reference: providerReference,
+      payment_id: paymentId || undefined,
+      status,
+      paid_at: paidAt || undefined,
+    },
+  };
+};
+
 const validateDate = (value, fieldLabel, errors) => {
   if (!value) {
     errors.push(`${fieldLabel} is required.`);
@@ -129,6 +188,7 @@ const validateCreateHoldPayload = (payload = {}) => {
 const validateCreatePaymentPayload = (payload = {}) => {
   const provider = normalizeOptionalString(payload.provider) || "stub";
   const providerReference = normalizeOptionalString(payload.provider_reference) || "";
+  const returnUrl = normalizeOptionalString(payload.return_url) || "";
   const errors = [];
 
   if (provider.length > 50) {
@@ -139,12 +199,17 @@ const validateCreatePaymentPayload = (payload = {}) => {
     errors.push("Provider reference must not exceed 120 characters.");
   }
 
+  if (returnUrl.length > 2048) {
+    errors.push("Return url must not exceed 2048 characters.");
+  }
+
   return {
     isValid: errors.length === 0,
     errors,
     value: {
       provider,
       provider_reference: providerReference,
+      return_url: returnUrl,
     },
   };
 };
@@ -468,9 +533,11 @@ module.exports = {
   validateCreateVenuePayload,
   validateObjectIdParam,
   validatePaginationQuery,
+  validateVenueListQuery,
   validateSlotsQuery,
   validateCreateHoldPayload,
   validateCreatePaymentPayload,
+  validatePaymentWebhookPayload,
   validateRefundPayload,
   validateBookingHistoryQuery,
   validateVenueUpdatePayload,
