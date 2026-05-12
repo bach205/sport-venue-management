@@ -103,10 +103,10 @@ Lỗi trong quá trình tạo user, tạo profile, tạo token, hoặc gửi mai
 6. Nếu user đã tồn tại và `is_verified=false`, service tìm mã xác thực chưa dùng mới nhất.
 7. Nếu mã cũ còn hạn, route không gửi lại mail và trả thông báo yêu cầu người dùng kiểm tra inbox.
 8. Nếu mã cũ đã hết hạn, service xóa các mã chưa dùng cũ, tạo mã mới, rồi gửi lại email xác thực.
-9. Nếu email chưa tồn tại, service tạo `users`, tạo `profiles` mặc định, tạo mã xác thực email, rồi gửi mail.
+9. Nếu email chưa tồn tại, service tạo `users`, tạo `profiles` mặc định, tạo `user_roles` mặc định (role là `user`), tạo mã xác thực email, rồi gửi mail.
 10. Nếu có lỗi sau khi user đã được tạo, service dọn dữ liệu vừa tạo bằng cách xóa token xác thực, xóa profile, và xóa user.
 
 ## Ghi chú
 - Route này không trả JWT. Người dùng chỉ được login sau khi xác thực email thành công.
 - Link xác thực trong email dùng `FRONTEND_URL/verify-email?token=...`.
-- Side effect của route là gửi email thật qua SMTP và tạo dữ liệu trong `users`, `profiles`, `email_verification_tokens`.
+- Side effect của route là gửi email thật qua SMTP và tạo dữ liệu trong `users`, `profiles`, `user_roles`, `email_verification_tokens`.

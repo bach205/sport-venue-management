@@ -37,7 +37,8 @@
       "_id": "6820abc123...",
       "email": "player@example.com",
       "status": "warning",
-      "is_verified": true
+      "is_verified": true,
+      "role": "user"
     },
     "profile": {
       "_id": "6820def456...",
@@ -98,7 +99,8 @@ Tài khoản bị cấm.
 8. Nếu `status=banned`, route chặn đăng nhập.
 9. Nếu hợp lệ, service lấy profile hiện tại của user.
 10. Service ký JWT bằng `signToken`.
-11. Response trả về `token`, `user`, và `profile`.
+11. Service lấy role của user từ `UserRole` model.
+12. Response trả về `token`, `user` (kèm `role`), và `profile`.
 
 ## Ghi chú
 - `warning` không chặn đăng nhập. Trạng thái này chỉ được trả về để frontend hiển thị cảnh báo.
