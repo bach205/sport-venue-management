@@ -8,6 +8,7 @@ const {
   validateCreateHoldPayload,
   validateCreatePaymentPayload,
   validatePaymentWebhookPayload,
+  validateSepayWebhookPayload,
   validateRefundPayload,
   validateBookingHistoryQuery,
   validateVenueUpdatePayload,
@@ -19,6 +20,14 @@ const {
 } = require("../../validations/venue.validation");
 
 class VenueController {
+  normalizeApiKey(value) {
+    if (!value) {
+      return "";
+    }
+
+    return String(value).replace(/^(Bearer|Apikey)\s+/i, "").trim();
+  }
+
   async createVenue(req, res) {
     const { isValid, errors, value } = validateCreateVenuePayload(req.body);
 
@@ -62,6 +71,42 @@ class VenueController {
   }
 
   async handlePaymentWebhook(req, res) {
+    if (req.params.provider === "sepay") {
+      const expectedApiKey = this.normalizeApiKey(process.env.SEPAY_API_KEY);
+      const providedApiKey = this.normalizeApiKey(req.headers.authorization);
+
+      if (!expectedApiKey) {
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+          message: "SEPAY_API_KEY is not configured.",
+        });
+      }
+
+      if (!providedApiKey || providedApiKey !== expectedApiKey) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          message: "Invalid Sepay webhook authorization.",
+        });
+      }
+
+      const payloadValidation = validateSepayWebhookPayload(req.body);
+
+      if (!payloadValidation.isValid) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors: payloadValidation.errors });
+      }
+
+      try {
+        const data = await venueService.handleSepayWebhook(payloadValidation.value);
+
+        return res.status(HTTP_STATUS.OK).json({
+          message: "Sepay webhook processed successfully.",
+          data,
+        });
+      } catch (error) {
+        return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+          message: error.message,
+        });
+      }
+    }
+
     const payloadValidation = validatePaymentWebhookPayload(req.body);
 
     if (!payloadValidation.isValid) {
@@ -185,6 +230,27 @@ class VenueController {
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Payment confirmed successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async getPaymentStatus(req, res) {
+    const idValidation = validateObjectIdParam(req.params.paymentId, "Payment");
+
+    if (!idValidation.isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors: idValidation.errors });
+    }
+
+    try {
+      const data = await venueService.getPaymentStatus(req.user.id, req.params.paymentId);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Payment status fetched successfully.",
         data,
       });
     } catch (error) {

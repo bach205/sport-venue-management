@@ -112,6 +112,51 @@ const validatePaymentWebhookPayload = (payload = {}) => {
   };
 };
 
+const validateSepayWebhookPayload = (payload = {}) => {
+  const code = normalizeOptionalString(payload.code) || "";
+  const content = normalizeOptionalString(payload.content) || "";
+  const transferType = normalizeOptionalString(payload.transferType);
+  const transactionDate = normalizeOptionalString(payload.transactionDate) || "";
+  const transferAmount = Number(payload.transferAmount);
+  const gateway = normalizeOptionalString(payload.gateway) || "";
+  const referenceCode = normalizeOptionalString(payload.referenceCode) || "";
+  const description = normalizeOptionalString(payload.description) || "";
+  const errors = [];
+
+  if (!code && !content) {
+    errors.push("Sepay webhook must include code or content.");
+  }
+
+  if (!transferType) {
+    errors.push("Transfer type is required.");
+  } else if (!["in", "out"].includes(transferType)) {
+    errors.push("Transfer type must be either in or out.");
+  }
+
+  if (!Number.isFinite(transferAmount) || transferAmount < 0) {
+    errors.push("Transfer amount must be a non-negative number.");
+  }
+
+  if (transactionDate && Number.isNaN(new Date(transactionDate.replace(" ", "T")).getTime())) {
+    errors.push("Transaction date must be a valid datetime.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      code,
+      content,
+      transfer_type: transferType,
+      transaction_date: transactionDate || undefined,
+      transfer_amount: transferAmount,
+      gateway,
+      reference_code: referenceCode,
+      description,
+    },
+  };
+};
+
 const validateDate = (value, fieldLabel, errors) => {
   if (!value) {
     errors.push(`${fieldLabel} is required.`);
@@ -538,6 +583,7 @@ module.exports = {
   validateCreateHoldPayload,
   validateCreatePaymentPayload,
   validatePaymentWebhookPayload,
+  validateSepayWebhookPayload,
   validateRefundPayload,
   validateBookingHistoryQuery,
   validateVenueUpdatePayload,

@@ -19,6 +19,8 @@ const BOOKING_STATUS_TO_SLOT_STATUS = {
   confirmed: "booked",
   refund_processing: "refund_processing",
 };
+const SEPAY_PROVIDER = "sepay";
+const SEPAY_REFERENCE_PREFIX = "MATCH";
 
 const buildPagination = (page, limit, total) => ({
   page,
@@ -44,6 +46,20 @@ const getDayOfWeek = (dateString) => {
 };
 
 const buildSlotKey = (date, startTime, endTime) => `${date}|${startTime}|${endTime}`;
+const normalizeSepayReference = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")[0]
+    .toUpperCase();
+const normalizeBooleanFlag = (value, fallback = false) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  return ["1", "true", "yes", "y", "on"].includes(normalized);
+};
 
 class VenueService {
   async createVenue(ownerId, payload) {
@@ -177,6 +193,22 @@ class VenueService {
     });
 
     if (activeBooking) {
+      if (
+        String(activeBooking.user_id) === String(userId) &&
+        ["hold", "payment_pending"].includes(activeBooking.status)
+      ) {
+        activeBooking.hold_expires_at = new Date(Date.now() + HOLD_TTL_MS);
+        await activeBooking.save();
+
+        const existingPayment = await Payment.findOne({ booking_id: activeBooking._id });
+        return {
+          booking: this.formatBooking(activeBooking, {
+            venue,
+          }),
+          payment: existingPayment ? this.formatPayment(existingPayment) : null,
+        };
+      }
+
       throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This slot is no longer available.");
     }
 
@@ -196,6 +228,7 @@ class VenueService {
         booking: this.formatBooking(booking, {
           venue,
         }),
+        payment: null,
       };
     } catch (error) {
       if (error?.code === 11000) {
@@ -212,6 +245,29 @@ class VenueService {
     const booking = await this.getBookingOrThrow(bookingId);
     this.assertOwnership(booking.user_id, userId, "You can only pay for your own booking.");
 
+    const existingPayment = await Payment.findOne({ booking_id: booking._id });
+    if (
+      existingPayment &&
+      ["hold", "payment_pending"].includes(booking.status) &&
+      existingPayment.status === "pending"
+    ) {
+      if (payload.provider && existingPayment.provider !== payload.provider) {
+        existingPayment.provider = payload.provider;
+      }
+
+      if (existingPayment.provider === SEPAY_PROVIDER && !existingPayment.provider_reference) {
+        existingPayment.provider_reference = this.buildSepayPaymentReference(booking._id);
+      }
+
+      await existingPayment.save();
+
+      const venue = await this.getVenueOrThrow(booking.venue_id);
+      return {
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(existingPayment),
+      };
+    }
+
     if (booking.status !== "hold") {
       throw createHttpError(
         HTTP_STATUS.BAD_REQUEST,
@@ -225,19 +281,18 @@ class VenueService {
       throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This booking hold has expired.");
     }
 
-    const existingPayment = await Payment.findOne({ booking_id: booking._id });
-    if (existingPayment) {
-      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "A payment already exists for this booking.");
-    }
-
     booking.status = "payment_pending";
     await booking.save();
+
+    const providerReference = payload.provider === SEPAY_PROVIDER
+      ? (payload.provider_reference || this.buildSepayPaymentReference(booking._id))
+      : payload.provider_reference;
 
     const payment = await Payment.create({
       booking_id: booking._id,
       amount: booking.amount,
       provider: payload.provider,
-      provider_reference: payload.provider_reference,
+      provider_reference: providerReference,
       status: "pending",
     });
 
@@ -267,6 +322,27 @@ class VenueService {
     });
   }
 
+  async getPaymentStatus(userId, paymentId) {
+    const payment = await Payment.findById(paymentId);
+    if (!payment) {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Payment not found.");
+    }
+
+    const booking = await this.getBookingOrThrow(payment.booking_id);
+    this.assertOwnership(booking.user_id, userId, "You can only view your own payment.");
+
+    await this.expireStaleBookings({ _id: booking._id });
+
+    const latestBooking = await this.getBookingOrThrow(booking._id);
+    const latestPayment = await Payment.findById(payment._id);
+    const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+
+    return {
+      booking: this.formatBooking(latestBooking, { venue }),
+      payment: this.formatPayment(latestPayment),
+    };
+  }
+
   async handlePaymentWebhook(provider, payload) {
     return this.processPaymentSettlement({
       paymentId: payload.payment_id,
@@ -274,6 +350,54 @@ class VenueService {
       provider_reference: payload.provider_reference,
       status: payload.status,
       paid_at: payload.paid_at,
+    });
+  }
+
+  async handleSepayWebhook(payload) {
+    const providerReference = this.extractSepayProviderReference(payload);
+    if (!providerReference) {
+      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Sepay webhook does not include a usable payment reference.");
+    }
+
+    const payment = await this.resolvePaymentForSettlement({
+      provider: SEPAY_PROVIDER,
+      provider_reference: providerReference,
+    });
+    const booking = await this.getBookingOrThrow(payment.booking_id);
+
+    await this.expireStaleBookings({ _id: booking._id });
+
+    const latestBooking = await this.getBookingOrThrow(booking._id);
+    const latestPayment = await Payment.findById(payment._id);
+    const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+
+    if (payload.transfer_type !== "in") {
+      return {
+        acknowledged: true,
+        ignored: true,
+        reason: "Sepay webhook is not an incoming transfer.",
+        booking: this.formatBooking(latestBooking, { venue }),
+        payment: this.formatPayment(latestPayment),
+      };
+    }
+
+    if (payload.transfer_amount < latestPayment.amount) {
+      return {
+        acknowledged: true,
+        ignored: true,
+        reason: "Transferred amount is lower than the payment amount.",
+        booking: this.formatBooking(latestBooking, { venue }),
+        payment: this.formatPayment(latestPayment),
+      };
+    }
+
+    return this.processPaymentSettlement({
+      provider: SEPAY_PROVIDER,
+      provider_reference: providerReference,
+      status: "paid",
+      paid_at: payload.transaction_date
+        ? new Date(payload.transaction_date.replace(" ", "T")).toISOString()
+        : undefined,
     });
   }
 
@@ -757,6 +881,47 @@ class VenueService {
     return payment;
   }
 
+  buildSepayPaymentReference(bookingId) {
+    return `${SEPAY_REFERENCE_PREFIX}${String(bookingId).slice(-8).toUpperCase()}`;
+  }
+
+  extractSepayProviderReference(payload) {
+    const directCode = normalizeSepayReference(payload.code);
+    if (directCode) {
+      return directCode;
+    }
+
+    return normalizeSepayReference(payload.content);
+  }
+
+  getSepayConfig() {
+    return {
+      bankName: String(process.env.SEPAY_BANK || "").trim(),
+      accountNumber: String(process.env.SEPAY_ACCOUNT_NUMBER || "").trim(),
+      accountName: String(process.env.SEPAY_ACCOUNT_NAME || "").trim(),
+      template: String(process.env.SEPAY_QR_TEMPLATE || "compact").trim(),
+      download: normalizeBooleanFlag(process.env.SEPAY_QR_DOWNLOAD, false),
+    };
+  }
+
+  buildSepayQrCodeUrl(payment) {
+    const config = this.getSepayConfig();
+    if (!config.bankName || !config.accountNumber || !payment) {
+      return "";
+    }
+
+    const query = new URLSearchParams({
+      acc: config.accountNumber,
+      bank: config.bankName,
+      amount: String(payment.amount || 0),
+      des: payment.provider_reference || String(payment._id),
+      template: config.template || "compact",
+      download: config.download ? "true" : "false",
+    });
+
+    return `https://qr.sepay.vn/img?${query.toString()}`;
+  }
+
   buildSlotsForDate(venue, date, overrides = [], activeBookings = []) {
     const generatedSlots = this.generateScheduleSlots(venue, date);
     const overrideSet = new Set(
@@ -1056,6 +1221,11 @@ class VenueService {
       return null;
     }
 
+    const sepayConfig = this.getSepayConfig();
+    const qrCodeUrl = payment.provider === SEPAY_PROVIDER
+      ? this.buildSepayQrCodeUrl(payment)
+      : "";
+
     return {
       id: String(payment._id),
       bookingId: String(payment.booking_id),
@@ -1063,6 +1233,10 @@ class VenueService {
       provider: payment.provider,
       providerReference: payment.provider_reference || "",
       status: payment.status,
+      bankName: payment.provider === SEPAY_PROVIDER ? sepayConfig.bankName : "",
+      bankAccountNumber: payment.provider === SEPAY_PROVIDER ? sepayConfig.accountNumber : "",
+      bankAccountName: payment.provider === SEPAY_PROVIDER ? sepayConfig.accountName : "",
+      qrCodeUrl,
       paidAt: payment.paid_at,
       refundedAt: payment.refunded_at,
       createdAt: payment.createdAt,

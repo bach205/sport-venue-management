@@ -31,6 +31,11 @@ router.post(
   authMiddleware,
   asyncHandler((req, res) => venueController.confirmPayment(req, res))
 );
+router.get(
+  "/payments/:paymentId",
+  authMiddleware,
+  asyncHandler((req, res) => venueController.getPaymentStatus(req, res))
+);
 router.post(
   "/bookings/:bookingId/refund",
   authMiddleware,
