@@ -61,6 +61,14 @@ type SettingsForm = {
 
 const DAY_LABELS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
+function createWeeklyScheduleEntry(): SettingsForm["weeklySchedule"][number] {
+  return {
+    dayOfWeek: 1,
+    startTime: "06:00",
+    endTime: "22:00",
+  };
+}
+
 function formatPrice(n: number) {
   return new Intl.NumberFormat("vi-VN").format(n) + "₫";
 }
@@ -92,7 +100,7 @@ function toSettingsForm(venue: OwnerVenue): SettingsForm {
     slotDurationMinutes: venue.slotDurationMinutes,
     weeklySchedule: venue.weeklySchedule.length
       ? venue.weeklySchedule
-      : [{ dayOfWeek: 1, startTime: "06:00", endTime: "22:00" }],
+      : [createWeeklyScheduleEntry()],
   };
 }
 
@@ -204,7 +212,44 @@ function SettingsTab({
   saving: boolean;
   deleting: boolean;
 }) {
-  const firstRange = form.weeklySchedule[0];
+  const [scheduleDraft, setScheduleDraft] = useState<SettingsForm["weeklySchedule"][number]>(createWeeklyScheduleEntry());
+
+  useEffect(() => {
+    setScheduleDraft(form.weeklySchedule[0] ?? createWeeklyScheduleEntry());
+  }, [form.weeklySchedule]);
+
+  const updateWeeklyScheduleItem = (
+    index: number,
+    key: keyof SettingsForm["weeklySchedule"][number],
+    value: number | string
+  ) => {
+    onChange((prev) => ({
+      ...prev,
+      weeklySchedule: prev.weeklySchedule.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [key]: value } : item
+      ),
+    }));
+  };
+
+  const addWeeklyScheduleItem = () => {
+    onChange((prev) => ({
+      ...prev,
+      weeklySchedule: prev.weeklySchedule.some((item) => item.dayOfWeek === scheduleDraft.dayOfWeek)
+        ? prev.weeklySchedule.map((item) =>
+            item.dayOfWeek === scheduleDraft.dayOfWeek ? { ...scheduleDraft } : item
+          )
+        : [...prev.weeklySchedule, { ...scheduleDraft }],
+    }));
+  };
+
+  const removeWeeklyScheduleItem = (index: number) => {
+    onChange((prev) => ({
+      ...prev,
+      weeklySchedule: prev.weeklySchedule.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const firstRange = scheduleDraft;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
@@ -237,19 +282,89 @@ function SettingsTab({
           </div>
           <div className="space-y-1.5">
             <Label>Thứ hoạt động</Label>
-            <select value={firstRange.dayOfWeek} onChange={(e) => onChange((prev) => ({ ...prev, weeklySchedule: [{ ...prev.weeklySchedule[0], dayOfWeek: Number(e.target.value) }] }))} className="h-11 w-full rounded-xl border px-3" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}>
+            <select value={firstRange.dayOfWeek} onChange={(e) => setScheduleDraft((prev) => ({ ...prev, dayOfWeek: Number(e.target.value) }))} className="h-11 w-full rounded-xl border px-3" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}>
               {DAY_LABELS.map((label, index) => <option key={label} value={index}>{label}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
             <Label>Khung giờ</Label>
             <div className="grid grid-cols-2 gap-2">
-              <Input value={firstRange.startTime} onChange={(e) => onChange((prev) => ({ ...prev, weeklySchedule: [{ ...prev.weeklySchedule[0], startTime: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
-              <Input value={firstRange.endTime} onChange={(e) => onChange((prev) => ({ ...prev, weeklySchedule: [{ ...prev.weeklySchedule[0], endTime: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              <Input type="time" value={firstRange.startTime} onChange={(e) => setScheduleDraft((prev) => ({ ...prev, startTime: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              <Input type="time" value={firstRange.endTime} onChange={(e) => setScheduleDraft((prev) => ({ ...prev, endTime: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
             </div>
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <Label>Mô tả</Label>
+            <div className="mb-4 flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
+                  Weekly Schedule List
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addWeeklyScheduleItem}
+                  className="h-9 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]"
+                  style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
+                >
+                  <CalendarDays size={14} />
+                  Add Range
+                </Button>
+              </div>
+              {form.weeklySchedule.length ? (
+                form.weeklySchedule.map((item, index) => (
+                  <div
+                    key={`${item.dayOfWeek}-${item.startTime}-${item.endTime}-${index}`}
+                    className="rounded-2xl border p-3"
+                    style={{ borderColor: "#dfc0b3", background: "#fffaf7" }}
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
+                        Range {index + 1}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => removeWeeklyScheduleItem(index)}
+                        className="h-8 rounded-lg px-2 text-[#a04100] hover:bg-[#fff1eb] hover:text-[#a04100]"
+                        style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
+                      >
+                        <Trash2 size={14} />
+                        Remove
+                      </Button>
+                    </div>
+                    <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
+                      <select
+                        value={item.dayOfWeek}
+                        onChange={(e) => updateWeeklyScheduleItem(index, "dayOfWeek", Number(e.target.value))}
+                        className="h-11 w-full rounded-xl border px-3"
+                        style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}
+                      >
+                        {DAY_LABELS.map((label, dayIndex) => <option key={label} value={dayIndex}>{label}</option>)}
+                      </select>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="time"
+                          value={item.startTime}
+                          onChange={(e) => updateWeeklyScheduleItem(index, "startTime", e.target.value)}
+                          className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                        />
+                        <Input
+                          type="time"
+                          value={item.endTime}
+                          onChange={(e) => updateWeeklyScheduleItem(index, "endTime", e.target.value)}
+                          className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed p-4 text-[#8b7266]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px" }}>
+                  No schedule ranges yet. Add weekly schedule rows here.
+                </div>
+              )}
+            </div>
             <textarea value={form.description} onChange={(e) => onChange((prev) => ({ ...prev, description: e.target.value }))} rows={5} className="min-h-[120px] w-full rounded-xl border px-3 py-3 outline-none transition-colors focus:border-[#006a65]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#241914" }} />
           </div>
         </div>
