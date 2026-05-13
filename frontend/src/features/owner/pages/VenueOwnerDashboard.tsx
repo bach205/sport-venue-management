@@ -27,19 +27,21 @@ import {
   type OwnerVenue,
 } from "@/features/owner/api/ownerVenueApi";
 
+function createScheduleRange(): CreateVenuePayload["weekly_schedule"][number] {
+  return {
+    day_of_week: 1,
+    start_time: "06:00",
+    end_time: "22:00",
+  };
+}
+
 const EMPTY_FORM: CreateVenuePayload = {
   name: "",
   location: "",
   description: "",
   slot_price: 120000,
   slot_duration_minutes: 60,
-  weekly_schedule: [
-    {
-      day_of_week: 1,
-      start_time: "06:00",
-      end_time: "22:00",
-    },
-  ],
+  weekly_schedule: [createScheduleRange()],
 };
 
 const DAY_OPTIONS = [
@@ -70,6 +72,7 @@ export default function VenueOwnerDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState<CreateVenuePayload>(EMPTY_FORM);
+  const [scheduleDraft, setScheduleDraft] = useState<CreateVenuePayload["weekly_schedule"][number]>(createScheduleRange());
 
   const loadVenues = async () => {
     try {
@@ -122,6 +125,7 @@ export default function VenueOwnerDashboard() {
       const created = await createOwnerVenue(form);
       setVenues((current) => [created, ...current]);
       setForm(EMPTY_FORM);
+      setScheduleDraft(createScheduleRange());
       setShowCreateForm(false);
       toast.success("Đã tạo sân mới thành công.");
     } catch (error: any) {
@@ -145,6 +149,37 @@ export default function VenueOwnerDashboard() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const updateWeeklyScheduleItem = (
+    index: number,
+    key: keyof CreateVenuePayload["weekly_schedule"][number],
+    value: number | string
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      weekly_schedule: prev.weekly_schedule.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [key]: value } : item
+      ),
+    }));
+  };
+
+  const addWeeklyScheduleItem = () => {
+    setForm((prev) => ({
+      ...prev,
+      weekly_schedule: prev.weekly_schedule.some((item) => item.day_of_week === scheduleDraft.day_of_week)
+        ? prev.weekly_schedule.map((item) =>
+            item.day_of_week === scheduleDraft.day_of_week ? { ...scheduleDraft } : item
+          )
+        : [...prev.weekly_schedule, { ...scheduleDraft }],
+    }));
+  };
+
+  const removeWeeklyScheduleItem = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      weekly_schedule: prev.weekly_schedule.filter((_, itemIndex) => itemIndex !== index),
+    }));
   };
 
   return (
@@ -244,8 +279,8 @@ export default function VenueOwnerDashboard() {
               <div className="space-y-1.5">
                 <Label>Thứ hoạt động</Label>
                 <select
-                  value={form.weekly_schedule[0]?.day_of_week ?? 1}
-                  onChange={(e) => setForm((prev) => ({ ...prev, weekly_schedule: [{ ...prev.weekly_schedule[0], day_of_week: Number(e.target.value) }] }))}
+                  value={scheduleDraft.day_of_week}
+                  onChange={(e) => setScheduleDraft((prev) => ({ ...prev, day_of_week: Number(e.target.value) }))}
                   className="h-11 w-full rounded-xl border px-3"
                   style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}
                 >
@@ -257,12 +292,84 @@ export default function VenueOwnerDashboard() {
               <div className="space-y-1.5">
                 <Label>Khung giờ</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input value={form.weekly_schedule[0]?.start_time ?? "06:00"} onChange={(e) => setForm((prev) => ({ ...prev, weekly_schedule: [{ ...prev.weekly_schedule[0], start_time: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
-                  <Input value={form.weekly_schedule[0]?.end_time ?? "22:00"} onChange={(e) => setForm((prev) => ({ ...prev, weekly_schedule: [{ ...prev.weekly_schedule[0], end_time: e.target.value }] }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+                  <Input type="time" value={scheduleDraft.start_time} onChange={(e) => setScheduleDraft((prev) => ({ ...prev, start_time: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+                  <Input type="time" value={scheduleDraft.end_time} onChange={(e) => setScheduleDraft((prev) => ({ ...prev, end_time: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
                 </div>
               </div>
               <div className="space-y-1.5 lg:col-span-2">
                 <Label>Mô tả</Label>
+                <div className="mb-4 flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
+                      Weekly Schedule List
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addWeeklyScheduleItem}
+                      className="h-9 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]"
+                      style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
+                    >
+                      <Plus data-icon="inline-start" />
+                      Add Range
+                    </Button>
+                  </div>
+                  {form.weekly_schedule.length ? (
+                    form.weekly_schedule.map((item, index) => (
+                      <div
+                        key={`${item.day_of_week}-${item.start_time}-${item.end_time}-${index}`}
+                        className="rounded-2xl border p-3"
+                        style={{ borderColor: "#dfc0b3", background: "#fffaf7" }}
+                      >
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
+                            Range {index + 1}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => removeWeeklyScheduleItem(index)}
+                            className="h-8 rounded-lg px-2 text-[#a04100] hover:bg-[#fff1eb] hover:text-[#a04100]"
+                            style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
+                          >
+                            <Trash2 data-icon="inline-start" />
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
+                          <select
+                            value={item.day_of_week}
+                            onChange={(e) => updateWeeklyScheduleItem(index, "day_of_week", Number(e.target.value))}
+                            className="h-11 w-full rounded-xl border px-3"
+                            style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}
+                          >
+                            {DAY_OPTIONS.map((day) => (
+                              <option key={day.value} value={day.value}>{day.label}</option>
+                            ))}
+                          </select>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              type="time"
+                              value={item.start_time}
+                              onChange={(e) => updateWeeklyScheduleItem(index, "start_time", e.target.value)}
+                              className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                            />
+                            <Input
+                              type="time"
+                              value={item.end_time}
+                              onChange={(e) => updateWeeklyScheduleItem(index, "end_time", e.target.value)}
+                              className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-dashed p-4 text-[#8b7266]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px" }}>
+                      No schedule ranges yet. You can create the venue first or add weekly schedule rows now.
+                    </div>
+                  )}
+                </div>
                 <textarea value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))} className="min-h-[120px] w-full rounded-xl border px-3 py-3 outline-none transition-colors focus:border-[#006a65]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#241914" }} />
               </div>
             </div>
@@ -271,7 +378,7 @@ export default function VenueOwnerDashboard() {
               <Button onClick={handleCreateVenue} disabled={submitting} className="h-11 rounded-xl px-5 border-0" style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}>
                 {submitting ? "Đang tạo..." : "Lưu venue mới"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => { setForm(EMPTY_FORM); setShowCreateForm(false); }} className="h-11 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]" style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}>
+              <Button type="button" variant="outline" onClick={() => { setForm(EMPTY_FORM); setScheduleDraft(createScheduleRange()); setShowCreateForm(false); }} className="h-11 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]" style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}>
                 Hủy
               </Button>
             </div>

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { X, CreditCard, Wallet, Building2, CheckCircle2, ChevronRight, Lock, Loader2 } from 'lucide-react';
-import type { Venue, VenueSlot, PaymentMethod, BookedSlotRef, Sport } from '../types/venues.types';
-import { createBooking } from '../store/bookingStore';
-import type { Booking } from '../types/venues.types';
+import type { Venue, VenueSlot, PaymentMethod, Sport, Booking } from '../types/venues.types';
+import {
+  createBookingHold,
+  createBookingPayment,
+  confirmBookingPayment,
+} from '../api/venuesApi';
 
 type Step = 'confirm' | 'payment' | 'success';
 
@@ -35,7 +38,6 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// ─── Step 1: Confirm ─────────────────────────────────────────────────────────
 function ConfirmStep({
   venue,
   slots,
@@ -56,6 +58,8 @@ function ConfirmStep({
   onClose: () => void;
 }) {
   const total = slots.reduce((s, sl) => s + sl.price, 0);
+  const isSingleSlot = slots.length === 1;
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-6 py-5 border-b border-[#dfc0b3]">
@@ -64,7 +68,7 @@ function ConfirmStep({
             Confirm Booking
           </h2>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginTop: 2 }}>
-            Review your selected slots
+            Review your selected slot
           </p>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#fff1eb] transition-colors" style={{ color: '#584238' }}>
@@ -73,13 +77,8 @@ function ConfirmStep({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
-        {/* Venue summary */}
         <div className="rounded-xl p-4 flex gap-4" style={{ background: '#fff1eb', border: '1px solid rgba(223,192,179,0.4)' }}>
-          <img
-            src={venue.imageUrl}
-            alt={venue.name}
-            className="w-16 h-16 rounded-lg object-cover shrink-0"
-          />
+          <img src={venue.imageUrl} alt={venue.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
           <div>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '15px', fontWeight: 700, color: '#241914' }}>
               {venue.name}
@@ -90,10 +89,20 @@ function ConfirmStep({
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100', fontWeight: 600, marginTop: 4 }}>
               📅 {formatDate(selectedDate)}
             </p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 4, textTransform: 'capitalize' }}>
+              {sport}
+            </p>
           </div>
         </div>
 
-        {/* Selected slots */}
+        {!isSingleSlot && (
+          <div className="rounded-xl px-4 py-3" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#856404' }}>
+              Checkout currently supports one slot at a time. Please go back and keep a single slot selected.
+            </p>
+          </div>
+        )}
+
         <div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 8 }}>
             Selected Slots ({slots.length})
@@ -126,7 +135,6 @@ function ConfirmStep({
           </div>
         </div>
 
-        {/* Notes */}
         <div>
           <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 6 }}>
             Notes (optional)
@@ -155,7 +163,6 @@ function ConfirmStep({
         </div>
       </div>
 
-      {/* Footer */}
       <div className="px-6 pb-6 pt-4 border-t border-[#dfc0b3]">
         <div className="flex items-center justify-between mb-4">
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Total</span>
@@ -165,7 +172,8 @@ function ConfirmStep({
         </div>
         <button
           onClick={onNext}
-          className="w-full h-13 rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+          disabled={!isSingleSlot}
+          className="w-full h-13 rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
             background: 'linear-gradient(90deg,#a04100,#ff7e36)',
             fontFamily: 'Lexend, sans-serif',
@@ -185,7 +193,6 @@ function ConfirmStep({
   );
 }
 
-// ─── Step 2: Payment ─────────────────────────────────────────────────────────
 function PaymentStep({
   total,
   paymentMethod,
@@ -193,6 +200,7 @@ function PaymentStep({
   onPay,
   onBack,
   loading,
+  error,
 }: {
   total: number;
   paymentMethod: PaymentMethod;
@@ -200,16 +208,15 @@ function PaymentStep({
   onPay: () => void;
   onBack: () => void;
   loading: boolean;
+  error: string | null;
 }) {
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
   const [name, setName] = useState('');
 
-  const formatCard = (v: string) =>
-    v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
-  const formatExpiry = (v: string) =>
-    v.replace(/\D/g, '').slice(0, 4).replace(/(.{2})/, '$1/');
+  const formatCard = (v: string) => v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+  const formatExpiry = (v: string) => v.replace(/\D/g, '').slice(0, 4).replace(/(.{2})/, '$1/');
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -228,7 +235,7 @@ function PaymentStep({
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-[#dfc0b3]">
         <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-[#fff1eb] transition-colors" style={{ color: '#584238' }}>
-          ← 
+          ←
         </button>
         <div>
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
@@ -245,7 +252,12 @@ function PaymentStep({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
-        {/* Payment method */}
+        {error && (
+          <div className="rounded-xl px-4 py-3" style={{ background: '#fff1eb', border: '1px solid rgba(160,65,0,0.15)' }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100' }}>{error}</p>
+          </div>
+        )}
+
         <div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 8 }}>
             Payment Method
@@ -271,15 +283,12 @@ function PaymentStep({
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, color: '#241914' }}>{opt.label}</p>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>{opt.desc}</p>
                 </div>
-                {paymentMethod === opt.id && (
-                  <CheckCircle2 size={18} style={{ color: '#a04100', marginLeft: 'auto' }} />
-                )}
+                {paymentMethod === opt.id && <CheckCircle2 size={18} style={{ color: '#a04100', marginLeft: 'auto' }} />}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Card fields (only when card selected) */}
         {paymentMethod === 'card' && (
           <div className="flex flex-col gap-3">
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 2 }}>
@@ -327,36 +336,29 @@ function PaymentStep({
         )}
 
         {paymentMethod === 'momo' && (
-          <div
-            className="flex flex-col items-center gap-3 py-6 rounded-xl"
-            style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}
-          >
+          <div className="flex flex-col items-center gap-3 py-6 rounded-xl" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl" style={{ background: '#fff' }}>
               💜
             </div>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>
-              You'll be redirected to MoMo after confirming
+              The selected wallet option still uses the same compatibility payment confirmation flow.
             </p>
           </div>
         )}
 
         {paymentMethod === 'bank' && (
-          <div
-            className="rounded-xl p-4 flex flex-col gap-2"
-            style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}
-          >
+          <div className="rounded-xl p-4 flex flex-col gap-2" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Transfer to:</p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Bank: <strong>Vietcombank</strong></p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Account: <strong>1234 5678 9012</strong></p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Name: <strong>Matchill Sports JSC</strong></p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 4 }}>
-              ⚠️ Booking will be confirmed after transfer is verified (up to 15 min).
+              Booking confirmation is still completed through the backend compatibility endpoint after payment creation.
             </p>
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <div className="px-6 pb-6 pt-4 border-t border-[#dfc0b3]">
         <div className="flex items-center justify-between mb-4">
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Total to pay</span>
@@ -387,7 +389,6 @@ function PaymentStep({
   );
 }
 
-// ─── Step 3: Success ─────────────────────────────────────────────────────────
 function SuccessStep({
   booking,
   onGoToBookings,
@@ -418,21 +419,15 @@ function SuccessStep({
       <div className="w-full rounded-xl p-4 text-left flex flex-col gap-2" style={{ background: '#fff1eb', border: '1px solid rgba(223,192,179,0.4)' }}>
         <Row label="Venue" value={booking.venueName} />
         <Row label="Date" value={formatDate(booking.date)} />
-        <Row
-          label="Slots"
-          value={booking.slots.map(s => `${s.startTime}–${s.endTime}`).join(', ')}
-        />
+        <Row label="Slots" value={booking.slots.map(s => `${s.startTime}–${s.endTime}`).join(', ')} />
         <Row label="Booking ID" value={`#${booking.id.slice(-8).toUpperCase()}`} />
         <Row label="Amount Paid" value={formatPrice(booking.totalPrice)} highlight />
       </div>
 
-      <div
-        className="w-full rounded-xl px-4 py-3 flex items-center gap-3"
-        style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}
-      >
+      <div className="w-full rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}>
         <span style={{ fontSize: 20 }}>💡</span>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}>
-          You can request a <strong>full refund within 5 minutes</strong> from Booking History.
+          You can request a refund from Booking History. Instant auto-refund still depends on the backend refund window.
         </p>
       </div>
 
@@ -483,7 +478,6 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
   );
 }
 
-// ─── Main BookingModal ────────────────────────────────────────────────────────
 interface Props {
   venue: Venue;
   slots: VenueSlot[];
@@ -500,38 +494,51 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const total = slots.reduce((s, sl) => s + sl.price, 0);
 
   const handlePay = async () => {
+    if (slots.length !== 1) {
+      setError('Please select exactly one slot for this checkout flow.');
+      return;
+    }
+
     setLoading(true);
-    // Simulate payment processing
-    await new Promise(r => setTimeout(r, 1800));
+    setError(null);
 
-    const slotRefs: BookedSlotRef[] = slots.map(s => ({
-      slotId: s.id,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      price: s.price,
-    }));
+    try {
+      const selectedSlot = slots[0];
+      const holdBooking = await createBookingHold({
+        venue_id: venue.id,
+        date: selectedDate,
+        start_time: selectedSlot.startTime,
+        end_time: selectedSlot.endTime,
+      });
 
-    const b = createBooking({
-      venueId: venue.id,
-      venueName: venue.name,
-      venueImage: venue.imageUrl,
-      venueAddress: venue.fullAddress,
-      sport,
-      date: selectedDate,
-      slots: slotRefs,
-      paymentMethod,
-      notes,
-      playerName: 'You',
-    });
+      const paymentResult = await createBookingPayment(holdBooking.id, {
+        provider: paymentMethod,
+        return_url: window.location.href,
+      });
 
-    setBooking(b);
-    setLoading(false);
-    setStep('success');
-    onSuccess(b);
+      if (!paymentResult.payment) {
+        throw new Error('Payment record was not returned by the server.');
+      }
+
+      const confirmed = await confirmBookingPayment(paymentResult.payment.id, {
+        status: 'paid',
+        provider_reference: paymentResult.payment.providerReference || `ui-${Date.now()}`,
+      });
+
+      setBooking(confirmed.booking);
+      setStep('success');
+      onSuccess(confirmed.booking);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to complete payment.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -556,7 +563,10 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
             sport={sport}
             notes={notes}
             onNotesChange={setNotes}
-            onNext={() => setStep('payment')}
+            onNext={() => {
+              setError(null);
+              setStep('payment');
+            }}
             onClose={onClose}
           />
         )}
@@ -568,6 +578,7 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
             onPay={handlePay}
             onBack={() => setStep('confirm')}
             loading={loading}
+            error={error}
           />
         )}
         {step === 'success' && booking && (

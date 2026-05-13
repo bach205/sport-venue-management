@@ -1,21 +1,22 @@
-/**
- * Venues API
- *
- * Routes:
- *   GET  /api/venues                              → { success, data: Venue[] }
- *     Query: ?sport=tennis&district=1&search=
- *   GET  /api/venues/:venueId                     → { success, data: Venue }
- *   GET  /api/venues/:venueId/slots?date=YYYY-MM-DD → { success, data: VenueSlot[] }
- *   POST /api/bookings                            → { success, data: Booking }
- *     Request: { venueId, sport, date, slotIds[], paymentMethod, notes, playerName }
- *   POST /api/bookings/:id/refund                 → { success, data: Booking }
- *   GET  /api/bookings                            → { success, data: Booking[] }
- */
-
+import { createAxiosInstance } from '@/shared/api/axiosBase';
 import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
 import { isSlotBooked } from '../store/bookingStore';
 import { getSlotOverride } from '../../owner/store/ownerStore';
-import type { Venue, VenueSlot, Sport } from '../types/venues.types';
+import type {
+  Booking,
+  BookingRefund,
+  BookingStatus,
+  PaymentMethod,
+  RefundMode,
+  SlotStatus,
+  Sport,
+  Venue,
+  VenueAvailabilitySummary,
+  VenuePayment,
+  VenueSlot,
+} from '../types/venues.types';
+
+const api = createAxiosInstance(API_BASE_URL);
 
 export interface UpsertVenuePayload {
   name: string;
@@ -31,6 +32,61 @@ export interface UpsertVenuePayload {
   district: string;
 }
 
+export interface FetchVenuesParams {
+  page?: number;
+  limit?: number;
+  date?: string;
+  sport?: Sport | 'all';
+  district?: string;
+  search?: string;
+}
+
+export interface FetchMyBookingsParams {
+  page?: number;
+  limit?: number;
+  status?: BookingStatus | 'all';
+}
+
+export interface CreateBookingHoldPayload {
+  venue_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+export interface CreateBookingPaymentPayload {
+  provider?: PaymentMethod | 'stub';
+  provider_reference?: string;
+  return_url?: string;
+}
+
+export interface ConfirmBookingPaymentPayload {
+  status: 'paid' | 'failed';
+  provider_reference?: string;
+  paid_at?: string;
+}
+
+export interface RequestBookingRefundPayload {
+  note?: string;
+}
+
+export interface RefundResponse {
+  mode: RefundMode;
+  booking: Booking;
+  payment: VenuePayment | null;
+  refund: BookingRefund | null;
+}
+
+export interface FetchVenuesResult {
+  items: Venue[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
 const venueListeners = new Set<() => void>();
 
 function emitVenuesChanged() {
@@ -42,9 +98,275 @@ export function subscribeVenues(listener: () => void) {
   return () => venueListeners.delete(listener);
 }
 
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ─── Mock venues ─────────────────────────────────────────────────────────────
+const DEFAULT_FACILITIES = ['Parking', 'Lighting'];
+const DEFAULT_VENUE_IMAGE = 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80';
+
+const PAYMENT_METHOD_BY_PROVIDER: Record<string, PaymentMethod> = {
+  card: 'card',
+  momo: 'momo',
+  bank: 'bank',
+  stub: 'card',
+};
+
+type BackendWeeklySchedule = {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+};
+
+type BackendAvailabilitySummary = VenueAvailabilitySummary;
+
+type BackendVenue = {
+  id: string;
+  ownerId?: string;
+  name: string;
+  location: string;
+  description: string;
+  slotPrice: number;
+  slotDurationMinutes: number;
+  weeklySchedule?: BackendWeeklySchedule[];
+  availabilitySummary?: BackendAvailabilitySummary;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BackendSlot = {
+  date: string;
+  startTime: string;
+  endTime: string;
+  price?: number;
+  status: string;
+  bookingId?: string | null;
+};
+
+type BackendPayment = {
+  id: string;
+  bookingId: string;
+  amount: number;
+  provider: string;
+  providerReference: string;
+  status: string;
+  paidAt: string | null;
+  refundedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BackendRefund = {
+  id: string;
+  bookingId: string;
+  paymentId: string;
+  requestedBy: string;
+  processedBy: string | null;
+  type: string;
+  status: string;
+  note: string;
+  processedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type BackendBooking = {
+  id: string;
+  status: BookingStatus;
+  amount: number;
+  holdExpiresAt: string | null;
+  slot: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
+  venue?: BackendVenue | null;
+  user?: {
+    id: string;
+    email: string | null;
+    name: string;
+  } | null;
+  payment?: BackendPayment | null;
+  refund?: BackendRefund | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function formatHoursLabel(time: string) {
+  return time.slice(0, 5);
+}
+
+function formatOpenHours(schedule?: BackendWeeklySchedule[]) {
+  if (!schedule?.length) return 'Flexible hours';
+
+  const sorted = [...schedule].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  return `${formatHoursLabel(first.startTime)} – ${formatHoursLabel(last.endTime)}`;
+}
+
+function inferDistrict(location: string) {
+  const segments = location.split(',').map((part) => part.trim()).filter(Boolean);
+  return segments[segments.length - 2] || segments[segments.length - 1] || 'Unknown district';
+}
+
+function inferSports(name: string, description: string): Sport[] {
+  const haystack = `${name} ${description}`.toLowerCase();
+  const sports: Sport[] = [];
+
+  if (haystack.includes('tennis')) sports.push('tennis');
+  if (haystack.includes('basketball')) sports.push('basketball');
+  if (haystack.includes('badminton')) sports.push('badminton');
+  if (haystack.includes('football') || haystack.includes('soccer')) sports.push('football');
+  if (haystack.includes('pickleball')) sports.push('pickleball');
+  if (haystack.includes('volleyball')) sports.push('volleyball');
+
+  return sports.length ? sports : ['tennis'];
+}
+
+function mapVenue(backendVenue: BackendVenue): Venue {
+  const district = inferDistrict(backendVenue.location);
+
+  return {
+    id: backendVenue.id,
+    ownerId: backendVenue.ownerId,
+    name: backendVenue.name,
+    shortAddress: district,
+    fullAddress: backendVenue.location,
+    sports: inferSports(backendVenue.name, backendVenue.description),
+    rating: 4.8,
+    reviewCount: 0,
+    imageUrl: DEFAULT_VENUE_IMAGE,
+    priceFrom: backendVenue.slotPrice,
+    facilities: DEFAULT_FACILITIES,
+    openHours: formatOpenHours(backendVenue.weeklySchedule),
+    description: backendVenue.description,
+    courtCount: backendVenue.weeklySchedule?.length || 1,
+    district,
+    slotDurationMinutes: backendVenue.slotDurationMinutes,
+    availabilitySummary: backendVenue.availabilitySummary,
+    weeklySchedule: backendVenue.weeklySchedule,
+  };
+}
+
+function mapPayment(payment?: BackendPayment | null): VenuePayment | null {
+  if (!payment) return null;
+  return {
+    id: payment.id,
+    bookingId: payment.bookingId,
+    amount: payment.amount,
+    provider: payment.provider,
+    providerReference: payment.providerReference,
+    status: payment.status,
+    paidAt: payment.paidAt,
+    refundedAt: payment.refundedAt,
+    createdAt: payment.createdAt,
+    updatedAt: payment.updatedAt,
+  };
+}
+
+function mapRefund(refund?: BackendRefund | null): BookingRefund | null {
+  if (!refund) return null;
+  return {
+    id: refund.id,
+    bookingId: refund.bookingId,
+    paymentId: refund.paymentId,
+    requestedBy: refund.requestedBy,
+    processedBy: refund.processedBy,
+    type: refund.type,
+    status: refund.status,
+    note: refund.note,
+    processedAt: refund.processedAt,
+    createdAt: refund.createdAt,
+    updatedAt: refund.updatedAt,
+  };
+}
+
+function mapBooking(backendBooking: BackendBooking): Booking {
+  const venue = backendBooking.venue ? mapVenue(backendBooking.venue) : null;
+  const payment = mapPayment(backendBooking.payment);
+  const refund = mapRefund(backendBooking.refund);
+
+  return {
+    id: backendBooking.id,
+    venueId: venue?.id || '',
+    venueName: venue?.name || 'Venue booking',
+    venueImage: venue?.imageUrl || DEFAULT_VENUE_IMAGE,
+    venueAddress: venue?.fullAddress || 'Venue address unavailable',
+    sport: venue?.sports[0] || 'tennis',
+    date: backendBooking.slot.date,
+    slots: [
+      {
+        slotId: `${backendBooking.id}_${backendBooking.slot.date}_${backendBooking.slot.startTime}`,
+        startTime: backendBooking.slot.startTime,
+        endTime: backendBooking.slot.endTime,
+        price: backendBooking.amount,
+      },
+    ],
+    totalPrice: backendBooking.amount,
+    status: backendBooking.status,
+    paymentMethod: PAYMENT_METHOD_BY_PROVIDER[payment?.provider || 'stub'] || 'card',
+    paidAt: payment?.paidAt || null,
+    holdExpiresAt: backendBooking.holdExpiresAt,
+    createdAt: backendBooking.createdAt,
+    updatedAt: backendBooking.updatedAt,
+    playerName: backendBooking.user?.name || 'You',
+    notes: refund?.note || '',
+    payment,
+    refund,
+  };
+}
+
+function mapSlotStatus(status: string): SlotStatus {
+  switch (status) {
+    case 'available':
+      return 'available';
+    case 'held':
+      return 'held';
+    case 'unavailable':
+      return 'unavailable';
+    case 'refund_processing':
+      return 'refund_processing';
+    case 'booked':
+      return 'booked';
+    default:
+      return 'closed';
+  }
+}
+
+function mapSlot(venueId: string, backendSlot: BackendSlot, slotPrice: number): VenueSlot {
+  return {
+    id: `${venueId}_${backendSlot.date}_${backendSlot.startTime}`,
+    venueId,
+    date: backendSlot.date,
+    startTime: backendSlot.startTime,
+    endTime: backendSlot.endTime,
+    price: backendSlot.price ?? slotPrice,
+    status: mapSlotStatus(backendSlot.status),
+    bookingId: backendSlot.bookingId ?? null,
+  };
+}
+
+function normalizeSearchText(value?: string) {
+  return value?.trim().toLowerCase() || '';
+}
+
+function filterVenueList(venues: Venue[], filters?: Pick<FetchVenuesParams, 'sport' | 'district' | 'search'>) {
+  const search = normalizeSearchText(filters?.search);
+
+  return venues.filter((venue) => {
+    if (filters?.sport && filters.sport !== 'all' && !venue.sports.includes(filters.sport)) return false;
+    if (filters?.district && filters.district !== 'all' && venue.district !== filters.district) return false;
+    if (!search) return true;
+
+    return (
+      venue.name.toLowerCase().includes(search) ||
+      venue.shortAddress.toLowerCase().includes(search) ||
+      venue.fullAddress.toLowerCase().includes(search) ||
+      venue.sports.some((sport) => sport.includes(search))
+    );
+  });
+}
+
+// Mock data retained for owner UI compatibility.
 export let MOCK_VENUES: Venue[] = [
   {
     id: 'v-001',
@@ -62,96 +384,14 @@ export let MOCK_VENUES: Venue[] = [
     courtCount: 6,
     district: 'District 1',
   },
-  {
-    id: 'v-002',
-    name: 'Binh Thanh Basketball Center',
-    shortAddress: 'Binh Thanh, HCMC',
-    fullAddress: '45 Dien Bien Phu St, Ward 25, Binh Thanh, HCMC',
-    sports: ['basketball'],
-    rating: 4.7,
-    reviewCount: 189,
-    imageUrl: 'https://images.unsplash.com/photo-1759694390162-bf13852b2650?w=800&q=80',
-    priceFrom: 150_000,
-    facilities: ['Air Conditioning', 'Locker Room', 'Scoreboard', 'Parking', 'Showers'],
-    openHours: '07:00 – 23:00',
-    description: 'Fully air-conditioned indoor basketball arena with professional flooring and NBA-standard backboards.',
-    courtCount: 4,
-    district: 'Binh Thanh',
-  },
-  {
-    id: 'v-003',
-    name: 'Go Vap Badminton Hall',
-    shortAddress: 'Go Vap, HCMC',
-    fullAddress: '88 Nguyen Oanh St, Ward 7, Go Vap, HCMC',
-    sports: ['badminton'],
-    rating: 4.8,
-    reviewCount: 256,
-    imageUrl: 'https://images.unsplash.com/photo-1775993167284-8e6a6e56ab69?w=800&q=80',
-    priceFrom: 80_000,
-    facilities: ['Air Conditioning', 'Equipment Rental', 'Parking', 'Pro Shop', 'Cafe'],
-    openHours: '05:30 – 23:30',
-    description: 'The largest badminton facility in Go Vap with 12 professional courts, Yonex equipment and certified coaching.',
-    courtCount: 12,
-    district: 'Go Vap',
-  },
-  {
-    id: 'v-004',
-    name: 'Thu Duc Football Complex',
-    shortAddress: 'Thu Duc, HCMC',
-    fullAddress: '233 Vo Van Ngan St, Thu Duc City, HCMC',
-    sports: ['football'],
-    rating: 4.6,
-    reviewCount: 421,
-    imageUrl: 'https://images.unsplash.com/photo-1776059462589-39863e08fbec?w=800&q=80',
-    priceFrom: 200_000,
-    facilities: ['Artificial Turf', 'Changing Room', 'Parking', 'Lighting', 'Referee Service'],
-    openHours: '06:00 – 23:00',
-    description: 'Modern 5v5 and 7v7 football fields with premium artificial turf. Popular for corporate leagues and weekend tournaments.',
-    courtCount: 8,
-    district: 'Thu Duc',
-  },
-  {
-    id: 'v-005',
-    name: 'District 7 Pickleball Club',
-    shortAddress: 'District 7, HCMC',
-    fullAddress: '18 Nguyen Thi Thap St, Tan Phu Ward, District 7, HCMC',
-    sports: ['pickleball'],
-    rating: 4.9,
-    reviewCount: 143,
-    imageUrl: 'https://images.unsplash.com/photo-1710772099352-f8fbb7b30977?w=800&q=80',
-    priceFrom: 100_000,
-    facilities: ['Air Conditioning', 'Equipment Rental', 'Coaching', 'Parking', 'Showers'],
-    openHours: '07:00 – 22:00',
-    description: 'Vietnam\'s top-rated pickleball facility with 8 indoor courts and professional coaching for all skill levels.',
-    courtCount: 8,
-    district: 'District 7',
-  },
-  {
-    id: 'v-006',
-    name: 'Vung Tau Beach Volleyball',
-    shortAddress: 'Vung Tau City',
-    fullAddress: 'Back Beach Zone, Ward 2, Vung Tau City',
-    sports: ['volleyball'],
-    rating: 4.7,
-    reviewCount: 98,
-    imageUrl: 'https://images.unsplash.com/photo-1585541115062-e91a6580c409?w=800&q=80',
-    priceFrom: 90_000,
-    facilities: ['Beach Courts', 'Changing Room', 'Equipment Rental', 'Sea View', 'Bar'],
-    openHours: '06:00 – 20:00',
-    description: 'Open-air beach volleyball courts right on Back Beach with stunning sea views. Perfect for casual games or competitive training.',
-    courtCount: 6,
-    district: 'Vung Tau',
-  },
 ];
 
-// ─── Generate time slots for a venue + date ──────────────────────────────────
 export function generateSlots(venueId: string, date: string): VenueSlot[] {
-  const venue = MOCK_VENUES.find(v => v.id === venueId);
+  const venue = MOCK_VENUES.find((v) => v.id === venueId);
   if (!venue) return [];
 
   const [openH] = venue.openHours.split(' – ')[0].split(':').map(Number);
   const [closeH] = venue.openHours.split(' – ')[1].split(':').map(Number);
-
   const slots: VenueSlot[] = [];
   const now = new Date();
   const selectedDate = new Date(date);
@@ -164,83 +404,135 @@ export function generateSlots(venueId: string, date: string): VenueSlot[] {
     const startTime = `${String(h).padStart(2, '0')}:00`;
     const endTime = `${String(h + 1).padStart(2, '0')}:00`;
     const slotId = `${venueId}_${date}_${startTime}`;
-
-    // Close past slots for today
     const isPast = isToday && h <= now.getHours();
-
-    // Check owner overrides first
     const override = getSlotOverride(venueId, date, startTime);
-
-    // Simulate some already-booked slots (deterministic by hash)
     const pseudoRandom = (venueId.charCodeAt(3) + h + date.charCodeAt(8)) % 7;
     const isMockBooked = !isPast && pseudoRandom === 0;
 
     let status: VenueSlot['status'] = 'available';
     if (isPast) status = 'closed';
-    else if (override === 'locked' || override === 'unavailable') status = 'booked'; // appear as booked to players
+    else if (override === 'locked' || override === 'unavailable') status = 'booked';
     else if (isSlotBooked(venueId, date, startTime) || isMockBooked) status = 'booked';
 
-    // Price varies by time-of-day (peak hours 17–21 are more expensive)
     const isPeak = h >= 17 && h <= 21;
     const price = isPeak ? venue.priceFrom * 1.5 : venue.priceFrom;
-
     slots.push({ id: slotId, venueId, date, startTime, endTime, price, status });
   }
+
   return slots;
 }
 
-// ─── Public API fns ──────────────────────────────────────────────────────────
-export async function fetchVenues(filters?: {
-  sport?: Sport | 'all';
-  district?: string;
-  search?: string;
-}): Promise<{ success: boolean; data: Venue[] }> {
+export async function fetchVenues(filters?: FetchVenuesParams): Promise<FetchVenuesResult> {
   if (isMockApi) {
     await delay(300);
-    let data = [...MOCK_VENUES];
-    if (filters?.sport && filters.sport !== 'all') {
-      data = data.filter(v => v.sports.includes(filters.sport as Sport));
-    }
-    if (filters?.district && filters.district !== 'all') {
-      data = data.filter(v => v.district === filters.district);
-    }
-    if (filters?.search) {
-      const q = filters.search.toLowerCase();
-      data = data.filter(
-        v =>
-          v.name.toLowerCase().includes(q) ||
-          v.shortAddress.toLowerCase().includes(q) ||
-          v.sports.some(s => s.includes(q))
-      );
-    }
-    return { success: true, data };
+    const data = filterVenueList([...MOCK_VENUES], filters);
+    return {
+      items: data,
+      pagination: {
+        page: filters?.page ?? 1,
+        limit: filters?.limit ?? data.length,
+        total: data.length,
+        pages: 1,
+      },
+    };
   }
-  const params = new URLSearchParams();
-  if (filters?.sport && filters.sport !== 'all') params.set('sport', filters.sport);
-  const res = await fetch(`${API_BASE_URL}/venues?${params}`);
-  return res.json();
+
+  const params: Record<string, string | number> = {};
+  if (filters?.page) params.page = filters.page;
+  if (filters?.limit) params.limit = filters.limit;
+  if (filters?.date) params.date = filters.date;
+
+  const res = await api.get<{ message: string; data: { items: BackendVenue[]; pagination: FetchVenuesResult['pagination'] } }>('/venues', {
+    params,
+  });
+
+  const mappedItems = res.data.data.items.map(mapVenue);
+  const filteredItems = filterVenueList(mappedItems, filters);
+
+  return {
+    items: filteredItems,
+    pagination: {
+      ...res.data.data.pagination,
+      total: filteredItems.length,
+      pages: Math.max(1, Math.ceil(filteredItems.length / (res.data.data.pagination.limit || filteredItems.length || 1))),
+    },
+  };
 }
 
-export async function fetchVenueById(venueId: string): Promise<{ success: boolean; data: Venue | null }> {
+export async function fetchVenueById(venueId: string, date?: string): Promise<Venue | null> {
   if (isMockApi) {
     await delay(200);
-    const venue = MOCK_VENUES.find(v => v.id === venueId) ?? null;
-    return { success: true, data: venue };
+    return MOCK_VENUES.find((venue) => venue.id === venueId) ?? null;
   }
-  const res = await fetch(`${API_BASE_URL}/venues/${venueId}`);
-  return res.json();
+
+  const venueList = await fetchVenues({ page: 1, limit: 100, date });
+  return venueList.items.find((venue) => venue.id === venueId) ?? null;
 }
 
-export async function fetchSlots(
-  venueId: string,
-  date: string
-): Promise<{ success: boolean; data: VenueSlot[] }> {
+export async function fetchVenueSlots(venueId: string, date: string): Promise<{ venue: Venue | null; date: string; slots: VenueSlot[] }> {
   if (isMockApi) {
     await delay(200);
-    return { success: true, data: generateSlots(venueId, date) };
+    const venue = MOCK_VENUES.find((item) => item.id === venueId) ?? null;
+    return { venue, date, slots: generateSlots(venueId, date) };
   }
-  const res = await fetch(`${API_BASE_URL}/venues/${venueId}/slots?date=${date}`);
-  return res.json();
+
+  const res = await api.get<{ message: string; data: { venue: BackendVenue; date: string; slots: BackendSlot[] } }>(`/venues/${venueId}/slots`, {
+    params: { date },
+  });
+
+  const venue = mapVenue(res.data.data.venue);
+  return {
+    venue,
+    date: res.data.data.date,
+    slots: res.data.data.slots.map((slot) => mapSlot(venueId, slot, venue.priceFrom)),
+  };
+}
+
+export async function createBookingHold(payload: CreateBookingHoldPayload): Promise<Booking> {
+  const res = await api.post<{ message: string; data: { booking: BackendBooking } }>('/bookings/holds', payload);
+  return mapBooking(res.data.data.booking);
+}
+
+export async function createBookingPayment(bookingId: string, payload: CreateBookingPaymentPayload): Promise<{ booking: Booking; payment: VenuePayment | null }> {
+  const res = await api.post<{ message: string; data: { booking: BackendBooking; payment: BackendPayment | null } }>(`/bookings/${bookingId}/payments`, payload);
+  return {
+    booking: mapBooking(res.data.data.booking),
+    payment: mapPayment(res.data.data.payment),
+  };
+}
+
+export async function confirmBookingPayment(paymentId: string, payload: ConfirmBookingPaymentPayload): Promise<{ booking: Booking; payment: VenuePayment | null }> {
+  const res = await api.post<{ message: string; data: { acknowledged: true; booking: BackendBooking; payment: BackendPayment | null } }>(`/payments/${paymentId}/confirm`, payload);
+  return {
+    booking: mapBooking(res.data.data.booking),
+    payment: mapPayment(res.data.data.payment),
+  };
+}
+
+export async function fetchMyBookings(params?: FetchMyBookingsParams): Promise<{ items: Booking[]; pagination: FetchVenuesResult['pagination'] }> {
+  const query: Record<string, string | number> = {};
+  if (params?.page) query.page = params.page;
+  if (params?.limit) query.limit = params.limit;
+  if (params?.status && params.status !== 'all') query.status = params.status;
+
+  const res = await api.get<{ message: string; data: { items: BackendBooking[]; pagination: FetchVenuesResult['pagination'] } }>('/bookings/me', {
+    params: query,
+  });
+
+  return {
+    items: res.data.data.items.map(mapBooking),
+    pagination: res.data.data.pagination,
+  };
+}
+
+export async function requestBookingRefund(bookingId: string, payload: RequestBookingRefundPayload): Promise<RefundResponse> {
+  const res = await api.post<{ message: string; data: { mode: RefundMode; booking: BackendBooking; payment: BackendPayment | null; refund: BackendRefund | null } }>(`/bookings/${bookingId}/refund`, payload);
+  return {
+    mode: res.data.data.mode,
+    booking: mapBooking(res.data.data.booking),
+    payment: mapPayment(res.data.data.payment),
+    refund: mapRefund(res.data.data.refund),
+  };
 }
 
 export async function createVenue(payload: UpsertVenuePayload): Promise<{ success: boolean; data: Venue }> {
@@ -276,10 +568,7 @@ export async function createVenue(payload: UpsertVenuePayload): Promise<{ succes
   return res.json();
 }
 
-export async function updateVenue(
-  venueId: string,
-  payload: UpsertVenuePayload
-): Promise<{ success: boolean; data: Venue | null }> {
+export async function updateVenue(venueId: string, payload: UpsertVenuePayload): Promise<{ success: boolean; data: Venue | null }> {
   if (isMockApi) {
     await delay(250);
     const idx = MOCK_VENUES.findIndex((venue) => venue.id === venueId);
