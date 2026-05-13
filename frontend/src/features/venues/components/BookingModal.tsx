@@ -1,37 +1,38 @@
 import React, { useState } from 'react';
-import { X, CreditCard, Wallet, Building2, CheckCircle2, ChevronRight, Lock, Loader2 } from 'lucide-react';
-import type { Venue, VenueSlot, PaymentMethod, Sport, Booking } from '../types/venues.types';
+import { X, Building2, CheckCircle2, ChevronRight, Lock, Loader2 } from 'lucide-react';
+
+import type { Booking, PaymentMethod, Sport, Venue, VenuePayment, VenueSlot } from '../types/venues.types';
 import {
   createBookingHold,
   createBookingPayment,
-  confirmBookingPayment,
+  fetchPaymentStatus,
 } from '../api/venuesApi';
 
 type Step = 'confirm' | 'payment' | 'success';
 
 const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: React.ReactNode; desc: string }[] = [
   {
-    id: 'card',
-    label: 'Credit / Debit Card',
-    icon: <CreditCard size={18} />,
-    desc: 'Visa, Mastercard, JCB',
-  },
-  {
-    id: 'momo',
-    label: 'MoMo Wallet',
-    icon: <Wallet size={18} />,
-    desc: 'Pay via MoMo e-wallet',
-  },
-  {
     id: 'bank',
     label: 'Bank Transfer',
     icon: <Building2 size={18} />,
     desc: 'Vietcombank, Techcombank...',
   },
+  {
+    id: 'card',
+    label: 'Credit / Debit Card',
+    icon: <Lock size={18} />,
+    desc: 'Temporarily unavailable for this flow',
+  },
+  {
+    id: 'momo',
+    label: 'MoMo Wallet',
+    icon: <Lock size={18} />,
+    desc: 'Temporarily unavailable for this flow',
+  },
 ];
 
 function formatPrice(n: number) {
-  return new Intl.NumberFormat('vi-VN').format(n) + '₫';
+  return new Intl.NumberFormat('vi-VN').format(n) + 'đ';
 }
 
 function formatDate(d: string) {
@@ -47,6 +48,8 @@ function ConfirmStep({
   onNotesChange,
   onNext,
   onClose,
+  loading,
+  error,
 }: {
   venue: Venue;
   slots: VenueSlot[];
@@ -56,13 +59,15 @@ function ConfirmStep({
   onNotesChange: (v: string) => void;
   onNext: () => void;
   onClose: () => void;
+  loading: boolean;
+  error: string | null;
 }) {
   const total = slots.reduce((s, sl) => s + sl.price, 0);
   const isSingleSlot = slots.length === 1;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-5 border-b border-[#dfc0b3]">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between gap-3 border-b border-[#dfc0b3] px-4 py-4 sm:px-6 sm:py-5">
         <div>
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
             Confirm Booking
@@ -76,7 +81,13 @@ function ConfirmStep({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+        {error && (
+          <div className="rounded-xl px-4 py-3" style={{ background: '#fff1eb', border: '1px solid rgba(160,65,0,0.15)' }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100' }}>{error}</p>
+          </div>
+        )}
+
         <div className="rounded-xl p-4 flex gap-4" style={{ background: '#fff1eb', border: '1px solid rgba(223,192,179,0.4)' }}>
           <img src={venue.imageUrl} alt={venue.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
           <div>
@@ -87,7 +98,7 @@ function ConfirmStep({
               {venue.shortAddress}
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100', fontWeight: 600, marginTop: 4 }}>
-              📅 {formatDate(selectedDate)}
+              Date: {formatDate(selectedDate)}
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 4, textTransform: 'capitalize' }}>
               {sport}
@@ -108,7 +119,7 @@ function ConfirmStep({
             Selected Slots ({slots.length})
           </p>
           <div className="flex flex-col gap-2">
-            {slots.map(slot => (
+            {slots.map((slot) => (
               <div
                 key={slot.id}
                 className="flex items-center justify-between px-4 py-3 rounded-xl"
@@ -124,7 +135,7 @@ function ConfirmStep({
                     </span>
                   </div>
                   <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#241914', fontWeight: 500 }}>
-                    {slot.startTime} – {slot.endTime}
+                    {slot.startTime} - {slot.endTime}
                   </span>
                 </div>
                 <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: '#a04100' }}>
@@ -141,7 +152,7 @@ function ConfirmStep({
           </label>
           <textarea
             value={notes}
-            onChange={e => onNotesChange(e.target.value)}
+            onChange={(e) => onNotesChange(e.target.value)}
             placeholder="e.g. Need equipment rental, 4 players"
             rows={3}
             style={{
@@ -157,13 +168,11 @@ function ConfirmStep({
               resize: 'none',
               boxSizing: 'border-box',
             }}
-            onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-            onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
           />
         </div>
       </div>
 
-      <div className="px-6 pb-6 pt-4 border-t border-[#dfc0b3]">
+      <div className="border-t border-[#dfc0b3] px-4 pb-4 pt-4 sm:px-6 sm:pb-6">
         <div className="flex items-center justify-between mb-4">
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Total</span>
           <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '22px', fontWeight: 800, color: '#a04100' }}>
@@ -172,7 +181,7 @@ function ConfirmStep({
         </div>
         <button
           onClick={onNext}
-          disabled={!isSingleSlot}
+          disabled={!isSingleSlot || loading}
           className="w-full h-13 rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
             background: 'linear-gradient(90deg,#a04100,#ff7e36)',
@@ -185,8 +194,8 @@ function ConfirmStep({
             boxShadow: '0 4px 14px rgba(160,65,0,0.35)',
           }}
         >
-          Continue to Payment
-          <ChevronRight size={18} />
+          {loading ? <Loader2 size={18} className="animate-spin" /> : <ChevronRight size={18} />}
+          {loading ? 'Creating booking...' : 'Continue to Payment'}
         </button>
       </div>
     </div>
@@ -195,171 +204,134 @@ function ConfirmStep({
 
 function PaymentStep({
   total,
+  payment,
   paymentMethod,
   onMethodChange,
-  onPay,
+  onCheckPayment,
   onBack,
   loading,
   error,
 }: {
   total: number;
+  payment: VenuePayment | null;
   paymentMethod: PaymentMethod;
   onMethodChange: (m: PaymentMethod) => void;
-  onPay: () => void;
+  onCheckPayment: () => void;
   onBack: () => void;
   loading: boolean;
   error: string | null;
 }) {
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [name, setName] = useState('');
-
-  const formatCard = (v: string) => v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
-  const formatExpiry = (v: string) => v.replace(/\D/g, '').slice(0, 4).replace(/(.{2})/, '$1/');
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    border: '1.5px solid #dfc0b3',
-    borderRadius: 10,
-    padding: '10px 14px',
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '14px',
-    color: '#241914',
-    background: '#fff',
-    outline: 'none',
-    boxSizing: 'border-box',
-  };
-
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-[#dfc0b3]">
-        <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-[#fff1eb] transition-colors" style={{ color: '#584238' }}>
-          ←
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex flex-wrap items-center gap-3 border-b border-[#dfc0b3] px-4 py-4 sm:px-6 sm:py-5">
+        <button onClick={onBack} className="rounded-lg px-2 py-1.5 transition-colors hover:bg-[#fff1eb]" style={{ color: '#584238' }}>
+          Back
         </button>
-        <div>
+        <div className="min-w-0 flex-1">
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
             Payment
           </h2>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginTop: 2 }}>
-            Secure checkout
+            Bank transfer only
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-1" style={{ color: '#006a65' }}>
+        <div className="ml-auto flex items-center gap-1 rounded-full px-2 py-1" style={{ color: '#006a65', background: 'rgba(0,106,101,0.08)' }}>
           <Lock size={14} />
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: 600, color: '#006a65' }}>SSL</span>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
         {error && (
           <div className="rounded-xl px-4 py-3" style={{ background: '#fff1eb', border: '1px solid rgba(160,65,0,0.15)' }}>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100' }}>{error}</p>
           </div>
         )}
 
+        <div className="rounded-xl p-4" style={{ background: '#eefbf7', border: '1px solid rgba(0,106,101,0.12)' }}>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Payment created</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Payment ID: <strong>{payment?.id || 'N/A'}</strong></p>
+            <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Reference: <strong>{payment?.providerReference || payment?.id || 'N/A'}</strong></p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Current status: <strong>{payment?.status || 'pending'}</strong></p>
+          </div>
+        </div>
+
         <div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 8 }}>
             Payment Method
           </p>
           <div className="flex flex-col gap-2">
-            {PAYMENT_OPTIONS.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => onMethodChange(opt.id)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left"
-                style={{
-                  borderColor: paymentMethod === opt.id ? '#a04100' : '#dfc0b3',
-                  background: paymentMethod === opt.id ? '#fff1eb' : '#fff',
-                }}
-              >
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: paymentMethod === opt.id ? '#a04100' : '#f4ded5', color: paymentMethod === opt.id ? '#fff' : '#584238' }}
+            {PAYMENT_OPTIONS.map((opt) => {
+              const enabled = opt.id === 'bank';
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => enabled && onMethodChange(opt.id)}
+                  disabled={!enabled}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left"
+                  style={{
+                    borderColor: paymentMethod === opt.id ? '#a04100' : '#dfc0b3',
+                    background: paymentMethod === opt.id ? '#fff1eb' : '#fff',
+                    opacity: enabled ? 1 : 0.45,
+                    cursor: enabled ? 'pointer' : 'not-allowed',
+                  }}
                 >
-                  {opt.icon}
-                </div>
-                <div>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, color: '#241914' }}>{opt.label}</p>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>{opt.desc}</p>
-                </div>
-                {paymentMethod === opt.id && <CheckCircle2 size={18} style={{ color: '#a04100', marginLeft: 'auto' }} />}
-              </button>
-            ))}
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: paymentMethod === opt.id ? '#a04100' : '#f4ded5', color: paymentMethod === opt.id ? '#fff' : '#584238' }}
+                  >
+                    {opt.icon}
+                  </div>
+                  <div>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, color: '#241914' }}>{opt.label}</p>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>{opt.desc}</p>
+                  </div>
+                  {paymentMethod === opt.id && enabled && <CheckCircle2 size={18} style={{ color: '#a04100', marginLeft: 'auto' }} />}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {paymentMethod === 'card' && (
-          <div className="flex flex-col gap-3">
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 2 }}>
-              Card Details
-            </p>
-            <input
-              style={inputStyle}
-              placeholder="Cardholder Name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-              onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-            />
-            <input
-              style={inputStyle}
-              placeholder="Card Number"
-              value={cardNumber}
-              onChange={e => setCardNumber(formatCard(e.target.value))}
-              maxLength={19}
-              onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-              onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-            />
-            <div className="flex gap-3">
-              <input
-                style={{ ...inputStyle, flex: 1 }}
-                placeholder="MM/YY"
-                value={expiry}
-                onChange={e => setExpiry(formatExpiry(e.target.value))}
-                maxLength={5}
-                onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-                onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-              />
-              <input
-                style={{ ...inputStyle, flex: 1 }}
-                placeholder="CVV"
-                type="password"
-                value={cvv}
-                onChange={e => setCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                maxLength={3}
-                onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-                onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-              />
+        <div className="rounded-xl p-4" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Transfer to:</p>
+          <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,220px)_1fr]">
+            {payment?.qrCodeUrl ? (
+              <div className="mx-auto w-full max-w-[220px] rounded-2xl bg-white p-3" style={{ border: '1px solid rgba(223,192,179,0.7)' }}>
+                <img
+                  src={payment.qrCodeUrl}
+                  alt="Sepay QR code"
+                  className="aspect-square w-full rounded-xl object-contain"
+                />
+              </div>
+            ) : null}
+            <div className="grid gap-3 self-start">
+              <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Bank</p>
+                <p className="break-words" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#241914', fontWeight: 600 }}>{payment?.bankName || 'N/A'}</p>
+              </div>
+              <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Account number</p>
+                <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#241914', fontWeight: 600 }}>{payment?.bankAccountNumber || 'N/A'}</p>
+              </div>
+              <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Account name</p>
+                <p className="break-words" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#241914', fontWeight: 600 }}>{payment?.bankAccountName || 'N/A'}</p>
+              </div>
+              <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Transfer note</p>
+                <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#a04100', fontWeight: 700 }}>{payment?.providerReference || payment?.id || 'N/A'}</p>
+              </div>
             </div>
           </div>
-        )}
-
-        {paymentMethod === 'momo' && (
-          <div className="flex flex-col items-center gap-3 py-6 rounded-xl" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl" style={{ background: '#fff' }}>
-              💜
-            </div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>
-              The selected wallet option still uses the same compatibility payment confirmation flow.
-            </p>
-          </div>
-        )}
-
-        {paymentMethod === 'bank' && (
-          <div className="rounded-xl p-4 flex flex-col gap-2" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Transfer to:</p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Bank: <strong>Vietcombank</strong></p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Account: <strong>1234 5678 9012</strong></p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Name: <strong>Matchill Sports JSC</strong></p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 4 }}>
-              Booking confirmation is still completed through the backend compatibility endpoint after payment creation.
-            </p>
-          </div>
-        )}
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 12 }}>
+            Scan the QR or transfer manually with the exact note above, then press <strong>Check Payment</strong>.
+          </p>
+        </div>
       </div>
 
-      <div className="px-6 pb-6 pt-4 border-t border-[#dfc0b3]">
+      <div className="border-t border-[#dfc0b3] px-4 pb-4 pt-4 sm:px-6 sm:pb-6">
         <div className="flex items-center justify-between mb-4">
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Total to pay</span>
           <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '22px', fontWeight: 800, color: '#a04100' }}>
@@ -367,7 +339,7 @@ function PaymentStep({
           </span>
         </div>
         <button
-          onClick={onPay}
+          onClick={onCheckPayment}
           disabled={loading}
           className="w-full h-13 rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-70"
           style={{
@@ -382,7 +354,7 @@ function PaymentStep({
           }}
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
-          {loading ? 'Processing…' : `Pay ${formatPrice(total)}`}
+          {loading ? 'Checking...' : 'Check Payment'}
         </button>
       </div>
     </div>
@@ -399,7 +371,7 @@ function SuccessStep({
   onClose: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center px-8 py-8 text-center gap-5">
+    <div className="flex flex-col items-center gap-5 px-5 py-6 text-center sm:px-8 sm:py-8">
       <div
         className="w-24 h-24 rounded-full flex items-center justify-center"
         style={{ background: 'linear-gradient(135deg,#006a65,#00b09e)', boxShadow: '0 8px 24px rgba(0,106,101,0.35)' }}
@@ -419,13 +391,13 @@ function SuccessStep({
       <div className="w-full rounded-xl p-4 text-left flex flex-col gap-2" style={{ background: '#fff1eb', border: '1px solid rgba(223,192,179,0.4)' }}>
         <Row label="Venue" value={booking.venueName} />
         <Row label="Date" value={formatDate(booking.date)} />
-        <Row label="Slots" value={booking.slots.map(s => `${s.startTime}–${s.endTime}`).join(', ')} />
+        <Row label="Slots" value={booking.slots.map((s) => `${s.startTime}-${s.endTime}`).join(', ')} />
         <Row label="Booking ID" value={`#${booking.id.slice(-8).toUpperCase()}`} />
         <Row label="Amount Paid" value={formatPrice(booking.totalPrice)} highlight />
       </div>
 
       <div className="w-full rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}>
-        <span style={{ fontSize: 20 }}>💡</span>
+        <span style={{ fontSize: 20 }}>Tip</span>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}>
           You can request a refund from Booking History. Instant auto-refund still depends on the backend refund window.
         </p>
@@ -491,14 +463,15 @@ interface Props {
 export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuccess, onGoToBookings }: Props) {
   const [step, setStep] = useState<Step>('confirm');
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank');
   const [loading, setLoading] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [payment, setPayment] = useState<VenuePayment | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const total = slots.reduce((s, sl) => s + sl.price, 0);
 
-  const handlePay = async () => {
+  const handleContinueToPayment = async () => {
     if (slots.length !== 1) {
       setError('Please select exactly one slot for this checkout flow.');
       return;
@@ -509,32 +482,64 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
 
     try {
       const selectedSlot = slots[0];
-      const holdBooking = await createBookingHold({
+      const holdResult = await createBookingHold({
         venue_id: venue.id,
         date: selectedDate,
         start_time: selectedSlot.startTime,
         end_time: selectedSlot.endTime,
       });
 
-      const paymentResult = await createBookingPayment(holdBooking.id, {
-        provider: paymentMethod,
-        return_url: window.location.href,
-      });
+      const paymentResult = holdResult.payment?.provider === 'sepay'
+        ? holdResult
+        : await createBookingPayment(holdResult.booking.id, {
+            provider: 'sepay',
+            return_url: window.location.href,
+          });
 
       if (!paymentResult.payment) {
         throw new Error('Payment record was not returned by the server.');
       }
 
-      const confirmed = await confirmBookingPayment(paymentResult.payment.id, {
-        status: 'paid',
-        provider_reference: paymentResult.payment.providerReference || `ui-${Date.now()}`,
-      });
-
-      setBooking(confirmed.booking);
-      setStep('success');
-      onSuccess(confirmed.booking);
+      setBooking(paymentResult.booking);
+      setPayment(paymentResult.payment);
+      setPaymentMethod('bank');
+      setStep('payment');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to complete payment.';
+      const message = err instanceof Error ? err.message : 'Unable to create booking payment.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckPayment = async () => {
+    if (!payment?.id) {
+      setError('Payment has not been created yet.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const statusResult = await fetchPaymentStatus(payment.id);
+      setBooking(statusResult.booking);
+      setPayment(statusResult.payment);
+
+      if (statusResult.payment?.status === 'paid' && statusResult.booking.status === 'confirmed') {
+        setStep('success');
+        onSuccess(statusResult.booking);
+        return;
+      }
+
+      if (statusResult.payment?.status === 'failed' || statusResult.booking.status === 'expired') {
+        setError('Payment is not completed or the booking hold has expired.');
+        return;
+      }
+
+      setError('Payment is still pending. Please complete the transfer and check again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to check payment status.';
       setError(message);
     } finally {
       setLoading(false);
@@ -543,15 +548,13 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center p-2 sm:items-center sm:p-4"
       style={{ background: 'rgba(36,25,20,0.5)' }}
-      onClick={e => { if (e.target === e.currentTarget && step !== 'payment') onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && step !== 'payment') onClose(); }}
     >
       <div
-        className="relative bg-white rounded-2xl w-full flex flex-col"
+        className="relative flex h-[min(100dvh-1rem,46rem)] w-full max-w-[38rem] flex-col overflow-hidden rounded-[24px] bg-white sm:h-auto sm:max-h-[92vh]"
         style={{
-          maxWidth: 480,
-          maxHeight: '92vh',
           boxShadow: '0 24px 64px rgba(36,25,20,0.3)',
         }}
       >
@@ -563,20 +566,23 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
             sport={sport}
             notes={notes}
             onNotesChange={setNotes}
-            onNext={() => {
-              setError(null);
-              setStep('payment');
-            }}
+            onNext={handleContinueToPayment}
             onClose={onClose}
+            loading={loading}
+            error={error}
           />
         )}
         {step === 'payment' && (
           <PaymentStep
             total={total}
+            payment={payment}
             paymentMethod={paymentMethod}
             onMethodChange={setPaymentMethod}
-            onPay={handlePay}
-            onBack={() => setStep('confirm')}
+            onCheckPayment={handleCheckPayment}
+            onBack={() => {
+              setError(null);
+              setStep('confirm');
+            }}
             loading={loading}
             error={error}
           />

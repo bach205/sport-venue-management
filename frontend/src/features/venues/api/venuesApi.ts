@@ -55,7 +55,7 @@ export interface CreateBookingHoldPayload {
 }
 
 export interface CreateBookingPaymentPayload {
-  provider?: PaymentMethod | 'stub';
+  provider?: PaymentMethod | 'stub' | 'sepay';
   provider_reference?: string;
   return_url?: string;
 }
@@ -107,6 +107,7 @@ const PAYMENT_METHOD_BY_PROVIDER: Record<string, PaymentMethod> = {
   card: 'card',
   momo: 'momo',
   bank: 'bank',
+  sepay: 'bank',
   stub: 'card',
 };
 
@@ -148,6 +149,10 @@ type BackendPayment = {
   provider: string;
   providerReference: string;
   status: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountName?: string;
+  qrCodeUrl?: string;
   paidAt: string | null;
   refundedAt: string | null;
   createdAt: string;
@@ -256,6 +261,10 @@ function mapPayment(payment?: BackendPayment | null): VenuePayment | null {
     provider: payment.provider,
     providerReference: payment.providerReference,
     status: payment.status,
+    bankName: payment.bankName || '',
+    bankAccountNumber: payment.bankAccountNumber || '',
+    bankAccountName: payment.bankAccountName || '',
+    qrCodeUrl: payment.qrCodeUrl || '',
     paidAt: payment.paidAt,
     refundedAt: payment.refundedAt,
     createdAt: payment.createdAt,
@@ -488,13 +497,24 @@ export async function fetchVenueSlots(venueId: string, date: string): Promise<{ 
   };
 }
 
-export async function createBookingHold(payload: CreateBookingHoldPayload): Promise<Booking> {
-  const res = await api.post<{ message: string; data: { booking: BackendBooking } }>('/bookings/holds', payload);
-  return mapBooking(res.data.data.booking);
+export async function createBookingHold(payload: CreateBookingHoldPayload): Promise<{ booking: Booking; payment: VenuePayment | null }> {
+  const res = await api.post<{ message: string; data: { booking: BackendBooking; payment: BackendPayment | null } }>('/bookings/holds', payload);
+  return {
+    booking: mapBooking(res.data.data.booking),
+    payment: mapPayment(res.data.data.payment),
+  };
 }
 
 export async function createBookingPayment(bookingId: string, payload: CreateBookingPaymentPayload): Promise<{ booking: Booking; payment: VenuePayment | null }> {
   const res = await api.post<{ message: string; data: { booking: BackendBooking; payment: BackendPayment | null } }>(`/bookings/${bookingId}/payments`, payload);
+  return {
+    booking: mapBooking(res.data.data.booking),
+    payment: mapPayment(res.data.data.payment),
+  };
+}
+
+export async function fetchPaymentStatus(paymentId: string): Promise<{ booking: Booking; payment: VenuePayment | null }> {
+  const res = await api.get<{ message: string; data: { booking: BackendBooking; payment: BackendPayment | null } }>(`/payments/${paymentId}`);
   return {
     booking: mapBooking(res.data.data.booking),
     payment: mapPayment(res.data.data.payment),

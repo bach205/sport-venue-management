@@ -12,7 +12,7 @@ export type BookingStatus =
   | 'refund_rejected'
   | 'expired';
 export type PaymentMethod = 'card' | 'momo' | 'bank';
-export type PaymentProvider = PaymentMethod | 'stub';
+export type PaymentProvider = PaymentMethod | 'stub' | 'sepay';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refund_pending' | 'refunded';
 export type RefundStatus = 'pending_auto' | 'pending_manual' | 'approved' | 'rejected' | 'completed';
 export type RefundMode = 'auto' | 'manual';
@@ -81,6 +81,10 @@ export interface VenuePayment {
   provider: PaymentProvider | string;
   providerReference: string;
   status: PaymentStatus | string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountName?: string;
+  qrCodeUrl?: string;
   paidAt: string | null;
   refundedAt: string | null;
   createdAt: string;
