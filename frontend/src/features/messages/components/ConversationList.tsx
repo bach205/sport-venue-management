@@ -1,7 +1,6 @@
 import React from "react";
 import { Search, Users } from "lucide-react";
 import type { Conversation } from "../types/messages.types";
-import { CURRENT_USER } from "../store/messagesStore";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
 
@@ -64,8 +63,14 @@ function AvatarBubble({
   );
 }
 
-function GroupAvatarBubble({ participants }: { participants: { name: string; avatar: string }[] }) {
-  const others = participants.filter((p) => p.id !== CURRENT_USER.id).slice(0, 2);
+function GroupAvatarBubble({
+  participants,
+  currentUserId,
+}: {
+  participants: { id: string; name: string; avatar: string }[];
+  currentUserId: string;
+}) {
+  const others = participants.filter((p) => p.id !== currentUserId).slice(0, 2);
   return (
     <div className="relative shrink-0" style={{ width: 44, height: 44 }}>
       <div
@@ -92,6 +97,7 @@ interface Props {
   onSearchChange: (v: string) => void;
   activeTab: "all" | "1-1" | "group";
   onTabChange: (t: "all" | "1-1" | "group") => void;
+  currentUserId: string;
 }
 
 export function ConversationList({
@@ -102,6 +108,7 @@ export function ConversationList({
   onSearchChange,
   activeTab,
   onTabChange,
+  currentUserId,
 }: Props) {
   const filtered = conversations.filter((conv) => {
     const matchesTab =
@@ -116,7 +123,7 @@ export function ConversationList({
       const name =
         conv.type === "group"
           ? (conv.name ?? "").toLowerCase()
-          : (conv.participants.find((p) => p.id !== CURRENT_USER.id)?.name.toLowerCase() ?? "");
+          : (conv.participants.find((p) => p.id !== currentUserId)?.name.toLowerCase() ?? "");
       if (!name.includes(q)) return false;
     }
     return true;
@@ -213,7 +220,7 @@ export function ConversationList({
           filtered.map((conv) => {
             const isActive = conv.id === activeId;
             const other =
-              conv.type === "1-1" ? conv.participants.find((p) => p.id !== CURRENT_USER.id) : null;
+              conv.type === "1-1" ? conv.participants.find((p) => p.id !== currentUserId) : null;
             const displayName =
               conv.type === "group" ? (conv.name ?? "Group") : (other?.name ?? "");
             const lastMsg = conv.lastMessage;
@@ -223,7 +230,7 @@ export function ConversationList({
               if (lastMsg.type === "match_found") lastMsgPreview = "🎾 Match Found!";
               else if (lastMsg.type === "venue_booked") lastMsgPreview = "📍 Venue Booked";
               else if (lastMsg.type === "system") lastMsgPreview = lastMsg.content;
-              else if (lastMsg.senderId === CURRENT_USER.id)
+              else if (lastMsg.senderId === currentUserId)
                 lastMsgPreview = `You: ${lastMsg.content}`;
               else if (conv.type === "group") {
                 const sender = conv.participants.find((p) => p.id === lastMsg.senderId);

@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  db: 
+    image: mongo:8
+    container_name: sport-venue-management-db
+    ports:
+      - "27016:27017"
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+volumes:
+  mongo_data:

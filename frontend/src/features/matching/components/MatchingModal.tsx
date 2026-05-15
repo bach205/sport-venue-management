@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { X, MapPin, Clock, Star, ShieldCheck, MessageSquare, Info } from "lucide-react";
 import { submitMatchRequest, simulateMatchSearch } from "../api/matchingApi";
@@ -10,9 +10,10 @@ import { resolveAvatar } from "../../../shared/assets/avatarMap";
 import {
   createOrOpenConversation,
   MOCK_USERS,
-  getConversations,
 } from "../../messages/store/messagesStore";
-import type { ChatMessage } from "../../messages/types/messages.types";
+import { isMockApi } from "@/shared/constants/api";
+import { socket } from "@/shared/socket/socketClient";
+import { useAppSelector } from "@/shared/hooks/useAppSelector";
 
 import imgMatchGraphic from "../../../imports/Html→Body-2/c1c6d62b4135dfdd55aafefa06abfdf8321f96cf.png";
 import imgOpponent from "../../../imports/Html→Body-2/781a656a29f4ab3f37bb8c8ba8f0a14ecb4a100e.png";
@@ -333,6 +334,15 @@ function RequestForm({
 function SearchingScreen({ request, onCancel }: { request: MatchRequest; onCancel: () => void }) {
   const [dotCount, setDotCount] = useState(0);
   const [pulseScale, setPulseScale] = useState(1);
+  const [statusIndex, setStatusIndex] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const statusMessages = [
+    "Scanning nearby courts",
+    "Checking skill levels",
+    "Matching time slots",
+    "Expanding search radius",
+  ];
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -342,8 +352,27 @@ function SearchingScreen({ request, onCancel }: { request: MatchRequest; onCance
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const statusTimer = setInterval(() => {
+      setStatusIndex((i) => (i + 1) % statusMessages.length);
+    }, 2200);
+
+    const elapsedTimer = setInterval(() => {
+      setElapsedSeconds((s) => s + 1);
+    }, 1000);
+
+    return () => {
+      clearInterval(statusTimer);
+      clearInterval(elapsedTimer);
+    };
+  }, []);
+
   const sportEmoji = SPORT_ICONS[request.sport];
   const dots = ".".repeat(dotCount);
+  const statusLine =
+    elapsedSeconds >= 12
+      ? "No match yet. Waiting for another player..."
+      : statusMessages[statusIndex];
 
   return (
     <div className="flex flex-col items-center justify-between h-full px-8 py-8">
@@ -401,6 +430,16 @@ function SearchingScreen({ request, onCancel }: { request: MatchRequest; onCance
             }}
           >
             Scanning {request.skillLevel} {request.sport} players near {request.location}
+          </p>
+          <p
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "12px",
+              color: "#8b7266",
+              marginTop: 6,
+            }}
+          >
+            {statusLine}
           </p>
         </div>
 
@@ -753,32 +792,215 @@ interface Props {
 
 export function MatchingModal({ onClose }: Props) {
   const navigate = useNavigate();
+  const authUser = useAppSelector((state) => state.auth.user);
+  const currentUserId = authUser?._id ?? null;
   const [step, setStep] = useState<"form" | "searching" | "matched">("form");
   const [request, setRequest] = useState<MatchRequest | null>(null);
   const [result, setResult] = useState<MatchResult | null>(null);
 
-  const handleSubmit = async (req: MatchRequest) => {
-    setRequest(req);
-    setStep("searching");
-    await submitMatchRequest(req);
-    const matchResult = await simulateMatchSearch(req, () => {});
+  const pendingMatchHandlerRef = useRef<((payload: any) => void) | null>(null);
+  const pendingMatchRejectRef = useRef<((error: Error) => void) | null>(null);
+  const activeRequestIdRef = useRef<string | null>(null);
+  const searchTokenRef = useRef(0);
+
+  useEffect(() => {
+    if (!currentUserId) return undefined;
+
+    const joinUser = () => socket.emit("user:join", currentUserId);
+
+    if (socket.connected) {
+      joinUser();
+    } else {
+      socket.once("connect", joinUser);
+    }
+
+    return () => {
+      socket.off("connect", joinUser);
+    };
+  }, [currentUserId]);
+
+  const clearPendingMatchListener = (reason?: string) => {
+    if (pendingMatchHandlerRef.current) {
+      socket.off("matching:request:matched", pendingMatchHandlerRef.current);
+      pendingMatchHandlerRef.current = null;
+    }
+
+    if (pendingMatchRejectRef.current && reason) {
+      pendingMatchRejectRef.current(new Error(reason));
+    }
+
+    pendingMatchRejectRef.current = null;
+  };
+
+  const emitMatchEcho = (incoming: any) => {
+    if (!incoming || incoming.clientEcho) {
+      return;
+    }
+
+    const targetUserId = incoming?.partner?.id ?? incoming?.match?.partner?.id ?? null;
+    if (!targetUserId || targetUserId === currentUserId) {
+      return;
+    }
+
+    socket.emit("matching:request:client-matched", {
+      targetUserId,
+      data: incoming,
+    });
+  };
+
+  const isRelevantMatch = (incoming: any) => {
+    const activeRequestId = activeRequestIdRef.current;
+    if (!activeRequestId) {
+      return true;
+    }
+
+    if (incoming?.request?.id === activeRequestId) {
+      return true;
+    }
+
+    const requestIds = incoming?.match?.requestIds;
+    if (!Array.isArray(requestIds)) {
+      return false;
+    }
+
+    return requestIds.some((id) => String(id) === String(activeRequestId));
+  };
+
+  const formatMatchTime = (timeValue: string | undefined, requestForTime: MatchRequest) => {
+    let date: Date | null = null;
+
+    if (timeValue) {
+      const parsed = new Date(timeValue);
+      if (!Number.isNaN(parsed.getTime())) {
+        date = parsed;
+      }
+    } else if (requestForTime?.date && requestForTime?.time) {
+      const parsed = new Date(`${requestForTime.date}T${requestForTime.time}:00`);
+      if (!Number.isNaN(parsed.getTime())) {
+        date = parsed;
+      }
+    }
+
+    if (!date) {
+      return requestForTime?.time ? `Today, ${requestForTime.time}` : "Scheduled";
+    }
+
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    return isToday ? `Today, ${hh}:${mm}` : `${date.toLocaleDateString()} ${hh}:${mm}`;
+  };
+
+  const buildMatchResultFromPayload = (payload: any, requestForTime: MatchRequest): MatchResult => {
+    const match = payload?.match ?? {};
+    const partner = match?.partner ?? payload?.partner ?? {};
+    const requestId =
+      payload?.request?.id ??
+      match?.requestIds?.[0] ??
+      activeRequestIdRef.current ??
+      `req-${Date.now()}`;
+    const location = match?.location ?? requestForTime.location;
+
+    return {
+      requestId,
+      sport: match?.sport ?? requestForTime.sport,
+      skillLevel: requestForTime.skillLevel,
+      venue: location,
+      venueDetail: location,
+      time: formatMatchTime(match?.time, requestForTime),
+      opponent: {
+        id: partner?.id ?? "unknown",
+        name: partner?.name ?? "Opponent",
+        avatar: partner?.avatar ?? "",
+        rating: partner?.rating ?? 0,
+        matchCount: partner?.matchCount ?? 0,
+        tier: partner?.tier ?? "Rookie",
+      },
+      conversationId: payload?.conversation?.id ?? match?.conversationId ?? "",
+    };
+  };
+
+  const finalizeMatch = (matchResult: MatchResult) => {
     setResult(matchResult);
     setStep("matched");
 
-    // Create the chat room in the messages store
-    if (matchResult) {
-      const knownUser = MOCK_USERS[matchResult.opponent.id];
-      const user = knownUser ?? {
-        id: matchResult.opponent.id,
-        name: matchResult.opponent.name,
-        avatar: matchResult.opponent.avatar,
-        isOnline: true,
-      };
+    if (!isMockApi) return;
 
-      createOrOpenConversation(
-        user,
-        `Match Found! You and ${user.name} are confirmed for ${SPORT_LABELS[matchResult.sport]}. Time: ${matchResult.time} · ${matchResult.venue}`
-      );
+    const knownUser = MOCK_USERS[matchResult.opponent.id];
+    const user = knownUser ?? {
+      id: matchResult.opponent.id,
+      name: matchResult.opponent.name,
+      avatar: matchResult.opponent.avatar,
+      isOnline: true,
+    };
+
+    createOrOpenConversation(
+      user,
+      `Match Found! You and ${user.name} are confirmed for ${SPORT_LABELS[matchResult.sport]}. Time: ${matchResult.time} · ${matchResult.venue}`
+    );
+  };
+
+  const handleSubmit = async (req: MatchRequest) => {
+    const CANCELLED_ERROR = "match-search-cancelled";
+    const searchToken = searchTokenRef.current + 1;
+    searchTokenRef.current = searchToken;
+
+    if (currentUserId) {
+      const joinUser = () => socket.emit("user:join", currentUserId);
+      if (socket.connected) {
+        joinUser();
+      } else {
+        socket.once("connect", joinUser);
+      }
+    }
+
+    clearPendingMatchListener();
+    activeRequestIdRef.current = null;
+    setRequest(req);
+    setResult(null);
+    setStep("searching");
+
+    try {
+      const response = await submitMatchRequest(req);
+      if (searchToken !== searchTokenRef.current) return;
+      const payload = response?.data ?? response;
+      const requestId = payload?.request?.id ?? null;
+      activeRequestIdRef.current = requestId;
+
+      if (payload?.match) {
+        if (searchToken !== searchTokenRef.current) return;
+        finalizeMatch(buildMatchResultFromPayload(payload, req));
+        activeRequestIdRef.current = null;
+        return;
+      }
+
+      const matchedPayload = await new Promise((resolve, reject) => {
+        const handleMatched = (incoming: any) => {
+          if (!incoming?.request?.id && !Array.isArray(incoming?.match?.requestIds)) return;
+          if (!isRelevantMatch(incoming)) return;
+          emitMatchEcho(incoming);
+          clearPendingMatchListener();
+          resolve(incoming);
+        };
+
+        pendingMatchHandlerRef.current = handleMatched;
+        pendingMatchRejectRef.current = reject;
+        socket.on("matching:request:matched", handleMatched);
+      });
+
+      if (searchToken !== searchTokenRef.current) return;
+      finalizeMatch(buildMatchResultFromPayload(matchedPayload, req));
+      activeRequestIdRef.current = null;
+    } catch (error: any) {
+      if (error?.message === CANCELLED_ERROR) {
+        return;
+      }
+
+      console.error(error);
+      setStep("form");
+      setRequest(null);
+      setResult(null);
     }
   };
 
@@ -795,8 +1017,12 @@ export function MatchingModal({ onClose }: Props) {
   };
 
   const handleCancel = () => {
+    searchTokenRef.current += 1;
+    clearPendingMatchListener("match-search-cancelled");
+    activeRequestIdRef.current = null;
     setStep("form");
     setRequest(null);
+    setResult(null);
   };
 
   return (
