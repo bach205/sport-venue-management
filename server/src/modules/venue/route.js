@@ -23,9 +23,18 @@ router.post(
   asyncHandler((req, res) => venueController.createPayment(req, res))
 );
 router.post(
+  "/webhooks/payments/:provider",
+  asyncHandler((req, res) => venueController.handlePaymentWebhook(req, res))
+);
+router.post(
   "/payments/:paymentId/confirm",
   authMiddleware,
   asyncHandler((req, res) => venueController.confirmPayment(req, res))
+);
+router.get(
+  "/payments/:paymentId",
+  authMiddleware,
+  asyncHandler((req, res) => venueController.getPaymentStatus(req, res))
 );
 router.post(
   "/bookings/:bookingId/refund",
@@ -49,11 +58,23 @@ router.get(
   requireRole("owner"),
   asyncHandler((req, res) => venueController.getMyVenues(req, res))
 );
+router.post(
+  "/my-venues",
+  authMiddleware,
+  requireRole("owner"),
+  asyncHandler((req, res) => venueController.createVenue(req, res))
+);
 router.patch(
   "/my-venues/:venueId",
   authMiddleware,
   requireRole("owner"),
   asyncHandler((req, res) => venueController.updateVenue(req, res))
+);
+router.delete(
+  "/my-venues/:venueId",
+  authMiddleware,
+  requireRole("owner"),
+  asyncHandler((req, res) => venueController.deleteVenue(req, res))
 );
 router.put(
   "/my-venues/:venueId/schedule",

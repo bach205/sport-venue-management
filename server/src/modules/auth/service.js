@@ -131,13 +131,17 @@ class AuthService {
                 "This account has been banned."
             );
         }
-
+        console.log(user)
         const profile = await userService.getUserProfile(user._id);
-        const token = signToken({ email: user.email, id: user._id });
+        const role = await userService.getUserRole(user._id);
+        const token = signToken({ email: user.email, id: user._id, role: role });
+
+        const userJson = user.toJSON();
+        userJson.role = role;
 
         return {
             token,
-            user: user.toJSON(),
+            user: userJson,
             profile: profile.toObject(),
         };
     }

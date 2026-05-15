@@ -47,6 +47,25 @@ Giữ chỗ tạm thời cho một slot trước khi thanh toán.
         "startTime": "08:00",
         "endTime": "09:00"
       }
+    },
+    "payment": null
+  }
+}
+```
+
+Hoặc nếu chính user đó đã có hold/payment còn hiệu lực cho đúng slot, route sẽ trả lại booking/payment cũ:
+```json
+{
+  "message": "Booking hold created successfully.",
+  "data": {
+    "booking": {
+      "id": "6820booking123...",
+      "status": "payment_pending"
+    },
+    "payment": {
+      "id": "6820payment123...",
+      "bookingId": "6820booking123...",
+      "status": "pending"
     }
   }
 }

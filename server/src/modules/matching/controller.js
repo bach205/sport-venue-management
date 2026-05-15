@@ -12,7 +12,7 @@ const matchingService = require("./service");
 class MatchingController {
   async createMatchRequest(req, res) {
     const { isValid, errors } = validateCreateMatchRequestPayload(req.body);
-
+    // console.log("Validation result:", { isValid, errors });
     if (!isValid) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
     }

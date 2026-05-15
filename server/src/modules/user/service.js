@@ -1,4 +1,4 @@
-const { User, Profile } = require("./model");
+const { User, Profile, UserRole } = require("./model");
 
 class UserService {
     async getUserProfile(userId) {
@@ -38,10 +38,17 @@ class UserService {
 
         const defaultName = email.split("@")[0];
 
+        // Create default role alongside profile
+        const result = await UserRole.create({ user_id: userId, role: "user" });
         return Profile.create({
             user_id: userId,
             name: defaultName,
         });
+    }
+
+    async getUserRole(userId) {
+        const userRole = await UserRole.findOne({ user_id: userId });
+        return userRole ? userRole.role : "user";
     }
 
     async deleteProfileByUserId(userId) {

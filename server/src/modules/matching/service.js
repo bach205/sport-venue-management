@@ -124,7 +124,6 @@ class MatchingService {
         request: responseData.request,
       });
     }
-
     return responseData;
   }
 
@@ -164,7 +163,7 @@ class MatchingService {
     if (participantRows.length === 0) {
       return { items: [] };
     }
-
+    
     const matchIds = participantRows.map((item) => item.match_id);
     const matches = await Match.find({ _id: { $in: matchIds } }).sort({ createdAt: -1 });
 
