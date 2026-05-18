@@ -10,4 +10,11 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    allowedHosts: ["matchill.io.vn"],
+  },
+
+  preview: {
+    allowedHosts: ["matchill.io.vn"],
+  },
 });
