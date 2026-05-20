@@ -23,9 +23,14 @@ class MatchingService {
     }).select("_id");
 
     if (existingPending) {
-      throw createHttpError(
-        HTTP_STATUS.BAD_REQUEST,
-        "You already have a pending match request."
+      await MatchRequest.updateMany(
+        {
+          user_id: userId,
+          status: "pending",
+        },
+        {
+          $set: { status: "cancelled" },
+        }
       );
     }
 
