@@ -1,5 +1,9 @@
-import React from 'react';
 import type { VenueSlot } from '../types/venues.types';
+
+function isPastSlot(slot: VenueSlot) {
+  const slotStart = new Date(`${slot.date}T${slot.startTime}:00`);
+  return !Number.isNaN(slotStart.getTime()) && slotStart.getTime() < Date.now();
+}
 
 function formatPrice(n: number) {
   return new Intl.NumberFormat('vi-VN').format(n) + '₫';
@@ -41,7 +45,10 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
         const isSelected = selectedIds.includes(slot.id);
         const isBooked = slot.status === 'booked';
         const isClosed = slot.status === 'closed';
-        const disabled = isBooked || isClosed;
+        const isHeld = slot.status === 'held';
+        const isUnavailable = slot.status === 'unavailable' || slot.status === 'refund_processing';
+        const isPast = isPastSlot(slot);
+        const disabled = isBooked || isClosed || isHeld || isUnavailable || isPast;
 
         let bg = '#fff';
         let border = '1.5px solid #dfc0b3';
@@ -54,12 +61,30 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
           border = '1.5px solid #a04100';
           textColor = '#fff';
           priceColor = 'rgba(255,255,255,0.85)';
+        } else if (isHeld) {
+          bg = '#f8e3d8';
+          border = '1.5px solid #dfc0b3';
+          textColor = '#584238';
+          priceColor = '#584238';
+          opacity = 0.85;
         } else if (isBooked) {
           bg = '#f4ded5';
           border = '1.5px solid #e8c4b3';
           textColor = '#8b7266';
           priceColor = '#8b7266';
           opacity = 0.7;
+        } else if (isUnavailable) {
+          bg = '#f7f0ed';
+          border = '1.5px solid #e8c4b3';
+          textColor = '#8b7266';
+          priceColor = '#8b7266';
+          opacity = 0.7;
+        } else if (isPast) {
+          bg = '#f7f0ed';
+          border = '1.5px solid #e8c4b3';
+          textColor = '#8b7266';
+          priceColor = '#8b7266';
+          opacity = 0.45;
         } else if (isClosed) {
           bg = '#f7f0ed';
           border = '1.5px solid #e8c4b3';
@@ -67,6 +92,18 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
           priceColor = '#c0a090';
           opacity = 0.5;
         }
+
+        const statusLabel = isBooked
+          ? 'Booked'
+          : isHeld
+            ? 'Held'
+            : isUnavailable
+              ? 'Unavailable'
+              : isPast
+                ? 'Expired'
+              : isClosed
+                ? 'Closed'
+                : formatPrice(slot.price);
 
         return (
           <button
@@ -110,7 +147,7 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
                 color: priceColor,
               }}
             >
-              {isBooked ? 'Booked' : isClosed ? 'Closed' : formatPrice(slot.price)}
+              {statusLabel}
             </span>
           </button>
         );

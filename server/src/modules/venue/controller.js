@@ -1,11 +1,14 @@
 const { HTTP_STATUS } = require("../../constants");
 const venueService = require("./service");
 const {
+  validateCreateVenuePayload,
   validateObjectIdParam,
-  validatePaginationQuery,
+  validateVenueListQuery,
   validateSlotsQuery,
   validateCreateHoldPayload,
   validateCreatePaymentPayload,
+  validatePaymentWebhookPayload,
+  validateSepayWebhookPayload,
   validateRefundPayload,
   validateBookingHistoryQuery,
   validateVenueUpdatePayload,
@@ -17,15 +20,44 @@ const {
 } = require("../../validations/venue.validation");
 
 class VenueController {
-  async listVenues(req, res) {
-    const { isValid, errors, value } = validatePaginationQuery(req.query);
+  normalizeApiKey(value) {
+    if (!value) {
+      return "";
+    }
+
+    return String(value).replace(/^(Bearer|Apikey)\s+/i, "").trim();
+  }
+
+  async createVenue(req, res) {
+    const { isValid, errors, value } = validateCreateVenuePayload(req.body);
 
     if (!isValid) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
     }
 
     try {
-      const data = await venueService.listVenues(value.page, value.limit);
+      const data = await venueService.createVenue(req.user.id, value);
+
+      return res.status(HTTP_STATUS.CREATED).json({
+        message: "Venue created successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async listVenues(req, res) {
+    const { isValid, errors, value } = validateVenueListQuery(req.query);
+
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+    }
+
+    try {
+      const data = await venueService.listVenues(value.page, value.limit, value.date);
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Venues fetched successfully.",
@@ -37,6 +69,67 @@ class VenueController {
       });
     }
   }
+
+  async handlePaymentWebhook(req, res) {
+    if (req.params.provider === "sepay") {
+      const expectedApiKey = this.normalizeApiKey(process.env.SEPAY_API_KEY);
+      const providedApiKey = this.normalizeApiKey(req.headers.authorization);
+
+      if (!expectedApiKey) {
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+          message: "SEPAY_API_KEY is not configured.",
+        });
+      }
+
+      if (!providedApiKey || providedApiKey !== expectedApiKey) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          message: "Invalid Sepay webhook authorization.",
+        });
+      }
+
+      const payloadValidation = validateSepayWebhookPayload(req.body);
+
+      if (!payloadValidation.isValid) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors: payloadValidation.errors });
+      }
+
+      try {
+        const data = await venueService.handleSepayWebhook(payloadValidation.value);
+
+        return res.status(HTTP_STATUS.OK).json({
+          message: "Sepay webhook processed successfully.",
+          data,
+        });
+      } catch (error) {
+        return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+          message: error.message,
+        });
+      }
+    }
+
+    const payloadValidation = validatePaymentWebhookPayload(req.body);
+
+    if (!payloadValidation.isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors: payloadValidation.errors });
+    }
+
+    try {
+      const data = await venueService.handlePaymentWebhook(
+        req.params.provider,
+        payloadValidation.value
+      );
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Payment webhook processed successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
 
   async getVenueSlots(req, res) {
     const idValidation = validateObjectIdParam(req.params.venueId, "Venue");
@@ -116,7 +209,11 @@ class VenueController {
 
   async confirmPayment(req, res) {
     const idValidation = validateObjectIdParam(req.params.paymentId, "Payment");
-    const payloadValidation = validateCreatePaymentPayload(req.body);
+    const payloadValidation = validatePaymentWebhookPayload({
+      ...req.body,
+      payment_id: req.params.paymentId,
+      status: req.body?.status || "paid",
+    });
 
     if (!idValidation.isValid || !payloadValidation.isValid) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -133,6 +230,27 @@ class VenueController {
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Payment confirmed successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async getPaymentStatus(req, res) {
+    const idValidation = validateObjectIdParam(req.params.paymentId, "Payment");
+
+    if (!idValidation.isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors: idValidation.errors });
+    }
+
+    try {
+      const data = await venueService.getPaymentStatus(req.user.id, req.params.paymentId);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Payment status fetched successfully.",
         data,
       });
     } catch (error) {
@@ -254,6 +372,27 @@ class VenueController {
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Venue updated successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async deleteVenue(req, res) {
+    const { isValid, errors } = validateObjectIdParam(req.params.venueId, "Venue");
+
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+    }
+
+    try {
+      const data = await venueService.deleteVenue(req.user.id, req.params.venueId);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Venue deleted successfully.",
         data,
       });
     } catch (error) {

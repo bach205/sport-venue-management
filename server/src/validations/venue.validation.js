@@ -53,6 +53,110 @@ const validatePaginationQuery = (query = {}) => {
   };
 };
 
+const validateVenueListQuery = (query = {}) => {
+  const pagination = validatePaginationQuery(query);
+  const errors = [...pagination.errors];
+
+  if (query.date !== undefined) {
+    validateDate(query.date, "Date", errors);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      ...pagination.value,
+      date: query.date ? String(query.date) : undefined,
+    },
+  };
+};
+
+const validatePaymentWebhookPayload = (payload = {}) => {
+  const providerReference = normalizeOptionalString(payload.provider_reference) || "";
+  const paymentId = normalizeOptionalString(payload.payment_id) || "";
+  const status = normalizeOptionalString(payload.status);
+  const paidAt = normalizeOptionalString(payload.paid_at);
+  const errors = [];
+
+  if (!providerReference && !paymentId) {
+    errors.push("Provider reference or payment id is required.");
+  }
+
+  if (providerReference.length > 120) {
+    errors.push("Provider reference must not exceed 120 characters.");
+  }
+
+  if (paymentId && !mongoose.Types.ObjectId.isValid(paymentId)) {
+    errors.push("Payment id is invalid.");
+  }
+
+  if (!status) {
+    errors.push("Status is required.");
+  } else if (!["paid", "failed"].includes(status)) {
+    errors.push("Status must be either paid or failed.");
+  }
+
+  if (paidAt && Number.isNaN(new Date(paidAt).getTime())) {
+    errors.push("Paid at must be a valid datetime.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      provider_reference: providerReference,
+      payment_id: paymentId || undefined,
+      status,
+      paid_at: paidAt || undefined,
+    },
+  };
+};
+
+const validateSepayWebhookPayload = (payload = {}) => {
+  const code = normalizeOptionalString(payload.code) || "";
+  const content = normalizeOptionalString(payload.content) || "";
+  const transferType = normalizeOptionalString(payload.transferType);
+  const transactionDate = normalizeOptionalString(payload.transactionDate) || "";
+  const transferAmount = Number(payload.transferAmount);
+  const gateway = normalizeOptionalString(payload.gateway) || "";
+  const referenceCode = normalizeOptionalString(payload.referenceCode) || "";
+  const description = normalizeOptionalString(payload.description) || "";
+  const errors = [];
+
+  if (!code && !content) {
+    errors.push("Sepay webhook must include code or content.");
+  }
+
+  if (!transferType) {
+    errors.push("Transfer type is required.");
+  } else if (!["in", "out"].includes(transferType)) {
+    errors.push("Transfer type must be either in or out.");
+  }
+
+  if (!Number.isFinite(transferAmount) || transferAmount < 0) {
+    errors.push("Transfer amount must be a non-negative number.");
+  }
+
+  if (transactionDate && Number.isNaN(new Date(transactionDate.replace(" ", "T")).getTime())) {
+    errors.push("Transaction date must be a valid datetime.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      code,
+      content,
+      transfer_type: transferType,
+      transaction_date: transactionDate || undefined,
+      transfer_amount: transferAmount,
+      gateway,
+      reference_code: referenceCode,
+      description,
+    },
+  };
+};
+
 const validateDate = (value, fieldLabel, errors) => {
   if (!value) {
     errors.push(`${fieldLabel} is required.`);
@@ -129,6 +233,7 @@ const validateCreateHoldPayload = (payload = {}) => {
 const validateCreatePaymentPayload = (payload = {}) => {
   const provider = normalizeOptionalString(payload.provider) || "stub";
   const providerReference = normalizeOptionalString(payload.provider_reference) || "";
+  const returnUrl = normalizeOptionalString(payload.return_url) || "";
   const errors = [];
 
   if (provider.length > 50) {
@@ -139,12 +244,17 @@ const validateCreatePaymentPayload = (payload = {}) => {
     errors.push("Provider reference must not exceed 120 characters.");
   }
 
+  if (returnUrl.length > 2048) {
+    errors.push("Return url must not exceed 2048 characters.");
+  }
+
   return {
     isValid: errors.length === 0,
     errors,
     value: {
       provider,
       provider_reference: providerReference,
+      return_url: returnUrl,
     },
   };
 };
@@ -228,6 +338,47 @@ const validateVenueUpdatePayload = (payload = {}) => {
     isValid: errors.length === 0,
     errors,
     value,
+  };
+};
+
+const validateCreateVenuePayload = (payload = {}) => {
+  const errors = [];
+  const name = normalizeOptionalString(payload.name);
+  const location = normalizeOptionalString(payload.location);
+  const description = normalizeOptionalString(payload.description) || "";
+  const slotPrice = Number(payload.slot_price);
+  const slotDuration = Number(payload.slot_duration_minutes);
+  const weeklySchedule = payload.weekly_schedule === undefined
+    ? []
+    : validateWeeklySchedule(payload.weekly_schedule, errors);
+
+  if (!name) {
+    errors.push("Name is required.");
+  }
+
+  if (!location) {
+    errors.push("Location is required.");
+  }
+
+  if (!Number.isFinite(slotPrice) || slotPrice < 0) {
+    errors.push("Slot price must be a non-negative number.");
+  }
+
+  if (!Number.isInteger(slotDuration) || slotDuration < 15) {
+    errors.push("Slot duration minutes must be an integer greater than or equal to 15.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: {
+      name,
+      location,
+      description,
+      slot_price: Number.isFinite(slotPrice) ? slotPrice : undefined,
+      slot_duration_minutes: Number.isInteger(slotDuration) ? slotDuration : undefined,
+      weekly_schedule: Array.isArray(weeklySchedule) ? weeklySchedule : [],
+    },
   };
 };
 
@@ -424,11 +575,15 @@ const validateRefundRequestsQuery = (query = {}) => {
 };
 
 module.exports = {
+  validateCreateVenuePayload,
   validateObjectIdParam,
   validatePaginationQuery,
+  validateVenueListQuery,
   validateSlotsQuery,
   validateCreateHoldPayload,
   validateCreatePaymentPayload,
+  validatePaymentWebhookPayload,
+  validateSepayWebhookPayload,
   validateRefundPayload,
   validateBookingHistoryQuery,
   validateVenueUpdatePayload,

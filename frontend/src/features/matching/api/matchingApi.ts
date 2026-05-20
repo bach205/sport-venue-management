@@ -13,7 +13,9 @@
  *     Response: { success: true, message: string }
  */
 
-import { isMockApi } from '../../../shared/constants/api';
+import axios from 'axios';
+import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
+import { getToken } from '@/features/auth/store/authStore';
 import type { MatchRequest, MatchResult } from '../types/matching.types';
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -66,16 +68,25 @@ const MOCK_VENUES: Record<string, string[]> = {
 export async function submitMatchRequest(
   req: MatchRequest
 ): Promise<{ success: boolean; requestId: string }> {
-  if (isMockApi) {
-    await delay(300);
-    return { success: true, requestId: `req-${Date.now()}` };
-  }
-  const res = await fetch('/api/matching/request', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(req),
+  // if (isMockApi) {
+  //   await delay(300);
+  //   return { success: true, requestId: `req-${Date.now()}` };
+  // }
+  const token = getToken();
+  const time = req.date && req.time ? `${req.date}T${req.time}:00` : new Date().toISOString();
+  const payload = {
+    sport: req.sport,
+    location: req.location,
+    time,
+    time_type: 'fixed',
+    skill_level: req.skillLevel,
+    match_type: req.type,
+    number_of_players: 1,
+  };
+  const res = await axios.post(`${API_BASE_URL}/matching/requests`, payload, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
-  return res.json();
+  return res.data;
 }
 
 export async function simulateMatchSearch(

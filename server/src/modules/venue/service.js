@@ -12,12 +12,15 @@ const { Profile } = require("../user/model");
 const HOLD_TTL_MS = 5 * 60 * 1000;
 const AUTO_REFUND_WINDOW_MS = 5 * 60 * 1000;
 const EXPIRED_BOOKING_STATUSES = ["hold", "payment_pending"];
+const ACTIVE_BOOKING_QUERY_STATUSES = ["hold", "payment_pending", "confirmed", "refund_processing"];
 const BOOKING_STATUS_TO_SLOT_STATUS = {
   hold: "held",
   payment_pending: "booked",
   confirmed: "booked",
   refund_processing: "refund_processing",
 };
+const SEPAY_PROVIDER = "sepay";
+const SEPAY_REFERENCE_PREFIX = "MATCH";
 
 const buildPagination = (page, limit, total) => ({
   page,
@@ -43,9 +46,37 @@ const getDayOfWeek = (dateString) => {
 };
 
 const buildSlotKey = (date, startTime, endTime) => `${date}|${startTime}|${endTime}`;
+const normalizeSepayReference = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")[0]
+    .toUpperCase();
+const normalizeBooleanFlag = (value, fallback = false) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  return ["1", "true", "yes", "y", "on"].includes(normalized);
+};
 
 class VenueService {
-  async listVenues(page = 1, limit = 20) {
+  async createVenue(ownerId, payload) {
+    const venue = await Venue.create({
+      owner_id: ownerId,
+      name: payload.name,
+      location: payload.location,
+      description: payload.description,
+      slot_price: payload.slot_price,
+      slot_duration_minutes: payload.slot_duration_minutes,
+      weekly_schedule: payload.weekly_schedule,
+    });
+
+    return this.formatVenue(venue);
+  }
+
+  async listVenues(page = 1, limit = 20, date) {
     const skip = (page - 1) * limit;
     const [venues, total] = await Promise.all([
       Venue.find({})
@@ -55,8 +86,56 @@ class VenueService {
       Venue.countDocuments({}),
     ]);
 
+    if (!date) {
+      return {
+        items: venues.map((venue) => this.formatVenue(venue)),
+        pagination: buildPagination(page, limit, total),
+      };
+    }
+
+    await this.expireStaleBookings({ date });
+
+    const venueIds = venues.map((venue) => venue._id);
+    const [overrides, activeBookings] = await Promise.all([
+      VenueAvailabilityOverride.find({
+        venue_id: { $in: venueIds },
+        date,
+      }),
+      Booking.find({
+        venue_id: { $in: venueIds },
+        date,
+        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+      }),
+    ]);
+
+    const overridesByVenueId = new Map();
+    const bookingsByVenueId = new Map();
+
+    overrides.forEach((override) => {
+      const key = String(override.venue_id);
+      const current = overridesByVenueId.get(key) || [];
+      current.push(override);
+      overridesByVenueId.set(key, current);
+    });
+
+    activeBookings.forEach((booking) => {
+      const key = String(booking.venue_id);
+      const current = bookingsByVenueId.get(key) || [];
+      current.push(booking);
+      bookingsByVenueId.set(key, current);
+    });
+
     return {
-      items: venues.map((venue) => this.formatVenue(venue)),
+      items: venues.map((venue) => {
+        const venueOverrides = overridesByVenueId.get(String(venue._id)) || [];
+        const venueBookings = bookingsByVenueId.get(String(venue._id)) || [];
+        const slots = this.buildSlotsForDate(venue, date, venueOverrides, venueBookings);
+
+        return {
+          ...this.formatVenue(venue),
+          availabilitySummary: this.buildAvailabilitySummary(date, slots),
+        };
+      }),
       pagination: buildPagination(page, limit, total),
     };
   }
@@ -70,7 +149,7 @@ class VenueService {
       Booking.find({
         venue_id: venueId,
         date,
-        status: { $in: ["hold", "payment_pending", "confirmed", "refund_processing"] },
+        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
       }),
     ]);
 
@@ -110,10 +189,26 @@ class VenueService {
       date: payload.date,
       start_time: payload.start_time,
       end_time: payload.end_time,
-      status: { $in: ["hold", "payment_pending", "confirmed", "refund_processing"] },
+      status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
     });
 
     if (activeBooking) {
+      if (
+        String(activeBooking.user_id) === String(userId) &&
+        ["hold", "payment_pending"].includes(activeBooking.status)
+      ) {
+        activeBooking.hold_expires_at = new Date(Date.now() + HOLD_TTL_MS);
+        await activeBooking.save();
+
+        const existingPayment = await Payment.findOne({ booking_id: activeBooking._id });
+        return {
+          booking: this.formatBooking(activeBooking, {
+            venue,
+          }),
+          payment: existingPayment ? this.formatPayment(existingPayment) : null,
+        };
+      }
+
       throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This slot is no longer available.");
     }
 
@@ -133,6 +228,7 @@ class VenueService {
         booking: this.formatBooking(booking, {
           venue,
         }),
+        payment: null,
       };
     } catch (error) {
       if (error?.code === 11000) {
@@ -149,6 +245,29 @@ class VenueService {
     const booking = await this.getBookingOrThrow(bookingId);
     this.assertOwnership(booking.user_id, userId, "You can only pay for your own booking.");
 
+    const existingPayment = await Payment.findOne({ booking_id: booking._id });
+    if (
+      existingPayment &&
+      ["hold", "payment_pending"].includes(booking.status) &&
+      existingPayment.status === "pending"
+    ) {
+      if (payload.provider && existingPayment.provider !== payload.provider) {
+        existingPayment.provider = payload.provider;
+      }
+
+      if (existingPayment.provider === SEPAY_PROVIDER && !existingPayment.provider_reference) {
+        existingPayment.provider_reference = this.buildSepayPaymentReference(booking._id);
+      }
+
+      await existingPayment.save();
+
+      const venue = await this.getVenueOrThrow(booking.venue_id);
+      return {
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(existingPayment),
+      };
+    }
+
     if (booking.status !== "hold") {
       throw createHttpError(
         HTTP_STATUS.BAD_REQUEST,
@@ -162,19 +281,18 @@ class VenueService {
       throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This booking hold has expired.");
     }
 
-    const existingPayment = await Payment.findOne({ booking_id: booking._id });
-    if (existingPayment) {
-      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "A payment already exists for this booking.");
-    }
-
     booking.status = "payment_pending";
     await booking.save();
+
+    const providerReference = payload.provider === SEPAY_PROVIDER
+      ? (payload.provider_reference || this.buildSepayPaymentReference(booking._id))
+      : payload.provider_reference;
 
     const payment = await Payment.create({
       booking_id: booking._id,
       amount: booking.amount,
       provider: payload.provider,
-      provider_reference: payload.provider_reference,
+      provider_reference: providerReference,
       status: "pending",
     });
 
@@ -195,39 +313,195 @@ class VenueService {
     const booking = await this.getBookingOrThrow(payment.booking_id);
     this.assertOwnership(booking.user_id, userId, "You can only confirm your own payment.");
 
+    return this.processPaymentSettlement({
+      paymentId,
+      provider: payment.provider,
+      provider_reference: payload.provider_reference,
+      status: payload.status,
+      paid_at: payload.paid_at,
+    });
+  }
+
+  async getPaymentStatus(userId, paymentId) {
+    const payment = await Payment.findById(paymentId);
+    if (!payment) {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Payment not found.");
+    }
+
+    const booking = await this.getBookingOrThrow(payment.booking_id);
+    this.assertOwnership(booking.user_id, userId, "You can only view your own payment.");
+
     await this.expireStaleBookings({ _id: booking._id });
 
     const latestBooking = await this.getBookingOrThrow(booking._id);
-    if (latestBooking.status !== "payment_pending") {
-      throw createHttpError(
-        HTTP_STATUS.BAD_REQUEST,
-        "This payment can no longer be confirmed for the current booking state."
-      );
-    }
-
-    if (payment.status !== "pending") {
-      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Payment is not pending anymore.");
-    }
-
-    if (latestBooking.hold_expires_at.getTime() < Date.now()) {
-      latestBooking.status = "expired";
-      payment.status = "failed";
-      await Promise.all([latestBooking.save(), payment.save()]);
-      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This booking hold has expired.");
-    }
-
-    payment.status = "paid";
-    payment.provider_reference =
-      payload.provider_reference || payment.provider_reference || payment.id;
-    payment.paid_at = new Date();
-    latestBooking.status = "confirmed";
-
-    await Promise.all([payment.save(), latestBooking.save()]);
-
+    const latestPayment = await Payment.findById(payment._id);
     const venue = await this.getVenueOrThrow(latestBooking.venue_id);
 
     return {
       booking: this.formatBooking(latestBooking, { venue }),
+      payment: this.formatPayment(latestPayment),
+    };
+  }
+
+  async handlePaymentWebhook(provider, payload) {
+    return this.processPaymentSettlement({
+      paymentId: payload.payment_id,
+      provider,
+      provider_reference: payload.provider_reference,
+      status: payload.status,
+      paid_at: payload.paid_at,
+    });
+  }
+
+  async handleSepayWebhook(payload) {
+    const providerReference = this.extractSepayProviderReference(payload);
+    if (!providerReference) {
+      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Sepay webhook does not include a usable payment reference.");
+    }
+
+    const payment = await this.resolvePaymentForSettlement({
+      provider: SEPAY_PROVIDER,
+      provider_reference: providerReference,
+    });
+    const booking = await this.getBookingOrThrow(payment.booking_id);
+
+    await this.expireStaleBookings({ _id: booking._id });
+
+    const latestBooking = await this.getBookingOrThrow(booking._id);
+    const latestPayment = await Payment.findById(payment._id);
+    const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+
+    if (payload.transfer_type !== "in") {
+      return {
+        acknowledged: true,
+        ignored: true,
+        reason: "Sepay webhook is not an incoming transfer.",
+        booking: this.formatBooking(latestBooking, { venue }),
+        payment: this.formatPayment(latestPayment),
+      };
+    }
+
+    if (payload.transfer_amount < latestPayment.amount) {
+      return {
+        acknowledged: true,
+        ignored: true,
+        reason: "Transferred amount is lower than the payment amount.",
+        booking: this.formatBooking(latestBooking, { venue }),
+        payment: this.formatPayment(latestPayment),
+      };
+    }
+
+    return this.processPaymentSettlement({
+      provider: SEPAY_PROVIDER,
+      provider_reference: providerReference,
+      status: "paid",
+      paid_at: payload.transaction_date
+        ? new Date(payload.transaction_date.replace(" ", "T")).toISOString()
+        : undefined,
+    });
+  }
+
+  async processPaymentSettlement(payload) {
+    const payment = await this.resolvePaymentForSettlement(payload);
+    const booking = await this.getBookingOrThrow(payment.booking_id);
+
+    await this.expireStaleBookings({ _id: booking._id });
+
+    const latestBooking = await this.getBookingOrThrow(booking._id);
+    const latestPayment = await Payment.findById(payment._id);
+    const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+
+    if (payload.status === "paid") {
+      return this.settleSuccessfulPayment(latestBooking, latestPayment, venue, payload);
+    }
+
+    return this.settleFailedPayment(latestBooking, latestPayment, venue);
+  }
+
+  async resolvePaymentForSettlement(payload) {
+    if (payload.paymentId) {
+      const payment = await Payment.findById(payload.paymentId);
+      if (!payment) {
+        throw createHttpError(HTTP_STATUS.NOT_FOUND, "Payment not found.");
+      }
+      return payment;
+    }
+
+    if (payload.provider_reference) {
+      const payment = await Payment.findOne({
+        provider: payload.provider,
+        provider_reference: payload.provider_reference,
+      });
+      if (!payment) {
+        throw createHttpError(HTTP_STATUS.NOT_FOUND, "Payment not found.");
+      }
+      return payment;
+    }
+
+    throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Payment reference is required.");
+  }
+
+  async settleSuccessfulPayment(booking, payment, venue, payload) {
+    if (payment.status === "paid" && booking.status === "confirmed") {
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
+    }
+
+    if (booking.status !== "payment_pending" || payment.status !== "pending") {
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
+    }
+
+    if (booking.hold_expires_at.getTime() < Date.now()) {
+      booking.status = "expired";
+      payment.status = "failed";
+      await Promise.all([booking.save(), payment.save()]);
+
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
+    }
+
+    payment.status = "paid";
+    payment.provider_reference = payload.provider_reference || payment.provider_reference || payment.id;
+    payment.paid_at = payload.paid_at ? new Date(payload.paid_at) : (payment.paid_at || new Date());
+    booking.status = "confirmed";
+
+    await Promise.all([payment.save(), booking.save()]);
+
+    return {
+      acknowledged: true,
+      booking: this.formatBooking(booking, { venue }),
+      payment: this.formatPayment(payment),
+    };
+  }
+
+  async settleFailedPayment(booking, payment, venue) {
+    if (["failed", "refunded"].includes(payment.status) || booking.status === "expired") {
+      return {
+        acknowledged: true,
+        booking: this.formatBooking(booking, { venue }),
+        payment: this.formatPayment(payment),
+      };
+    }
+
+    if (booking.status === "payment_pending" && payment.status === "pending") {
+      payment.status = "failed";
+      booking.status = "expired";
+      await Promise.all([payment.save(), booking.save()]);
+    }
+
+    return {
+      acknowledged: true,
+      booking: this.formatBooking(booking, { venue }),
       payment: this.formatPayment(payment),
     };
   }
@@ -348,6 +622,27 @@ class VenueService {
     return this.formatVenue(venue);
   }
 
+  async deleteVenue(ownerId, venueId) {
+    const venue = await this.getOwnedVenueOrThrow(ownerId, venueId);
+    const relatedBookingCount = await Booking.countDocuments({ venue_id: venue._id });
+
+    if (relatedBookingCount > 0) {
+      throw createHttpError(
+        HTTP_STATUS.BAD_REQUEST,
+        "This venue cannot be deleted because it already has booking history."
+      );
+    }
+
+    await Promise.all([
+      VenueAvailabilityOverride.deleteMany({ venue_id: venue._id }),
+      Venue.deleteOne({ _id: venue._id }),
+    ]);
+
+    return {
+      id: String(venue._id),
+    };
+  }
+
   async updateVenueSchedule(ownerId, venueId, payload) {
     const venue = await this.getOwnedVenueOrThrow(ownerId, venueId);
 
@@ -371,7 +666,7 @@ class VenueService {
         date: payload.date,
         start_time: payload.start_time,
         end_time: payload.end_time,
-        status: { $in: ["hold", "payment_pending", "confirmed", "refund_processing"] },
+        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
       });
 
       if (activeBooking) {
@@ -586,6 +881,47 @@ class VenueService {
     return payment;
   }
 
+  buildSepayPaymentReference(bookingId) {
+    return `${SEPAY_REFERENCE_PREFIX}${String(bookingId).slice(-8).toUpperCase()}`;
+  }
+
+  extractSepayProviderReference(payload) {
+    const directCode = normalizeSepayReference(payload.code);
+    if (directCode) {
+      return directCode;
+    }
+
+    return normalizeSepayReference(payload.content);
+  }
+
+  getSepayConfig() {
+    return {
+      bankName: String(process.env.SEPAY_BANK || "").trim(),
+      accountNumber: String(process.env.SEPAY_ACCOUNT_NUMBER || "").trim(),
+      accountName: String(process.env.SEPAY_ACCOUNT_NAME || "").trim(),
+      template: String(process.env.SEPAY_QR_TEMPLATE || "compact").trim(),
+      download: normalizeBooleanFlag(process.env.SEPAY_QR_DOWNLOAD, false),
+    };
+  }
+
+  buildSepayQrCodeUrl(payment) {
+    const config = this.getSepayConfig();
+    if (!config.bankName || !config.accountNumber || !payment) {
+      return "";
+    }
+
+    const query = new URLSearchParams({
+      acc: config.accountNumber,
+      bank: config.bankName,
+      amount: String(payment.amount || 0),
+      des: payment.provider_reference || String(payment._id),
+      template: config.template || "compact",
+      download: config.download ? "true" : "false",
+    });
+
+    return `https://qr.sepay.vn/img?${query.toString()}`;
+  }
+
   buildSlotsForDate(venue, date, overrides = [], activeBookings = []) {
     const generatedSlots = this.generateScheduleSlots(venue, date);
     const overrideSet = new Set(
@@ -616,6 +952,34 @@ class VenueService {
         bookingId: booking ? String(booking._id) : null,
       };
     });
+  }
+
+  buildAvailabilitySummary(date, slots = []) {
+    return slots.reduce(
+      (summary, slot) => {
+        summary.totalSlots += 1;
+
+        if (slot.status === "available") {
+          summary.availableSlots += 1;
+        } else if (slot.status === "held") {
+          summary.heldSlots += 1;
+        } else if (slot.status === "booked" || slot.status === "refund_processing") {
+          summary.bookedSlots += 1;
+        } else if (slot.status === "unavailable") {
+          summary.unavailableSlots += 1;
+        }
+
+        return summary;
+      },
+      {
+        date,
+        totalSlots: 0,
+        availableSlots: 0,
+        heldSlots: 0,
+        bookedSlots: 0,
+        unavailableSlots: 0,
+      }
+    );
   }
 
   generateScheduleSlots(venue, date) {
@@ -857,6 +1221,11 @@ class VenueService {
       return null;
     }
 
+    const sepayConfig = this.getSepayConfig();
+    const qrCodeUrl = payment.provider === SEPAY_PROVIDER
+      ? this.buildSepayQrCodeUrl(payment)
+      : "";
+
     return {
       id: String(payment._id),
       bookingId: String(payment.booking_id),
@@ -864,6 +1233,10 @@ class VenueService {
       provider: payment.provider,
       providerReference: payment.provider_reference || "",
       status: payment.status,
+      bankName: payment.provider === SEPAY_PROVIDER ? sepayConfig.bankName : "",
+      bankAccountNumber: payment.provider === SEPAY_PROVIDER ? sepayConfig.accountNumber : "",
+      bankAccountName: payment.provider === SEPAY_PROVIDER ? sepayConfig.accountName : "",
+      qrCodeUrl,
       paidAt: payment.paid_at,
       refundedAt: payment.refunded_at,
       createdAt: payment.createdAt,

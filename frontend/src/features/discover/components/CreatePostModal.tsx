@@ -41,6 +41,8 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
     setLoading(false);
     if (res.success) {
       onCreated();
+    } else {
+      setError(res.message || 'Failed to create post.');
     }
   };
 

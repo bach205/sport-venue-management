@@ -31,7 +31,11 @@ export default function DiscoverPage() {
   const loadPosts = async () => {
     setLoading(true);
     const res = await fetchPosts();
-    if (res.success) setPosts(res.data);
+    if (res.success) {
+      setPosts(res.data);
+    } else {
+      setPosts([]);
+    }
     setLoading(false);
   };
 

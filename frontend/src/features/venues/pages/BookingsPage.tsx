@@ -1,24 +1,32 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, CalendarDays, MapPin, Clock, RotateCcw, Phone, CheckCircle2, Loader2 } from 'lucide-react';
-import { getBookings, getRefundWindowRemaining, REFUND_WINDOW_MS } from '../store/bookingStore';
+import { fetchMyBookings } from '../api/venuesApi';
 import { RefundModal } from '../components/RefundModal';
-import type { Booking } from '../types/venues.types';
+import type { Booking, BookingStatus } from '../types/venues.types';
 
-type Tab = 'all' | 'confirmed' | 'processing_refund' | 'refunded';
+const REFUND_WINDOW_MS = 5 * 60 * 1000;
 
-const STATUS_LABEL: Record<Booking['status'], string> = {
+type Tab = 'all' | 'confirmed' | 'payment_pending' | 'refund_processing' | 'refunded' | 'expired';
+
+const STATUS_LABEL: Record<BookingStatus, string> = {
+  hold: 'On Hold',
+  payment_pending: 'Payment Pending',
   confirmed: 'Confirmed',
-  processing_refund: 'Processing Refund',
+  refund_processing: 'Refund Processing',
   refunded: 'Refunded',
-  cancelled: 'Cancelled',
+  refund_rejected: 'Refund Rejected',
+  expired: 'Expired',
 };
 
-const STATUS_STYLE: Record<Booking['status'], { bg: string; color: string }> = {
+const STATUS_STYLE: Record<BookingStatus, { bg: string; color: string }> = {
+  hold: { bg: '#fff3cd', color: '#856404' },
+  payment_pending: { bg: '#fff3cd', color: '#856404' },
   confirmed: { bg: '#e7f8f7', color: '#006a65' },
-  processing_refund: { bg: '#fff3cd', color: '#856404' },
+  refund_processing: { bg: '#fff3cd', color: '#856404' },
   refunded: { bg: '#f4ded5', color: '#8b7266' },
-  cancelled: { bg: '#f4ded5', color: '#8b7266' },
+  refund_rejected: { bg: '#fff1eb', color: '#a04100' },
+  expired: { bg: '#f7f0ed', color: '#8b7266' },
 };
 
 function formatPrice(n: number) {
@@ -33,6 +41,12 @@ function formatCountdown(ms: number) {
   const s = Math.ceil(ms / 1000);
   const m = Math.floor(s / 60);
   return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function getRefundWindowRemaining(booking: Booking): number {
+  if (!booking.paidAt) return 0;
+  const elapsed = Date.now() - new Date(booking.paidAt).getTime();
+  return Math.max(0, REFUND_WINDOW_MS - elapsed);
 }
 
 const SPORT_EMOJI: Record<string, string> = {
@@ -51,7 +65,7 @@ function RefundCountdown({ booking }: { booking: Booking }) {
       if (r <= 0) clearInterval(t);
     }, 500);
     return () => clearInterval(t);
-  }, [booking]);
+  }, [booking, remaining]);
 
   if (remaining <= 0) return null;
 
@@ -67,7 +81,7 @@ function RefundCountdown({ booking }: { booking: Booking }) {
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: isUrgent ? '#856404' : '#006a65', fontWeight: 500 }}>
-            Free refund window
+            Auto-refund window
           </span>
           <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '13px', fontWeight: 700, color: isUrgent ? '#856404' : '#006a65' }}>
             {formatCountdown(remaining)}
@@ -89,34 +103,20 @@ function RefundCountdown({ booking }: { booking: Booking }) {
   );
 }
 
-function BookingCard({
-  booking,
-  onRefund,
-}: {
-  booking: Booking;
-  onRefund: (b: Booking) => void;
-}) {
+function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Booking) => void }) {
   const remaining = getRefundWindowRemaining(booking);
-  const canRefund = booking.status === 'confirmed' && remaining > 0;
+  const canRefund = booking.status === 'confirmed';
 
   return (
     <div
       className="rounded-2xl overflow-hidden"
       style={{ background: '#fff', border: '1px solid #dfc0b3', boxShadow: '0 2px 8px rgba(36,25,20,0.07)' }}
     >
-      {/* Top: Image + Name */}
       <div className="flex gap-4 p-5 border-b border-[#dfc0b3]">
-        <img
-          src={booking.venueImage}
-          alt={booking.venueName}
-          className="w-20 h-20 rounded-xl object-cover shrink-0"
-        />
+        <img src={booking.venueImage} alt={booking.venueName} className="w-20 h-20 rounded-xl object-cover shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3
-              className="truncate"
-              style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 700, color: '#241914' }}
-            >
+            <h3 className="truncate" style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 700, color: '#241914' }}>
               {booking.venueName}
             </h3>
             <span
@@ -147,7 +147,6 @@ function BookingCard({
         </div>
       </div>
 
-      {/* Details */}
       <div className="px-5 py-4 flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -176,28 +175,28 @@ function BookingCard({
           </div>
         </div>
 
-        {/* Refund countdown (only for confirmed within window) */}
-        {booking.status === 'confirmed' && <RefundCountdown booking={booking} />}
+        {booking.status === 'confirmed' && remaining > 0 && <RefundCountdown booking={booking} />}
 
-        {/* Processing refund status */}
-        {booking.status === 'processing_refund' && (
-          <div
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}
-          >
+        {booking.status === 'payment_pending' && booking.holdExpiresAt && (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
             <Loader2 size={14} className="animate-spin" style={{ color: '#856404', flexShrink: 0 }} />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#856404' }}>
-              Refund of <strong>{formatPrice(booking.totalPrice)}</strong> is being processed (1–3 business days).
+              Waiting for payment confirmation. Hold expires at {new Date(booking.holdExpiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.
             </p>
           </div>
         )}
 
-        {/* Refunded status */}
+        {booking.status === 'refund_processing' && (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
+            <Loader2 size={14} className="animate-spin" style={{ color: '#856404', flexShrink: 0 }} />
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#856404' }}>
+              Refund request submitted and being processed by the server.
+            </p>
+          </div>
+        )}
+
         {booking.status === 'refunded' && (
-          <div
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}
-          >
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}>
             <CheckCircle2 size={14} style={{ color: '#006a65', flexShrink: 0 }} />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}>
               <strong>{formatPrice(booking.totalPrice)}</strong> refunded to your account.
@@ -205,7 +204,15 @@ function BookingCard({
           </div>
         )}
 
-        {/* Action buttons */}
+        {booking.status === 'refund_rejected' && (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#fff1eb', border: '1px solid rgba(160,65,0,0.15)' }}>
+            <Phone size={14} style={{ color: '#a04100', flexShrink: 0 }} />
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100' }}>
+              Refund request was rejected. Contact the venue for more details.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-2 pt-1">
           {canRefund && (
             <button
@@ -224,7 +231,7 @@ function BookingCard({
               Request Refund
             </button>
           )}
-          {booking.status === 'confirmed' && !canRefund && (
+          {(booking.status === 'expired' || booking.status === 'refund_rejected') && (
             <button
               onClick={() => onRefund(booking)}
               className="flex items-center gap-2 px-3 h-10 rounded-xl hover:bg-[#fff1eb] transition-colors"
@@ -247,32 +254,47 @@ function BookingCard({
 
 export default function BookingsPage() {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<Booking[]>(() => getBookings());
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('all');
   const [refundTarget, setRefundTarget] = useState<Booking | null>(null);
 
-  // Re-render every 10s to update countdown timers
+  const loadBookings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchMyBookings({ page: 1, limit: 50 });
+      setBookings(res.items);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const t = setInterval(() => setBookings([...getBookings()]), 10_000);
+    loadBookings();
+  }, [loadBookings]);
+
+  useEffect(() => {
+    const t = setInterval(() => setBookings((current) => [...current]), 10_000);
     return () => clearInterval(t);
   }, []);
 
   const filtered = bookings.filter(b => tab === 'all' || b.status === tab);
 
-  const handleRefunded = useCallback((updated: Booking) => {
-    setBookings([...getBookings()]);
-  }, []);
+  const handleRefunded = useCallback(async () => {
+    await loadBookings();
+  }, [loadBookings]);
 
   const TABS: { id: Tab; label: string }[] = [
     { id: 'all', label: `All (${bookings.length})` },
     { id: 'confirmed', label: `Confirmed (${bookings.filter(b => b.status === 'confirmed').length})` },
-    { id: 'processing_refund', label: `Refunding (${bookings.filter(b => b.status === 'processing_refund').length})` },
+    { id: 'payment_pending', label: `Pending (${bookings.filter(b => b.status === 'payment_pending').length})` },
+    { id: 'refund_processing', label: `Refunding (${bookings.filter(b => b.status === 'refund_processing').length})` },
     { id: 'refunded', label: `Refunded (${bookings.filter(b => b.status === 'refunded').length})` },
+    { id: 'expired', label: `Expired (${bookings.filter(b => b.status === 'expired').length})` },
   ];
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: '#fff8f6' }}>
-      {/* Header */}
       <div className="border-b border-[#dfc0b3] bg-[#fff8f6]">
         <div className="max-w-screen-xl mx-auto px-6 py-6">
           <div className="flex items-center gap-4 mb-2">
@@ -293,7 +315,6 @@ export default function BookingsPage() {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-1 mt-4">
             {TABS.map(t => (
               <button
@@ -316,9 +337,12 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Bookings list */}
       <div className="max-w-screen-xl mx-auto w-full px-6 py-8">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 size={32} className="animate-spin" style={{ color: '#a04100' }} />
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <CalendarDays size={56} style={{ color: '#dfc0b3', marginBottom: 16 }} />
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#241914' }}>
@@ -351,13 +375,12 @@ export default function BookingsPage() {
         )}
       </div>
 
-      {/* Refund Modal */}
       {refundTarget && (
         <RefundModal
           booking={refundTarget}
           onClose={() => setRefundTarget(null)}
-          onRefunded={b => {
-            handleRefunded(b);
+          onRefunded={async () => {
+            await handleRefunded();
             setRefundTarget(null);
           }}
         />

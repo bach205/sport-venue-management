@@ -31,7 +31,8 @@ Lấy thông tin user hiện tại và profile tương ứng của chính user �
       "_id": "6820abc123...",
       "email": "player@example.com",
       "status": "warning",
-      "is_verified": true
+      "is_verified": true,
+      "role": "user"
     },
     "profile": {
       "_id": "6820def456...",
@@ -99,8 +100,9 @@ Không tìm thấy user trong service.
 3. Controller gọi `userService.getUserDetails(req.user.id)`.
 4. Service lấy user từ collection `users`.
 5. Service gọi `getUserProfile`.
-6. Nếu profile chưa tồn tại, service tự tạo profile mặc định.
-7. Response trả về cả `user` và `profile`.
+6. Service gọi `getUserRole`.
+7. Nếu profile chưa tồn tại, service tự tạo profile mặc định.
+8. Response trả về cả `user` (kèm `role`) và `profile`.
 
 ## Ghi chú
 - Route này luôn trả `status` và `is_verified`, nên frontend có thể dùng trực tiếp để hiển thị cảnh báo account.

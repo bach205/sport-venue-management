@@ -90,7 +90,7 @@ const validateBaseMatchingPayload = (payload = {}, options = {}) => {
     errors.push("Location is required.");
   }
 
-  validateFutureDate(payload.time, "Time", errors);
+  // validateFutureDate(payload.time, "Time", errors);
   validateEnum(payload.time_type, TIME_TYPES, "Time type", errors);
   validateEnum(payload.skill_level, SKILL_LEVELS, "Skill level", errors);
   validateEnum(payload.match_type, MATCH_TYPES, "Match type", errors);

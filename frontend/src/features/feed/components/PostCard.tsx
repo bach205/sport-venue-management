@@ -123,7 +123,7 @@ function CommentSection({
     <div className="px-4 pb-4 flex flex-col gap-3">
       {comments.map((c) => (
         <div key={c.id} className="flex gap-2.5">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white gradient-orange-diag font-heading">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white gradient-teal-diag font-heading">
             {initials(c.author.name)}
           </div>
           <div className="flex-1 min-w-0">
@@ -365,7 +365,7 @@ export function PostCard({
     <article className="flex flex-col rounded-2xl overflow-hidden bg-white border border-[#e8e0dc] shadow-[0_1px_4px_rgba(36,25,20,0.06)]">
       {/* Header */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-orange-diag font-heading">
+        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-teal-diag font-heading">
           {initials(post.author.name)}
         </div>
         <div className="flex-1 min-w-0">
@@ -436,7 +436,7 @@ export function PostCard({
               <button
                 onClick={handleSaveEdit}
                 disabled={savingEdit || !editContent.trim()}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading disabled:opacity-60"
+                className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-teal text-sm font-bold text-white font-heading disabled:opacity-60"
               >
                 {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 Lưu

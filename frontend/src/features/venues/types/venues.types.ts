@@ -2,18 +2,39 @@ import type { Sport } from '../../discover/types/discover.types';
 
 export type { Sport };
 
-export type SlotStatus = 'available' | 'booked' | 'closed' | 'selected';
-export type BookingStatus = 'confirmed' | 'processing_refund' | 'refunded' | 'cancelled';
+export type SlotStatus = 'available' | 'booked' | 'closed' | 'selected' | 'held' | 'unavailable' | 'refund_processing';
+export type BookingStatus =
+  | 'hold'
+  | 'payment_pending'
+  | 'confirmed'
+  | 'refund_processing'
+  | 'refunded'
+  | 'refund_rejected'
+  | 'expired';
 export type PaymentMethod = 'card' | 'momo' | 'bank';
+export type PaymentProvider = PaymentMethod | 'stub' | 'sepay';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refund_pending' | 'refunded';
+export type RefundStatus = 'pending_auto' | 'pending_manual' | 'approved' | 'rejected' | 'completed';
+export type RefundMode = 'auto' | 'manual';
+
+export interface VenueAvailabilitySummary {
+  date: string;
+  totalSlots: number;
+  availableSlots: number;
+  heldSlots: number;
+  bookedSlots: number;
+  unavailableSlots: number;
+}
 
 export interface VenueSlot {
-  id: string;       // e.g. "v1_2026-05-09_08:00"
+  id: string;
   venueId: string;
-  date: string;     // "YYYY-MM-DD"
-  startTime: string;// "08:00"
-  endTime: string;  // "09:00"
-  price: number;    // VND
+  date: string;
+  startTime: string;
+  endTime: string;
+  price: number;
   status: SlotStatus;
+  bookingId?: string | null;
 }
 
 export interface VenueFacility {
@@ -23,6 +44,7 @@ export interface VenueFacility {
 
 export interface Venue {
   id: string;
+  ownerId?: string;
   name: string;
   shortAddress: string;
   fullAddress: string;
@@ -30,12 +52,19 @@ export interface Venue {
   rating: number;
   reviewCount: number;
   imageUrl: string;
-  priceFrom: number;      // VND per hour
+  priceFrom: number;
   facilities: string[];
-  openHours: string;      // "06:00 – 22:00"
+  openHours: string;
   description: string;
   courtCount: number;
   district: string;
+  slotDurationMinutes?: number;
+  availabilitySummary?: VenueAvailabilitySummary;
+  weeklySchedule?: Array<{
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+  }>;
 }
 
 export interface BookedSlotRef {
@@ -45,6 +74,37 @@ export interface BookedSlotRef {
   price: number;
 }
 
+export interface VenuePayment {
+  id: string;
+  bookingId: string;
+  amount: number;
+  provider: PaymentProvider | string;
+  providerReference: string;
+  status: PaymentStatus | string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountName?: string;
+  qrCodeUrl?: string;
+  paidAt: string | null;
+  refundedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BookingRefund {
+  id: string;
+  bookingId: string;
+  paymentId: string;
+  requestedBy: string;
+  processedBy: string | null;
+  type: string;
+  status: RefundStatus | string;
+  note: string;
+  processedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Booking {
   id: string;
   venueId: string;
@@ -52,13 +112,18 @@ export interface Booking {
   venueImage: string;
   venueAddress: string;
   sport: Sport;
-  date: string;           // "YYYY-MM-DD"
+  date: string;
   slots: BookedSlotRef[];
   totalPrice: number;
   status: BookingStatus;
   paymentMethod: PaymentMethod;
-  paidAt: string;         // ISO datetime — used for 5-min refund window
+  paidAt: string | null;
+  holdExpiresAt?: string | null;
   createdAt: string;
+  updatedAt: string;
   playerName: string;
   notes: string;
+  payment?: VenuePayment | null;
+  refund?: BookingRefund | null;
+  refundMode?: RefundMode;
 }

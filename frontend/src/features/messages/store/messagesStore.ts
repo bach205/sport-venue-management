@@ -215,11 +215,20 @@ export function findConversationWithUser(userId: string): Conversation | undefin
   );
 }
 
-export function addMessageToConversation(convId: string, msg: ChatMessage): void {
+export function addMessageToConversation(
+  convId: string,
+  msg: ChatMessage,
+  markRead: boolean = true
+): void {
   const conv = _conversations.find(c => c.id === convId);
   if (conv) {
     conv.messages.push(msg);
-    conv.unreadCount = 0; // mark as read since user is viewing
+    if (markRead) {
+      msg.read = true;
+      conv.unreadCount = 0;
+    } else {
+      conv.unreadCount += 1;
+    }
   }
 }
 
@@ -272,6 +281,6 @@ export function sendMessage(convId: string, content: string): ChatMessage {
     timestamp: new Date().toISOString(),
     read: true,
   };
-  addMessageToConversation(convId, msg);
+  addMessageToConversation(convId, msg, true);
   return msg;
 }

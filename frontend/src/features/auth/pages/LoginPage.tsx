@@ -35,6 +35,11 @@ const DEMO_ROLES = [
 ];
 
 function buildAuthUser(user: ApiUser, profile: ApiProfile): AuthUser {
+  // Map server role "user" to frontend role "player"
+  let role: UserRole = "user";
+  if (user.role === "admin") role = "admin";
+  if (user.role === "owner") role = "owner";
+
   return {
     _id: user._id,
     email: user.email,
@@ -60,34 +65,26 @@ export default function LoginPage() {
   // ── Real / mock email+password login ────────────────────────────────────────
   const onSubmit = async (data: FormData) => {
     const result = await login({ email: data.email, password: data.password });
+    console.log(result)
     if (result.success && result.data) {
-      const { token, user, profile } = result.data;
-      const authUser = buildAuthUser(user, profile);
-      dispatch(loginSuccess({ token, user: authUser }));
+      const authUser = buildAuthUser(result.data.user, result.data.profile);
+      dispatch(
+        loginSuccess({
+          token: result.data.token,
+          user: authUser,
+        })
+      );
       toast.success(result.message);
-      if (authUser.role === 'admin') navigate('/admin');
-      else if (authUser.role === 'owner') navigate('/owner/venues');
-      else navigate('/discover');
+      if (authUser.role === "owner") {
+        navigate("/owner/venues");
+      } else {
+        navigate("/discover");
+      }
     } else {
       toast.error(result.message);
     }
   };
 
-  // ── Demo one-click login ─────────────────────────────────────────────────────
-  const handleDemoLogin = async (demo: typeof DEMO_ROLES[0]) => {
-    setDemoLoading(demo.email);
-    await new Promise(r => setTimeout(r, 600)); // simulate API latency
-    const user = DEMO_ACCOUNTS[demo.email];
-    if (user) {
-      dispatch(loginSuccess({
-        token: `mock_demo_${user._id}_${Date.now()}`,
-        user,
-      }));
-      toast.success(`Đăng nhập thành công với vai trò ${demo.label}!`);
-    }
-    setDemoLoading(null);
-    navigate(demo.redirectTo);
-  };
 
   return (
     <AuthLayout imageUrl={SPORT_IMAGE} imageAlt="Tennis player on court"
@@ -103,36 +100,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Demo Role Cards */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex-1 h-px bg-brand-border" />
-          <span className="text-brand-muted px-2 py-0.5 rounded-md text-xs font-semibold bg-brand-surface-orange border border-brand-border">
-            ⚡ Demo nhanh
-          </span>
-          <div className="flex-1 h-px bg-brand-border" />
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {DEMO_ROLES.map(demo => (
-            <div key={demo.email} className={`rounded-2xl p-3.5 flex flex-col gap-2.5 border-[1.5px] ${demo.border} ${demo.bg}`}>
-              <div className="text-3xl leading-none">{demo.emoji}</div>
-              <span className={`self-start px-2 py-0.5 rounded-full text-xs font-bold whitespace-nowrap ${demo.badge}`}>
-                {demo.label}
-              </span>
-              <p className="text-xs text-brand-body leading-snug flex-1">{demo.desc}</p>
-              <button
-                onClick={() => handleDemoLogin(demo)}
-                disabled={demoLoading !== null}
-                className={`w-full h-9 rounded-xl flex items-center justify-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-70 text-white text-[13px] font-bold ${demo.btn}`}
-              >
-                {demoLoading === demo.email
-                  ? <Loader2 size={14} className="animate-spin" />
-                  : <>Vào ngay <ArrowRight size={13} /></>}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+    
 
       <div className="flex items-center gap-3 mb-5">
         <div className="flex-1 h-px bg-brand-border" />

@@ -67,17 +67,22 @@ const createHold = async (token, venueId, startTime, endTime) =>
       end_time: endTime,
     });
 
-const createPayment = async (token, bookingId) =>
+const createPayment = async (token, bookingId, payload = {}) =>
   request(app)
     .post(`/api/v1/bookings/${bookingId}/payments`)
     .set(authHeader(token))
-    .send({});
+    .send(payload);
 
-const confirmPayment = async (token, paymentId) =>
+const sendPaymentWebhook = async (provider, payload) =>
+  request(app)
+    .post(`/api/v1/webhooks/payments/${provider}`)
+    .send(payload);
+
+const confirmPayment = async (token, paymentId, payload = {}) =>
   request(app)
     .post(`/api/v1/payments/${paymentId}/confirm`)
     .set(authHeader(token))
-    .send({});
+    .send(payload);
 
 const createConfirmedBooking = async (token, venueId, startTime, endTime, paidAt) => {
   const holdResponse = await createHold(token, venueId, startTime, endTime);
@@ -85,8 +90,13 @@ const createConfirmedBooking = async (token, venueId, startTime, endTime, paidAt
 
   const paymentResponse = await createPayment(token, bookingId);
   const paymentId = paymentResponse.body.data.payment.id;
+  const provider = paymentResponse.body.data.payment.provider;
 
-  await confirmPayment(token, paymentId);
+  await sendPaymentWebhook(provider, {
+    payment_id: paymentId,
+    status: "paid",
+    paid_at: paidAt ? paidAt.toISOString() : undefined,
+  });
 
   if (paidAt) {
     await Payment.findByIdAndUpdate(paymentId, { paid_at: paidAt });
@@ -108,7 +118,6 @@ beforeAll(async () => {
 
 afterEach(async () => {
   const collections = mongoose.connection.collections;
-  // Keep indexes between tests, only clear data.
   await Promise.all(Object.values(collections).map((collection) => collection.deleteMany({})));
 });
 
@@ -118,6 +127,33 @@ afterAll(async () => {
 });
 
 describe("Venue booking module", () => {
+  test("lets an owner create a venue", async () => {
+    const owner = await createUser("owner", "owner-create@example.com");
+
+    const response = await request(app)
+      .post("/api/v1/my-venues")
+      .set(authHeader(owner.token))
+      .send({
+        name: "Fresh Arena",
+        location: "Thu Duc",
+        description: "Newly opened venue",
+        slot_price: 300000,
+        slot_duration_minutes: 90,
+        weekly_schedule: [
+          {
+            day_of_week: TEST_DAY_OF_WEEK,
+            start_time: "07:00",
+            end_time: "10:00",
+          },
+        ],
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.name).toBe("Fresh Arena");
+    expect(response.body.data.slotPrice).toBe(300000);
+    expect(response.body.data.slotDurationMinutes).toBe(90);
+  });
+
   test("returns slot statuses for available and unavailable schedule entries", async () => {
     const owner = await createUser("owner", "owner1@example.com");
     const venue = await createVenue(owner.user._id);
@@ -143,6 +179,40 @@ describe("Venue booking module", () => {
         expect.objectContaining({ startTime: "09:00", endTime: "10:00", status: "unavailable" }),
       ])
     );
+  });
+
+  test("returns availability summary counts when listing venues by date", async () => {
+    const owner = await createUser("owner", "owner-summary@example.com");
+    const user = await createUser("user", "summary-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    await VenueAvailabilityOverride.create({
+      venue_id: venue._id,
+      date: TEST_DATE,
+      start_time: "11:00",
+      end_time: "12:00",
+      status: "unavailable",
+      created_by: owner.user._id,
+      reason: "maintenance",
+    });
+
+    await createHold(user.token, venue._id, "08:00", "09:00");
+
+    const paymentPendingHold = await createHold(user.token, venue._id, "09:00", "10:00");
+    const pendingBookingId = paymentPendingHold.body.data.booking.id;
+    await createPayment(user.token, pendingBookingId);
+
+    const response = await request(app).get(`/api/v1/venues?date=${TEST_DATE}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.items[0].availabilitySummary).toEqual({
+      date: TEST_DATE,
+      totalSlots: 4,
+      availableSlots: 1,
+      heldSlots: 1,
+      bookedSlots: 1,
+      unavailableSlots: 1,
+    });
   });
 
   test("creates a hold for an available slot and rejects duplicate holds", async () => {
@@ -171,11 +241,11 @@ describe("Venue booking module", () => {
       createHold(userB.token, venue._id, "10:00", "11:00"),
     ]);
 
-    const statuses = [responseA.status, responseB.status].sort();
-    expect(statuses).toEqual([400, 201]);
+    const statuses = [responseA.status, responseB.status].sort((a, b) => a - b);
+    expect(statuses).toEqual([201, 400]);
   });
 
-  test("moves booking from hold to payment_pending to confirmed when payment is confirmed", async () => {
+  test("confirms payment through webhook and updates booking state", async () => {
     const owner = await createUser("owner", "owner4@example.com");
     const user = await createUser("user", "payer@example.com");
     const venue = await createVenue(owner.user._id);
@@ -189,11 +259,119 @@ describe("Venue booking module", () => {
     expect(paymentResponse.body.data.payment.status).toBe("pending");
 
     const paymentId = paymentResponse.body.data.payment.id;
-    const confirmResponse = await confirmPayment(user.token, paymentId);
+    const provider = paymentResponse.body.data.payment.provider;
+    const webhookResponse = await sendPaymentWebhook(provider, {
+      payment_id: paymentId,
+      provider_reference: `provider-${paymentId}`,
+      status: "paid",
+    });
 
-    expect(confirmResponse.status).toBe(200);
-    expect(confirmResponse.body.data.booking.status).toBe("confirmed");
-    expect(confirmResponse.body.data.payment.status).toBe("paid");
+    expect(webhookResponse.status).toBe(200);
+    expect(webhookResponse.body.data.booking.status).toBe("confirmed");
+    expect(webhookResponse.body.data.payment.status).toBe("paid");
+    expect(webhookResponse.body.data.payment.providerReference).toBe(`provider-${paymentId}`);
+  });
+
+  test("keeps compatibility confirm endpoint routed through shared settlement logic", async () => {
+    const owner = await createUser("owner", "owner-compat@example.com");
+    const user = await createUser("user", "compat-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "10:00", "11:00");
+    const bookingId = holdResponse.body.data.booking.id;
+    const paymentResponse = await createPayment(user.token, bookingId);
+    const paymentId = paymentResponse.body.data.payment.id;
+
+    const response = await confirmPayment(user.token, paymentId, {
+      status: "paid",
+      provider_reference: `compat-${paymentId}`,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.booking.status).toBe("confirmed");
+    expect(response.body.data.payment.status).toBe("paid");
+  });
+
+  test("fails payment through webhook and reopens the slot", async () => {
+    const owner = await createUser("owner", "owner-failed@example.com");
+    const user = await createUser("user", "failed-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "08:00", "09:00");
+    const bookingId = holdResponse.body.data.booking.id;
+    const paymentResponse = await createPayment(user.token, bookingId);
+    const paymentId = paymentResponse.body.data.payment.id;
+    const provider = paymentResponse.body.data.payment.provider;
+
+    const webhookResponse = await sendPaymentWebhook(provider, {
+      payment_id: paymentId,
+      status: "failed",
+    });
+
+    expect(webhookResponse.status).toBe(200);
+    expect(webhookResponse.body.data.booking.status).toBe("expired");
+    expect(webhookResponse.body.data.payment.status).toBe("failed");
+
+    const slotsResponse = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+
+    expect(slotsResponse.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "08:00", endTime: "09:00", status: "available" }),
+      ])
+    );
+  });
+
+  test("handles duplicate webhook callbacks idempotently", async () => {
+    const owner = await createUser("owner", "owner-duplicate@example.com");
+    const user = await createUser("user", "duplicate-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "09:00", "10:00");
+    const bookingId = holdResponse.body.data.booking.id;
+    const paymentResponse = await createPayment(user.token, bookingId);
+    const paymentId = paymentResponse.body.data.payment.id;
+    const provider = paymentResponse.body.data.payment.provider;
+
+    const payload = {
+      payment_id: paymentId,
+      provider_reference: `dup-${paymentId}`,
+      status: "paid",
+    };
+
+    const firstResponse = await sendPaymentWebhook(provider, payload);
+    const secondResponse = await sendPaymentWebhook(provider, payload);
+
+    expect(firstResponse.status).toBe(200);
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.body.data.booking.status).toBe("confirmed");
+    expect(secondResponse.body.data.payment.status).toBe("paid");
+  });
+
+  test("does not reconfirm an expired hold when webhook arrives late", async () => {
+    const owner = await createUser("owner", "owner-late@example.com");
+    const user = await createUser("user", "late-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "10:00", "11:00");
+    const bookingId = holdResponse.body.data.booking.id;
+    const paymentResponse = await createPayment(user.token, bookingId);
+    const paymentId = paymentResponse.body.data.payment.id;
+    const provider = paymentResponse.body.data.payment.provider;
+
+    await Booking.findByIdAndUpdate(bookingId, {
+      hold_expires_at: new Date(Date.now() - 60 * 1000),
+    });
+
+    const webhookResponse = await sendPaymentWebhook(provider, {
+      payment_id: paymentId,
+      status: "paid",
+    });
+
+    expect(webhookResponse.status).toBe(200);
+    expect(webhookResponse.body.data.booking.status).toBe("expired");
+    expect(webhookResponse.body.data.payment.status).toBe("failed");
   });
 
   test("expires stale holds and reopens the slot in availability responses", async () => {
@@ -218,6 +396,27 @@ describe("Venue booking module", () => {
     expect(slotsResponse.body.data.slots).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ startTime: "08:00", endTime: "09:00", status: "available" }),
+      ])
+    );
+  });
+
+  test("shows payment-pending slots as booked", async () => {
+    const owner = await createUser("owner", "owner-pending@example.com");
+    const user = await createUser("user", "pending-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "09:00", "10:00");
+    const bookingId = holdResponse.body.data.booking.id;
+    await createPayment(user.token, bookingId);
+
+    const slotsResponse = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+
+    expect(slotsResponse.status).toBe(200);
+    expect(slotsResponse.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "09:00", endTime: "10:00", status: "booked" }),
       ])
     );
   });
@@ -408,5 +607,29 @@ describe("Venue booking module", () => {
 
     expect(makeAvailableResponse.status).toBe(200);
     expect(makeAvailableResponse.body.data.slot.status).toBe("available");
+  });
+
+  test("lets an owner delete a venue with no booking history and blocks deletion otherwise", async () => {
+    const owner = await createUser("owner", "owner-delete@example.com");
+    const user = await createUser("user", "delete-booking@example.com");
+    const deletableVenue = await createVenue(owner.user._id);
+
+    const deleteResponse = await request(app)
+      .delete(`/api/v1/my-venues/${deletableVenue._id}`)
+      .set(authHeader(owner.token));
+
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteResponse.body.data.id).toBe(String(deletableVenue._id));
+    expect(await Venue.findById(deletableVenue._id)).toBeNull();
+
+    const blockedVenue = await createVenue(owner.user._id);
+    await createHold(user.token, blockedVenue._id, "08:00", "09:00");
+
+    const blockedDeleteResponse = await request(app)
+      .delete(`/api/v1/my-venues/${blockedVenue._id}`)
+      .set(authHeader(owner.token));
+
+    expect(blockedDeleteResponse.status).toBe(400);
+    expect(blockedDeleteResponse.body.message).toContain("booking history");
   });
 });

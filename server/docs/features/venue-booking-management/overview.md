@@ -20,9 +20,10 @@ Triển khai `venue` thành một backend module hoàn chỉnh theo hướng `te
 ## API và luồng nghiệp vụ
 - Public/user APIs:
   - `GET /venues` và `GET /venues/:venueId/slots?date=YYYY-MM-DD` để duyệt sân và xem slot theo ngày.
-  - `POST /bookings/holds` để giữ chỗ tạm thời trước thanh toán. Hold TTL mặc định 5 phút.
-  - `POST /bookings/:bookingId/payments` để tạo payment theo contract gateway-ready.
-  - `POST /payments/:paymentId/confirm` dùng cho adapter nội bộ/stub ở phase đầu; sau này thay bằng webhook/provider callback mà không đổi flow chính.
+- `POST /bookings/holds` để giữ chỗ tạm thời trước thanh toán. Hold TTL mặc định 5 phút.
+- `POST /bookings/:bookingId/payments` để tạo payment theo contract gateway-ready.
+- `GET /payments/:paymentId` để client kiểm tra trạng thái thanh toán hiện tại.
+- `POST /payments/:paymentId/confirm` dùng cho adapter nội bộ/stub ở phase đầu; sau này thay bằng webhook/provider callback mà không đổi flow chính.
   - `POST /bookings/:bookingId/refund` để user yêu cầu refund.
   - `GET /bookings/me` và `GET /bookings/me/:id` để xem lịch sử booking.
 - Owner APIs:

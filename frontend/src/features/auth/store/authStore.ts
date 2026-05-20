@@ -5,7 +5,7 @@ import type { ApiUser, ApiProfile } from "../types/auth.types";
 export type { AuthUser, UserRole } from "./authSlice";
 export type { UserStatus } from "../types/auth.types";
 
-import type { AuthUser } from "./authSlice";
+import type { AuthUser, UserRole } from "./authSlice";
 
 export const DEMO_ACCOUNTS: Record<string, AuthUser> = {
   "player@demo.com": {
@@ -60,6 +60,11 @@ export function subscribeAuth(fn: () => void): () => void {
 }
 
 export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfile): AuthUser {
+  // Map server role "user" to frontend role "player"
+  let role: UserRole = "user";
+  if (user.role === "admin") role = "admin";
+  if (user.role === "owner") role = "owner";
+
   const authUser: AuthUser = {
     _id: user._id,
     email: user.email,

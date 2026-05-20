@@ -18,6 +18,7 @@
 
 import axios from 'axios';
 import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
+import { getToken } from '@/features/auth/store/authStore';
 import type { DiscoverPost, CreatePostPayload } from '../types/discover.types';
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -144,13 +145,55 @@ let _posts = [...MOCK_POSTS];
 
 // --- API Functions ---
 
+const buildAuthHeader = () => {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const buildAvatarUrl = (seed: string) =>
+  `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
+
+const mapPostFromApi = (post: any): DiscoverPost => {
+  const authorName = post.author?.name || post.author?.email || 'Unknown';
+
+  return {
+    id: post.id,
+    author: {
+      id: post.author?.id || 'unknown',
+      name: authorName,
+      avatar: buildAvatarUrl(authorName),
+      rating: 4.5,
+      postsCount: 0,
+    },
+    sport: post.sport,
+    location: post.location,
+    time: post.time,
+    skillLevel: post.skillLevel,
+    playersNeeded: post.numberOfPlayers,
+    currentPlayers: 1,
+    type: post.matchType,
+    description: post.content,
+    createdAt: post.createdAt,
+  };
+};
+
 export async function fetchPosts(): Promise<{ success: boolean; data: DiscoverPost[] }> {
   if (isMockApi) {
     await delay(400);
     return { success: true, data: [..._posts] };
   }
-  const res = await axios.get(`${API_BASE_URL}/discover`);
-  return res.data;
+  try {
+    const res = await axios.get(`${API_BASE_URL}/matching/discover-posts`, {
+      headers: buildAuthHeader(),
+    });
+    const items = Array.isArray(res.data?.data?.items) ? res.data.data.items : [];
+    return { success: true, data: items.map(mapPostFromApi) };
+  } catch (err: any) {
+    return {
+      success: false,
+      data: [],
+    };
+  }
 }
 
 export async function createPost(
@@ -174,6 +217,32 @@ export async function createPost(
     _posts = [newPost, ..._posts];
     return { success: true, data: newPost, message: 'Post created successfully!' };
   }
-  const res = await axios.post(`${API_BASE_URL}/discover`, payload);
-  return res.data;
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/matching/discover-posts`,
+      {
+        sport: payload.sport,
+        location: payload.location,
+        time: payload.time,
+        time_type: 'fixed',
+        skill_level: payload.skillLevel,
+        number_of_players: payload.playersNeeded,
+        match_type: payload.type,
+        content: payload.description,
+      },
+      { headers: buildAuthHeader() }
+    );
+    return {
+      success: true,
+      data: mapPostFromApi(res.data.data),
+      message: res.data.message,
+    };
+  } catch (err: any) {
+    const message = err.response?.data?.message || 'Failed to create post.';
+    return {
+      success: false,
+      data: null as unknown as DiscoverPost,
+      message,
+    };
+  }
 }

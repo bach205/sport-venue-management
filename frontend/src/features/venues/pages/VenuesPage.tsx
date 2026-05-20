@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Search, SlidersHorizontal, Loader2, CalendarDays } from 'lucide-react';
 import { fetchVenues } from '../api/venuesApi';
@@ -17,6 +17,21 @@ const SPORT_OPTIONS = [
 
 const DISTRICTS = ['all', 'District 1', 'Binh Thanh', 'Go Vap', 'Thu Duc', 'District 7', 'Vung Tau'];
 
+function toISODate(date: Date) {
+  return date.toISOString().split('T')[0];
+}
+
+function formatBrowseDate(date: string) {
+  return new Date(date).toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+const TODAY = toISODate(new Date());
+const MAX_DATE = toISODate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+
 export default function VenuesPage() {
   const navigate = useNavigate();
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -24,15 +39,21 @@ export default function VenuesPage() {
   const [sport, setSport] = useState<Sport | 'all'>('all');
   const [district, setDistrict] = useState('all');
   const [search, setSearch] = useState('');
+  const [selectedDate, setSelectedDate] = useState(TODAY);
 
-  const load = async () => {
-    setLoading(true);
-    const res = await fetchVenues({ sport, district, search });
-    if (res.success) setVenues(res.data);
-    setLoading(false);
-  };
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetchVenues({ sport, district, search, date: selectedDate });
+        setVenues(res.items);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => { load(); }, [sport, district, search]);
+    load();
+  }, [sport, district, search, selectedDate]);
 
   const selectStyle: React.CSSProperties = {
     fontFamily: 'Inter, sans-serif',
@@ -48,10 +69,9 @@ export default function VenuesPage() {
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: '#fff8f6' }}>
-      {/* Header */}
       <div className="border-b border-[#dfc0b3] bg-[#fff8f6]">
         <div className="max-w-screen-xl mx-auto px-6 py-6">
-          <div className="flex items-start justify-between mb-5">
+          <div className="flex items-start justify-between mb-5 gap-4">
             <div>
               <h1
                 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 700, color: '#241914' }}
@@ -59,7 +79,7 @@ export default function VenuesPage() {
                 Sports Venues
               </h1>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 4 }}>
-                Browse, book courts & fields near you in real time
+                Browse, book courts & fields near you for {formatBrowseDate(selectedDate)}
               </p>
             </div>
             <button
@@ -78,7 +98,6 @@ export default function VenuesPage() {
             </button>
           </div>
 
-          {/* Filters */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px] max-w-xs">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#8b7266' }} />
@@ -88,24 +107,45 @@ export default function VenuesPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ ...selectStyle, paddingLeft: '34px', width: '100%', boxSizing: 'border-box' }}
-                onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-                onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
+                onFocus={e => {
+                  e.target.style.borderColor = '#006a65';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = '#dfc0b3';
+                }}
               />
             </div>
             <SlidersHorizontal size={14} style={{ color: '#8b7266' }} />
             <select value={sport} onChange={e => setSport(e.target.value as Sport | 'all')} style={selectStyle}>
-              {SPORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {SPORT_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
             <select value={district} onChange={e => setDistrict(e.target.value)} style={selectStyle}>
               {DISTRICTS.map(d => (
-                <option key={d} value={d}>{d === 'all' ? 'All Districts' : d}</option>
+                <option key={d} value={d}>
+                  {d === 'all' ? 'All Districts' : d}
+                </option>
               ))}
             </select>
+            <input
+              type="date"
+              value={selectedDate}
+              min={TODAY}
+              max={MAX_DATE}
+              onChange={e => setSelectedDate(e.target.value)}
+              style={{ ...selectStyle, minWidth: 170 }}
+            />
           </div>
+
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 10 }}>
+            Live availability is shown for {formatBrowseDate(selectedDate)}.
+          </p>
         </div>
       </div>
 
-      {/* Venue Grid */}
       <div className="max-w-screen-xl mx-auto w-full px-6 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-24">
@@ -118,13 +158,13 @@ export default function VenuesPage() {
               No venues found
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266', marginTop: 8 }}>
-              Try adjusting your filters
+              Try adjusting your filters for {formatBrowseDate(selectedDate)}
             </p>
           </div>
         ) : (
           <>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginBottom: '20px' }}>
-              {venues.length} venue{venues.length !== 1 ? 's' : ''} found
+              {venues.length} venue{venues.length !== 1 ? 's' : ''} found · Availability for {formatBrowseDate(selectedDate)}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {venues.map(venue => (

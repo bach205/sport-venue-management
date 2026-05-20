@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Phone, Video, Info, Smile, Mic, Send, Plus, MapPin } from "lucide-react";
 import type { Conversation, ChatMessage } from "../types/messages.types";
-import { CURRENT_USER } from "../store/messagesStore";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
 
@@ -94,16 +93,17 @@ function SystemMessage({ msg }: { msg: ChatMessage }) {
 interface Props {
   conversation: Conversation;
   onSendMessage: (content: string) => void;
+  currentUserId: string;
 }
 
-export function ChatWindow({ conversation, onSendMessage }: Props) {
+export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const other =
     conversation.type === "1-1"
-      ? conversation.participants.find((p) => p.id !== CURRENT_USER.id)
+      ? conversation.participants.find((p) => p.id !== currentUserId)
       : null;
 
   const displayName =
@@ -266,7 +266,7 @@ export function ChatWindow({ conversation, onSendMessage }: Props) {
                   return <SystemMessage key={msg.id} msg={msg} />;
                 }
 
-                const isMe = msg.senderId === CURRENT_USER.id;
+                const isMe = msg.senderId === currentUserId;
                 const sender = conversation.participants.find((p) => p.id === msg.senderId);
                 const showAvatar =
                   !isMe && (idx === 0 || group.messages[idx - 1]?.senderId !== msg.senderId);

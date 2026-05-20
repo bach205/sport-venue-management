@@ -23,9 +23,14 @@ class MatchingService {
     }).select("_id");
 
     if (existingPending) {
-      throw createHttpError(
-        HTTP_STATUS.BAD_REQUEST,
-        "You already have a pending match request."
+      await MatchRequest.updateMany(
+        {
+          user_id: userId,
+          status: "pending",
+        },
+        {
+          $set: { status: "cancelled" },
+        }
       );
     }
 
@@ -124,7 +129,6 @@ class MatchingService {
         request: responseData.request,
       });
     }
-
     return responseData;
   }
 
@@ -156,6 +160,22 @@ class MatchingService {
     return this.formatMatchRequest(request);
   }
 
+  async cancelPendingMatchRequestsByUser(userId) {
+    const result = await MatchRequest.updateMany(
+      {
+        user_id: userId,
+        status: "pending",
+      },
+      {
+        $set: { status: "cancelled" },
+      }
+    );
+
+    return {
+      cancelledCount: result.modifiedCount || 0,
+    };
+  }
+
   async listMyMatches(userId) {
     const participantRows = await MatchParticipant.find({ user_id: userId })
       .select("match_id")
@@ -164,7 +184,7 @@ class MatchingService {
     if (participantRows.length === 0) {
       return { items: [] };
     }
-
+    
     const matchIds = participantRows.map((item) => item.match_id);
     const matches = await Match.find({ _id: { $in: matchIds } }).sort({ createdAt: -1 });
 
