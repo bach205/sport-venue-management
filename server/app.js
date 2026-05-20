@@ -7,7 +7,25 @@ const errorMiddleware = require("./src/middlewares/error.middleware");
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+    "https://matchill.io.vn",
+    "https://www.matchill.io.vn",
+];
+
+const corsOptions = {
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
