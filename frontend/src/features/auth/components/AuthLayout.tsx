@@ -32,8 +32,6 @@ export function AuthLayout({ children, imageUrl, quote, quoteAuthor }: AuthLayou
     <div className="min-h-screen flex items-center justify-center p-4 gradient-auth-bg relative">
       <div className="absolute top-0 left-0 w-80 h-80 rounded-full opacity-30 pointer-events-none"
         style={{ background: 'radial-gradient(circle, #ffb693 0%, transparent 70%)', transform: 'translate(-30%, -30%)' }} />
-      <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-20 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #6ef4ea 0%, transparent 70%)', transform: 'translate(30%, 30%)' }} />
 
       <div className="relative w-full max-w-4xl">
         <div className="flex rounded-2xl overflow-hidden shadow-2xl" style={{ boxShadow: '0 8px 40px rgba(36,25,20,0.15)' }}>
