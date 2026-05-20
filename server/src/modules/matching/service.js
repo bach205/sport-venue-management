@@ -155,6 +155,22 @@ class MatchingService {
     return this.formatMatchRequest(request);
   }
 
+  async cancelPendingMatchRequestsByUser(userId) {
+    const result = await MatchRequest.updateMany(
+      {
+        user_id: userId,
+        status: "pending",
+      },
+      {
+        $set: { status: "cancelled" },
+      }
+    );
+
+    return {
+      cancelledCount: result.modifiedCount || 0,
+    };
+  }
+
   async listMyMatches(userId) {
     const participantRows = await MatchParticipant.find({ user_id: userId })
       .select("match_id")
