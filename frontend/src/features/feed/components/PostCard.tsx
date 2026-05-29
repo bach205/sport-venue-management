@@ -11,7 +11,10 @@ import {
   Loader2,
   ChevronDown,
   AlertTriangle,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
+import { Link } from "react-router";
 import type { ApiPost, ApiComment } from "../types/feed.types";
 import {
   likePost,
@@ -25,8 +28,6 @@ import {
 } from "../api/socialApi";
 import { getCurrentUser } from "../../auth/store/authStore";
 import { toast } from "sonner";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function timeAgo(iso: string): string {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -45,8 +46,6 @@ function initials(name: string) {
     .join("")
     .toUpperCase();
 }
-
-// ─── Comment section ──────────────────────────────────────────────────────────
 
 function CommentSection({
   postId,
@@ -123,7 +122,7 @@ function CommentSection({
     <div className="px-4 pb-4 flex flex-col gap-3">
       {comments.map((c) => (
         <div key={c.id} className="flex gap-2.5">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white gradient-teal-diag font-heading">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold text-white gradient-orange-diag font-heading">
             {initials(c.author.name)}
           </div>
           <div className="flex-1 min-w-0">
@@ -250,8 +249,6 @@ function CommentSection({
   );
 }
 
-// ─── Delete confirm banner ─────────────────────────────────────────────────────
-
 function DeleteConfirmBanner({
   onConfirm,
   onCancel,
@@ -284,8 +281,6 @@ function DeleteConfirmBanner({
     </div>
   );
 }
-
-// ─── PostCard ──────────────────────────────────────────────────────────────────
 
 export function PostCard({
   post: initialPost,
@@ -361,13 +356,40 @@ export function PostCard({
     setPost((p) => ({ ...p, commentCount: Math.max(0, p.commentCount + delta) }));
   };
 
+  const handleSharePost = async () => {
+    const shareUrl = `${window.location.origin}/feed/${post.id}`;
+    const shareText = `${post.author.name}: ${post.content || "Bai viet co anh tren feed"}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Bài viết cộng đồng thể thao",
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Đã copy link bài viết.");
+    } catch {
+      toast.error("Không thể chia sẻ bài viết lúc này.");
+    }
+  };
+
   return (
     <article className="flex flex-col rounded-2xl overflow-hidden bg-white border border-[#e8e0dc] shadow-[0_1px_4px_rgba(36,25,20,0.06)]">
       {/* Header */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-teal-diag font-heading">
-          {initials(post.author.name)}
-        </div>
+        {post.author.avatarUrl ? (
+          <img
+            src={post.author.avatarUrl}
+            alt={post.author.name}
+            className="w-10 h-10 rounded-full shrink-0 object-cover bg-brand-surface-warm"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-orange-diag font-heading">
+            {post.author.avatarUrl ? <img src={post.author.avatarUrl} alt={post.author.name} className="w-full h-full object-cover rounded-full" /> : initials(post.author.name)}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -436,7 +458,7 @@ export function PostCard({
               <button
                 onClick={handleSaveEdit}
                 disabled={savingEdit || !editContent.trim()}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-teal text-sm font-bold text-white font-heading disabled:opacity-60"
+                className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading disabled:opacity-60"
               >
                 {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 Lưu
@@ -449,12 +471,22 @@ export function PostCard({
               </button>
             </div>
           </div>
-        ) : (
+        ) : post.content ? (
           <p className="text-sm text-brand-dark leading-relaxed whitespace-pre-wrap">
             {post.content}
           </p>
-        )}
+        ) : null}
       </div>
+
+      {post.imageUrl && (
+        <div className="px-4 pb-3">
+          <img
+            src={post.imageUrl}
+            alt="Post attachment"
+            className="max-h-[520px] w-full rounded-xl object-cover bg-brand-surface-warm border border-brand-border"
+          />
+        </div>
+      )}
 
       {/* Delete confirm banner */}
       {confirmDelete && (
@@ -526,6 +558,24 @@ export function PostCard({
             />
           )}
         </button>
+
+        <button
+          onClick={handleSharePost}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all hover:bg-[#f4f0ee] text-[13px] text-brand-body font-medium"
+        >
+          <Share2 size={17} />
+          Chia sẻ
+        </button>
+      </div>
+
+      <div className="px-4 py-2 border-b border-[#f4ede9]">
+        <Link
+          to={`/feed/${post.id}`}
+          className="inline-flex items-center gap-1.5 text-[13px] text-brand-teal hover:underline"
+        >
+          <ExternalLink size={14} />
+          Xem chi tiết bài viết
+        </Link>
       </div>
 
       {/* Comments */}

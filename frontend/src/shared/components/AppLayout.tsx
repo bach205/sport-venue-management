@@ -7,11 +7,11 @@ import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 
 const NAV_LINKS = [
-  { label: 'Home',        to: '/discover' },
-  { label: 'Feed',        to: '/feed' },
-  { label: 'Venues',      to: '/venues' },
-  { label: 'My Bookings', to: '/bookings' },
-  { label: 'Community',   to: '/messages' },
+  { label: 'Trang chủ',   to: '/discover' },
+  { label: 'Bản tin',     to: '/feed' },
+  { label: 'Sân đấu',     to: '/venues' },
+  { label: 'Đơn đặt sân', to: '/bookings' },
+  { label: 'Cộng đồng',   to: '/messages' },
 ];
 
 const ROLE_BADGE = {
@@ -45,7 +45,8 @@ export default function AppLayout() {
       <header className="sticky top-0 z-20 bg-brand-surface border-b border-brand-border shadow-sm">
         <div className="max-w-screen-xl mx-auto px-6 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-10">
-            <Link to="/discover" className="font-heading text-[22px] font-extrabold text-brand-orange no-underline">
+            <Link to="/discover" className="font-heading text-md font-extrabold text-brand-orange no-underline">
+              <img src="/public/logo.png" alt="Logo" className="w-14 h-14 inline-block " />
               Matchill
             </Link>
             <nav className="hidden md:flex items-center gap-7">
@@ -74,7 +75,7 @@ export default function AppLayout() {
                   className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-brand-surface-orange transition-colors border-[1.5px] border-brand-border"
                 >
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold text-white gradient-orange-diag font-heading">
-                    {user.name[0]}
+                    { user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-lg" /> : user.name[0]}
                   </div>
                   <p className="hidden sm:block text-[13px] font-bold text-brand-dark font-heading leading-tight">
                     {user.name.split(' ')[0]}
@@ -89,7 +90,7 @@ export default function AppLayout() {
                       <div className="px-4 py-4 border-b border-brand-surface-warm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold text-white gradient-orange-diag font-heading">
-                            {user.name[0]}
+                            {user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-xl" /> : user.name[0]}
                           </div>
                           <div>
                             <p className="text-sm font-bold text-brand-dark font-heading">{user.name}</p>
@@ -103,18 +104,18 @@ export default function AppLayout() {
                       <div className="px-2 py-2">
                         <Link to="/profile" onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline">
-                          <User size={16} className="text-brand-orange" /> My Profile
+                          <User size={16} className="text-brand-orange" /> Trang cá nhân
                         </Link>
                         {user.role === 'owner' && (
                           <Link to="/owner/venues" onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#ddeeff] transition-colors text-sm text-brand-navy no-underline">
-                            <Building2 size={16} /> Owner Dashboard
+                            <Building2 size={16} /> Kênh chủ sân
                           </Link>
                         )}
                         {user.role === 'admin' && (
                           <Link to="/admin" onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#ffd6d6] transition-colors text-sm text-brand-red no-underline">
-                            <ShieldCheck size={16} /> Admin Panel
+                            <ShieldCheck size={16} /> Trang quản trị
                           </Link>
                         )}
                       </div>

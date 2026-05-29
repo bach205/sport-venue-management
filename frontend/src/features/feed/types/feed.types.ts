@@ -3,12 +3,14 @@ export interface ApiAuthor {
   id: string;
   email: string;
   name: string;
+  avatarUrl?: string | null;
 }
 
 /** Single post as returned by GET /social/feed and POST /social/posts */
 export interface ApiPost {
   id: string;
   content: string;
+  imageUrl?: string | null;
   author: ApiAuthor;
   createdAt: string;
   updatedAt: string;
@@ -39,7 +41,7 @@ export interface Pagination {
 export interface FeedData {
   items: ApiPost[];
   pagination: Pagination;
-  meta: { scope: string };
+  meta: { scope: string; query?: string };
 }
 
 export interface CommentsData {

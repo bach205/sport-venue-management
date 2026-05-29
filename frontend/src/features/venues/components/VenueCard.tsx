@@ -11,12 +11,21 @@ const SPORT_EMOJI: Record<string, string> = {
   volleyball: '🏐',
 };
 
+const SPORT_LABELS: Record<string, string> = {
+  tennis: 'Tennis',
+  basketball: 'Bóng rổ',
+  badminton: 'Cầu lông',
+  football: 'Bóng đá',
+  pickleball: 'Pickleball',
+  volleyball: 'Bóng chuyền',
+};
+
 function formatPrice(n: number) {
   return new Intl.NumberFormat('vi-VN').format(n) + '₫';
 }
 
 function formatAvailabilityDate(date: string) {
-  return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return new Date(date).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' });
 }
 
 function AvailabilityChip({ label, value, tone }: { label: string; value: number; tone: 'green' | 'orange' | 'gray' }) {
@@ -65,7 +74,7 @@ export function VenueCard({ venue, onClick }: Props) {
           {venue.sports.slice(0, 2).map((s) => (
             <span
               key={s}
-              className="px-2 py-1 rounded-lg text-white capitalize"
+              className="px-2 py-1 rounded-lg text-white"
               style={{
                 background: 'rgba(36,25,20,0.6)',
                 backdropFilter: 'blur(6px)',
@@ -74,7 +83,7 @@ export function VenueCard({ venue, onClick }: Props) {
                 fontWeight: 600,
               }}
             >
-              {SPORT_EMOJI[s]} {s}
+              {SPORT_EMOJI[s]} {SPORT_LABELS[s] || s}
             </span>
           ))}
         </div>
@@ -88,7 +97,7 @@ export function VenueCard({ venue, onClick }: Props) {
             color: '#fff',
           }}
         >
-          From {formatPrice(venue.priceFrom)}/hr
+          Từ {formatPrice(venue.priceFrom)}/giờ
         </div>
       </div>
 
@@ -140,7 +149,7 @@ export function VenueCard({ venue, onClick }: Props) {
           <div className="flex items-center gap-1.5">
             <Users size={13} style={{ color: '#8b7266' }} />
             <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>
-              {venue.courtCount} court{venue.courtCount === 1 ? '' : 's'}
+              {venue.courtCount} sân
             </span>
           </div>
         </div>
@@ -156,12 +165,12 @@ export function VenueCard({ venue, onClick }: Props) {
                 fontWeight: 600,
               }}
             >
-              Availability · {formatAvailabilityDate(availability.date)}
+              Lịch trống · {formatAvailabilityDate(availability.date)}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              <AvailabilityChip label="available" value={availability.availableSlots} tone="green" />
-              <AvailabilityChip label="booked" value={availability.bookedSlots} tone="orange" />
-              <AvailabilityChip label="unavailable" value={availability.unavailableSlots} tone="gray" />
+              <AvailabilityChip label="trống" value={availability.availableSlots} tone="green" />
+              <AvailabilityChip label="đã đặt" value={availability.bookedSlots} tone="orange" />
+              <AvailabilityChip label="không bán" value={availability.unavailableSlots} tone="gray" />
             </div>
           </div>
         )}
@@ -192,7 +201,7 @@ export function VenueCard({ venue, onClick }: Props) {
                 color: '#8b7266',
               }}
             >
-              +{venue.facilities.length - 3} more
+              +{venue.facilities.length - 3} khác
             </span>
           )}
         </div>

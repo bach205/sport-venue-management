@@ -49,7 +49,7 @@ function buildAuthUser(user: ApiUser, profile: ApiProfile): AuthUser {
     sport_preference: profile.sport_preference,
     reputation_score: profile.reputation_score,
     role: user.role ?? 'user',
-    avatar: `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
+    avatar: profile.avatar_url || `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
     ownedVenueIds: [],
   };
 }
@@ -87,8 +87,8 @@ export default function LoginPage() {
 
 
   return (
-    <AuthLayout imageUrl={SPORT_IMAGE} imageAlt="Tennis player on court"
-      quote="The fastest way to get on the court." quoteAuthor="Trusted by 10k+ players">
+    <AuthLayout imageUrl={SPORT_IMAGE} imageAlt="Người chơi tennis trên sân"
+      quote="Cách nhanh nhất để ra sân." quoteAuthor="Được tin dùng bởi hơn 10k người chơi">
       <MatchillLogo />
 
       <div className="mb-6 text-center">
@@ -96,7 +96,7 @@ export default function LoginPage() {
           Sẵn Sàng Sân Chơi?
         </h1>
         <p className="text-sm text-brand-body leading-relaxed">
-          Log in to book courts, find matches, and connect with the community.
+          Đăng nhập để đặt sân, tìm trận đấu và kết nối với cộng đồng.
         </p>
       </div>
 
@@ -113,7 +113,7 @@ export default function LoginPage() {
           <Label htmlFor="email" className="text-brand-dark text-[13px] font-semibold">Email</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" size={16} />
-            <Input id="email" type="email" placeholder="Enter your email"
+            <Input id="email" type="email" placeholder="Nhập email của bạn"
               className="pl-9 border-brand-border focus-visible:border-brand-teal focus-visible:ring-brand-teal/20 h-11"
               {...register('email')} />
           </div>
@@ -122,14 +122,14 @@ export default function LoginPage() {
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-brand-dark text-[13px] font-semibold">Password</Label>
+            <Label htmlFor="password" className="text-brand-dark text-[13px] font-semibold">Mật Khẩu</Label>
             <Link to="/forgot-password" className="text-brand-orange hover:text-brand-orange-light transition-colors text-[13px] font-medium">
-              Forgot Password?
+              Quên mật khẩu?
             </Link>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" size={16} />
-            <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password"
+            <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Nhập mật khẩu của bạn"
               className="pl-9 pr-10 border-brand-border focus-visible:border-brand-teal focus-visible:ring-brand-teal/20 h-11"
               {...register('password')} />
             <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -148,14 +148,14 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="flex items-center gap-3 my-5">
+      {/* <div className="flex items-center gap-3 my-5">
         <div className="flex-1 h-px bg-brand-border" />
-        <span className="text-brand-muted text-[13px]">or continue with</span>
+        <span className="text-brand-muted text-[13px]">hoặc tiếp tục với</span>
         <div className="flex-1 h-px bg-brand-border" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => toast.info('Google login coming soon')}
+        <button onClick={() => toast.info('Tính năng đăng nhập bằng Google sắp ra mắt')}
           className="flex items-center justify-center gap-2 h-11 rounded-lg border border-brand-border bg-white hover:bg-brand-surface-orange transition-colors text-sm font-medium text-brand-dark">
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -165,19 +165,19 @@ export default function LoginPage() {
           </svg>
           Google
         </button>
-        <button onClick={() => toast.info('Facebook login coming soon')}
+        <button onClick={() => toast.info('Tính năng đăng nhập bằng Facebook sắp ra mắt')}
           className="flex items-center justify-center gap-2 h-11 rounded-lg border border-brand-border bg-white hover:bg-brand-surface-orange transition-colors text-sm font-medium text-brand-dark">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
           </svg>
           Facebook
         </button>
-      </div>
+      </div> */}
 
       <p className="text-center mt-6 text-brand-body text-sm">
-        Don't have an account?{' '}
+        Chưa có tài khoản?{' '}
         <Link to="/register" className="text-brand-orange hover:text-brand-orange-light transition-colors font-semibold">
-          Sign Up
+          Đăng ký
         </Link>
       </p>
     </AuthLayout>

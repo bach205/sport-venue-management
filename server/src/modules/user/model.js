@@ -86,6 +86,9 @@ const ProfileSchema = new mongoose.Schema(
     location: {
       type: String,
     },
+    avatar_url: {
+      type: String,
+    },
     reputation_score: {
       type: Number,
       default: 0,

@@ -12,17 +12,7 @@ interface AuthLayoutProps {
 export function MatchillLogo() {
   return (
     <div className="flex flex-col items-center gap-1 mb-6">
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="17" cy="10" r="4" fill="#ff7e36"/>
-        <path d="M13 18c0-2.2 1.8-4 4-4s4 1.8 4 4v8l-4 4-4-4V18z" fill="#ff7e36"/>
-        <circle cx="31" cy="10" r="4" fill="#006a65"/>
-        <path d="M27 18c0-2.2 1.8-4 4-4s4 1.8 4 4v8l-4 4-4-4V18z" fill="#006a65"/>
-        <path d="M19 26h10l-5-5-5 5z" fill="#ff7e36" opacity="0.6"/>
-        <path d="M21 22h6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-      <span className="font-heading text-[13px] font-bold tracking-[0.15em] uppercase text-brand-orange">
-        Matchill
-      </span>
+      <img src="/logo.png" alt="Matchill Logo" className="w-12 h-12" />
     </div>
   );
 }

@@ -5,10 +5,9 @@ import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
 
 function formatMsgTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", {
+  return new Date(iso).toLocaleTimeString("vi-VN", {
     hour: "numeric",
     minute: "2-digit",
-    hour12: true,
   });
 }
 
@@ -16,9 +15,9 @@ function formatDaySeparator(iso: string) {
   const d = new Date(iso);
   const today = new Date();
   const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  return d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  if (diffDays === 0) return "Hôm nay";
+  if (diffDays === 1) return "Hôm qua";
+  return d.toLocaleDateString("vi-VN", { month: "long", day: "numeric" });
 }
 
 function SystemMessage({ msg }: { msg: ChatMessage }) {
@@ -47,10 +46,10 @@ function SystemMessage({ msg }: { msg: ChatMessage }) {
                 color: "#a04100",
               }}
             >
-              Match Found!
+              Đã tìm thấy đối thủ!
             </p>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>
-              {msg.content.replace("Match Found! ", "")}
+              {msg.content.replace("Match Found! ", "").replace("Đã tìm thấy đối thủ! ", "")}
             </p>
           </div>
         </div>
@@ -107,7 +106,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
       : null;
 
   const displayName =
-    conversation.type === "group" ? (conversation.name ?? "Group") : (other?.name ?? "");
+    conversation.type === "group" ? (conversation.name ?? "Nhóm") : (other?.name ?? "");
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -190,19 +189,19 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
           </p>
           <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#006a65" }}>
             {other?.isOnline
-              ? `Online now${other.distance ? ` · ${other.distance}` : ""}`
+              ? `Đang hoạt động${other.distance ? ` · ${other.distance}` : ""}`
               : conversation.type === "group"
-                ? `${conversation.participants.length} members`
-                : "Offline"}
+                ? `${conversation.participants.length} thành viên`
+                : "Ngoại tuyến"}
           </p>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1">
           {[
-            { icon: <Phone size={18} />, title: "Voice call" },
-            { icon: <Video size={18} />, title: "Video call" },
-            { icon: <Info size={18} />, title: "Info" },
+            { icon: <Phone size={18} />, title: "Cuộc gọi thoại" },
+            { icon: <Video size={18} />, title: "Cuộc gọi video" },
+            { icon: <Info size={18} />, title: "Thông tin" },
           ].map(({ icon, title }) => (
             <button
               key={title}
@@ -234,7 +233,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
                 color: "#241914",
               }}
             >
-              Start the conversation!
+              Bắt đầu cuộc trò chuyện!
             </p>
             <p
               style={{
@@ -244,7 +243,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
                 marginTop: 6,
               }}
             >
-              Say hi to {displayName}
+              Gửi lời chào tới {displayName}
             </p>
           </div>
         ) : (
@@ -383,7 +382,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
           <textarea
             ref={inputRef}
             rows={1}
-            placeholder="Type a message..."
+            placeholder="Nhập tin nhắn..."
             value={input}
             onChange={(e) => {
               setInput(e.target.value);

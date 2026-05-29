@@ -14,33 +14,67 @@ import { getLevelProgress, getFEOnlyData } from '../store/profileStore';
 import type { UserProfile, Achievement, Gender, SkillLevel, Sport } from '../types/profile.types';
 import type { ApiUser, UpdateProfilePayload } from '../../auth/types/auth.types';
 import { toast } from 'sonner';
+import { uploadImage } from '@/shared/api/uploadApi';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 type Tab = 'info' | 'achievements' | 'activity';
 
+const CATEGORY_LABELS: Record<string, string> = {
+  booking: 'Đặt sân',
+  social: 'Cộng đồng',
+  skill: 'Kỹ năng',
+  loyalty: 'Thân thiết',
+};
+
+const GENDER_LABELS: Record<string, string> = {
+  male: 'Nam',
+  female: 'Nữ',
+  other: 'Khác',
+  prefer_not_to_say: 'Không muốn tiết lộ',
+};
+
+const SKILL_LEVEL_MAP: Record<string, string> = {
+  casual: 'Giải trí',
+  intermediate: 'Trung bình',
+  competitive: 'Thi đấu',
+};
+
+const STATUS_MAP: Record<string, string> = {
+  active: 'Hoạt động',
+  warning: 'Cảnh cáo',
+  suspended: 'Bị khóa',
+};
+
+const ACTIVITY_TYPE_LABELS: Record<string, string> = {
+  booking: 'Đặt sân',
+  match: 'Trận đấu',
+  message: 'Tin nhắn',
+  achievement: 'Thành tựu',
+};
+
 const SPORTS: { value: Sport; label: string; emoji: string }[] = [
   { value: 'tennis',       label: 'Tennis',       emoji: '🎾' },
-  { value: 'basketball',   label: 'Basketball',   emoji: '🏀' },
-  { value: 'badminton',    label: 'Badminton',    emoji: '🏸' },
-  { value: 'football',     label: 'Football',     emoji: '⚽' },
+  { value: 'basketball',   label: 'Bóng rổ',      emoji: '🏀' },
+  { value: 'badminton',    label: 'Cầu lông',     emoji: '🏸' },
+  { value: 'football',     label: 'Bóng đá',      emoji: '⚽' },
   { value: 'pickleball',   label: 'Pickleball',   emoji: '🏓' },
-  { value: 'volleyball',   label: 'Volleyball',   emoji: '🏐' },
-  { value: 'swimming',     label: 'Swimming',     emoji: '🏊' },
-  { value: 'table_tennis', label: 'Table Tennis', emoji: '🏓' },
+  { value: 'volleyball',   label: 'Bóng chuyền',  emoji: '🏐' },
+  { value: 'swimming',     label: 'Bơi lội',      emoji: '🏊' },
+  { value: 'table_tennis', label: 'Bóng bàn',     emoji: '🏓' },
 ];
 
 const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string; active: string }[] = [
-  { value: 'casual',       label: 'Casual',       desc: 'Just for fun',     active: 'bg-brand-teal/15 border-brand-teal text-brand-teal' },
-  { value: 'intermediate', label: 'Intermediate', desc: 'Regular player',   active: 'bg-brand-navy/10 border-brand-navy text-brand-navy' },
-  { value: 'competitive',  label: 'Competitive',  desc: 'Tournament level', active: 'bg-brand-orange/10 border-brand-orange text-brand-orange' },
+  { value: 'casual',       label: 'Giải trí',     desc: 'Chơi cho vui',     active: 'bg-brand-teal/15 border-brand-teal text-brand-teal' },
+  { value: 'intermediate', label: 'Trung bình',   desc: 'Chơi thường xuyên',   active: 'bg-brand-navy/10 border-brand-navy text-brand-navy' },
+  { value: 'competitive',  label: 'Thi đấu',      desc: 'Trình độ giải đấu', active: 'bg-brand-orange/10 border-brand-orange text-brand-orange' },
 ];
 
 const GENDERS: { value: Gender; label: string }[] = [
-  { value: 'male',              label: 'Male' },
-  { value: 'female',            label: 'Female' },
-  { value: 'other',             label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+  { value: 'male',              label: 'Nam' },
+  { value: 'female',            label: 'Nữ' },
+  { value: 'other',             label: 'Khác' },
+  { value: 'prefer_not_to_say', label: 'Không muốn tiết lộ' },
 ];
 
 const CATEGORY_CONFIG: Record<string, { color: string; textClass: string; bgClass: string }> = {
@@ -51,7 +85,7 @@ const CATEGORY_CONFIG: Record<string, { color: string; textClass: string; bgClas
 };
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 // ─── Achievement Card ─────────────────────────────────────────────────────────
@@ -66,8 +100,8 @@ function AchievementCard({ ach }: { ach: Achievement }) {
       style={unlocked ? { borderColor: cat.color + '33', boxShadow: '0 2px 12px rgba(36,25,20,0.08)' } : undefined}
     >
       <div className="absolute top-3 right-3">
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${cat.bgClass} ${cat.textClass}`}>
-          {ach.category}
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${cat.bgClass} ${cat.textClass}`}>
+          {CATEGORY_LABELS[ach.category] || ach.category}
         </span>
       </div>
       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${cat.bgClass} ${!unlocked ? 'grayscale-[50%]' : ''}`}>
@@ -149,19 +183,19 @@ function EditForm({
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Display Name *</label>
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Tên hiển thị *</label>
           <input className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div>
-          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Location</label>
-          <input className={inputCls} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Ho Chi Minh City" />
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Khu vực</label>
+          <input className={inputCls} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Ví dụ: Thành phố Hồ Chí Minh" />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Age</label>
-          <input className={inputCls} type="number" min={10} max={80} value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} placeholder="Your age" />
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Tuổi</label>
+          <input className={inputCls} type="number" min={10} max={80} value={form.age} onChange={e => setForm(f => ({ ...f, age: e.target.value }))} placeholder="Tuổi của bạn" />
         </div>
         <div>
           <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Gender</label>
@@ -173,7 +207,7 @@ function EditForm({
 
       <div>
         <label className="text-[13px] font-semibold text-brand-dark block mb-2">
-          Sport Preferences <span className="font-mono font-normal text-brand-muted text-[11px]">(sport_preference)</span>
+          Môn thể thao yêu thích <span className="font-mono font-normal text-brand-muted text-[11px]">(sport_preference)</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {SPORTS.map(s => {
@@ -191,7 +225,7 @@ function EditForm({
 
       <div>
         <label className="text-[13px] font-semibold text-brand-dark block mb-2">
-          Skill Level <span className="font-mono font-normal text-brand-muted text-[11px]">(skill_level)</span>
+          Trình độ <span className="font-mono font-normal text-brand-muted text-[11px]">(skill_level)</span>
         </label>
         <div className="grid grid-cols-3 gap-3">
           {SKILL_LEVELS.map(sl => {
@@ -217,7 +251,7 @@ function EditForm({
           className="flex items-center gap-2 h-11 px-6 rounded-xl gradient-orange text-white font-heading text-sm font-bold hover:opacity-90 disabled:opacity-70 transition-opacity"
           style={{ boxShadow: '0 4px 14px rgba(160,65,0,0.3)' }}>
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-          {saving ? 'Saving…' : 'Save Changes'}
+          {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
         </button>
       </div>
     </div>
@@ -233,6 +267,7 @@ export default function ProfilePage() {
   const status     = useAppSelector(state => state.profile.status);
 
   const [saving,    setSaving]    = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [tab,       setTab]       = useState<Tab>('info');
   const [editing,   setEditing]   = useState(false);
   const [achFilter, setAchFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
@@ -264,6 +299,7 @@ export default function ProfilePage() {
           sport_preference: (apiProfile.sport_preference ?? []) as Sport[],
           skill_level:      (apiProfile.skill_level ?? 'casual') as SkillLevel,
           location:         apiProfile.location ?? '',
+          avatarUrl:        apiProfile.avatar_url || feData.avatarUrl,
           reputation_score: apiProfile.reputation_score,
           is_verified:      user.is_verified,
         }));
@@ -288,16 +324,46 @@ export default function ProfilePage() {
         sport_preference: (apiProfile.sport_preference ?? profile?.sport_preference) as Sport[],
         skill_level:      (apiProfile.skill_level ?? profile?.skill_level) as SkillLevel,
         location:         apiProfile.location ?? profile?.location ?? '',
+        avatarUrl:        apiProfile.avatar_url || profile?.avatarUrl || '',
         reputation_score: apiProfile.reputation_score,
       }));
       // Keep authUser.name in sync (displayed in NavBar, etc.)
       dispatch(patchUser({ name: apiProfile.name }));
       setEditing(false);
-      toast.success('Profile updated successfully!');
+      toast.success('Cập nhật hồ sơ thành công!');
     } else {
       toast.error(res.message);
     }
     setSaving(false);
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn tệp ảnh.');
+      return;
+    }
+
+    setAvatarUploading(true);
+    const uploadResult = await uploadImage(file);
+    if (!uploadResult.success || !uploadResult.data) {
+      toast.error(uploadResult.message);
+      setAvatarUploading(false);
+      return;
+    }
+
+    const updateResult = await updateProfile({ avatar_url: uploadResult.data.imageUrl });
+    if (updateResult.success && updateResult.data) {
+      const avatarUrl = updateResult.data.avatar_url || uploadResult.data.imageUrl;
+      dispatch(updateProfileData({ avatarUrl }));
+      dispatch(patchUser({ avatar: avatarUrl }));
+      toast.success('Đã cập nhật ảnh đại diện.');
+    } else {
+      toast.error(updateResult.message);
+    }
+    setAvatarUploading(false);
   };
 
   // ── Loading / auth guard ──────────────────────────────────────────────────────
@@ -305,7 +371,7 @@ export default function ProfilePage() {
   if (!authUser) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <p className="font-heading text-lg text-brand-dark">Please log in to view your profile</p>
+        <p className="font-heading text-lg text-brand-dark">Vui lòng đăng nhập để xem hồ sơ</p>
       </div>
     );
   }
@@ -314,7 +380,7 @@ export default function ProfilePage() {
     return (
       <div className="flex items-center justify-center py-24 gap-3 text-brand-muted">
         <Loader2 size={20} className="animate-spin text-brand-orange" />
-        <span className="text-sm">Loading profile…</span>
+        <span className="text-sm">Đang tải hồ sơ…</span>
       </div>
     );
   }
@@ -332,9 +398,9 @@ export default function ProfilePage() {
   );
 
   const TABS = [
-    { id: 'info'         as Tab, label: 'Personal Info',                                              icon: <Edit3 size={15} /> },
-    { id: 'achievements' as Tab, label: `Achievements (${unlockedCount}/${profile.achievements.length})`, icon: <Trophy size={15} /> },
-    { id: 'activity'     as Tab, label: 'Activity',                                                   icon: <Calendar size={15} /> },
+    { id: 'info'         as Tab, label: 'Thông tin cá nhân',                                              icon: <Edit3 size={15} /> },
+    { id: 'achievements' as Tab, label: `Thành tựu (${unlockedCount}/${profile.achievements.length})`, icon: <Trophy size={15} /> },
+    { id: 'activity'     as Tab, label: 'Hoạt động',                                                   icon: <Calendar size={15} /> },
   ];
 
   const ROLE_BADGE = { user: 'bg-[#d0f5ee] text-[#00785e]', owner: 'bg-[#ddeeff] text-brand-navy', admin: 'bg-[#ffd6d6] text-brand-red' };
@@ -343,12 +409,8 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col min-h-full bg-brand-surface">
       {/* Cover */}
-      <div className="relative w-full overflow-hidden h-[220px]">
-        <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(36,25,20,0.65))' }} />
-        <button className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-[13px] border border-white/25 bg-white/15 backdrop-blur-sm">
-          <Camera size={14} /> Change Cover
-        </button>
+      <div className="relative w-full overflow-hidden h-[100px]">
+
         {/* Subtle refresh indicator when revalidating cached data */}
         {status === 'loading' && profile && (
           <div className="absolute top-4 left-4">
@@ -365,9 +427,20 @@ export default function ProfilePage() {
               style={{ boxShadow: '0 4px 16px rgba(36,25,20,0.2)' }}>
               <img src={profile.avatarUrl} alt={profile.name} className="w-full h-full object-cover bg-brand-surface-warm" />
             </div>
-            <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center bg-brand-orange border-2 border-brand-surface">
-              <Camera size={12} className="text-white" />
-            </button>
+            <label className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center bg-brand-orange border-2 border-brand-surface cursor-pointer">
+              {avatarUploading ? (
+                <Loader2 size={12} className="text-white animate-spin" />
+              ) : (
+                <Camera size={12} className="text-white" />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={avatarUploading}
+                onChange={handleAvatarUpload}
+              />
+            </label>
           </div>
 
           <div className="flex-1 pb-1">
@@ -385,27 +458,27 @@ export default function ProfilePage() {
                 </span>
               )}
               <span className="flex items-center gap-1 text-[13px] text-brand-body">
-                <Calendar size={13} className="text-brand-orange" /> Joined {formatDate(profile.joinedAt)}
+                <Calendar size={13} className="text-brand-orange" /> Tham gia {formatDate(profile.joinedAt)}
               </span>
               <span className="flex items-center gap-1 text-[13px] text-brand-body">
-                <Star size={13} fill="#a04100" className="text-brand-orange" /> {profile.rating} ({profile.reviewCount} reviews)
+                <Star size={13} fill="#a04100" className="text-brand-orange" /> {profile.rating} ({profile.reviewCount} đánh giá)
               </span>
             </div>
           </div>
 
           <button onClick={() => { setTab('info'); setEditing(true); }}
             className="flex items-center gap-2 h-10 px-4 rounded-xl gradient-orange text-white text-[13px] font-bold font-heading hover:opacity-90 transition-opacity shrink-0">
-            <Edit3 size={14} /> Edit Profile
+            <Edit3 size={14} /> Chỉnh sửa hồ sơ
           </button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
-            { icon: '🏸', label: 'Sport',         value: profile.sport_preference.slice(0, 2).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') || '–' },
-            { icon: '⚡', label: 'Skill Level',    value: profile.skill_level.charAt(0).toUpperCase() + profile.skill_level.slice(1) },
-            { icon: '📅', label: 'Total Bookings', value: `${profile.totalBookings}` },
-            { icon: '🤝', label: 'Matches Played', value: `${profile.totalMatchesPlayed}` },
+            { icon: '🏸', label: 'Bộ môn yêu thích',         value: profile.sport_preference.slice(0, 2).map(s => SPORTS.find(x => x.value === s)?.label || s).join(', ') || '–' },
+            { icon: '⚡', label: 'Trình độ',    value: SKILL_LEVEL_MAP[profile.skill_level] || profile.skill_level },
+            { icon: '📅', label: 'Tổng lượt đặt', value: `${profile.totalBookings}` },
+            { icon: '🤝', label: 'Trận đã chơi', value: `${profile.totalMatchesPlayed}` },
           ].map((s, i) => (
             <div key={i} className="rounded-xl px-4 py-3 flex items-center gap-3 bg-white border border-brand-border">
               <span className="text-xl">{s.icon}</span>
@@ -422,21 +495,21 @@ export default function ProfilePage() {
           <div className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 gradient-orange"
             style={{ boxShadow: '0 4px 12px rgba(160,65,0,0.35)' }}>
             <span className="font-heading text-lg font-black text-white leading-none">{xpInfo.level}</span>
-            <span className="text-[9px] text-white/80 tracking-widest">LEVEL</span>
+            <span className="text-[9px] text-white/80 tracking-widest">CẤP ĐỘ</span>
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
               <span className="font-heading text-sm font-bold text-brand-dark">
-                Level {xpInfo.level}
+                Cấp độ {xpInfo.level}
                 {xpInfo.level < 50 && <span className="text-[13px] font-normal text-brand-muted"> → {xpInfo.level + 1}</span>}
               </span>
-              <span className="text-[13px] text-brand-orange font-semibold">{profile.reputation_score} rep</span>
+              <span className="text-[13px] text-brand-orange font-semibold">{profile.reputation_score} điểm uy tín</span>
             </div>
             <div className="w-full h-2.5 rounded-full overflow-hidden bg-brand-surface-warm">
               <div className="h-full rounded-full gradient-orange transition-[width] duration-500" style={{ width: `${xpInfo.pct}%` }} />
             </div>
             <div className="flex items-center justify-between mt-1.5">
-              <span className="text-[11px] text-brand-muted">{unlockedCount} achievements · {totalXp} XP</span>
+              <span className="text-[11px] text-brand-muted">{unlockedCount} thành tựu · {totalXp} XP</span>
               <span className="text-[11px] text-brand-orange font-semibold">{xpInfo.pct}%</span>
             </div>
           </div>
@@ -445,7 +518,7 @@ export default function ProfilePage() {
               <Trophy size={14} className="text-brand-orange" />
               <span className="font-heading text-[15px] font-bold text-brand-orange">{unlockedCount}/{profile.achievements.length}</span>
             </div>
-            <span className="text-[11px] text-brand-muted">Achievements</span>
+            <span className="text-[11px] text-brand-muted">Thành tựu</span>
           </div>
         </div>
 
@@ -465,7 +538,7 @@ export default function ProfilePage() {
           <div className="pb-12">
             {editing ? (
               <div className="rounded-2xl p-6 bg-white border border-brand-border">
-                <h2 className="font-heading text-lg font-bold text-brand-dark mb-5">Edit Profile</h2>
+                <h2 className="font-heading text-lg font-bold text-brand-dark mb-5">Chỉnh sửa hồ sơ</h2>
                 <EditForm profile={profile} onSave={handleSave} onCancel={() => setEditing(false)} saving={saving} />
               </div>
             ) : (
@@ -473,22 +546,22 @@ export default function ProfilePage() {
                 <div className="lg:col-span-2 flex flex-col gap-5">
                   <div className="rounded-2xl p-5 bg-white border border-brand-border">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-heading text-base font-bold text-brand-dark">Personal Details</h3>
+                      <h3 className="font-heading text-base font-bold text-brand-dark">Thông tin chi tiết</h3>
                       <button onClick={() => setEditing(true)}
                         className="flex items-center gap-1 px-3 h-8 rounded-lg hover:bg-brand-surface-orange transition-colors text-[13px] text-brand-orange font-semibold">
-                        <Edit3 size={12} /> Edit
+                        <Edit3 size={12} /> Sửa
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-y-5 gap-x-8">
                       {[
-                        { label: 'name',             value: profile.name },
-                        { label: 'age',              value: profile.age ? `${profile.age} years old` : '—' },
-                        { label: 'gender',           value: profile.gender === 'prefer_not_to_say' ? 'Prefer not to say' : (profile.gender?.charAt(0).toUpperCase() + profile.gender?.slice(1) || '—') },
-                        { label: 'location',         value: profile.location || '—' },
-                        { label: 'skill_level',      value: profile.skill_level?.charAt(0).toUpperCase() + profile.skill_level?.slice(1) || '—' },
-                        { label: 'reputation_score', value: `${profile.reputation_score} pts` },
-                        { label: 'is_verified',      value: profile.is_verified ? '✅ Verified' : '⚠️ Unverified' },
-                        { label: 'joinedAt',         value: formatDate(profile.joinedAt) },
+                        { label: 'Họ và tên',        value: profile.name },
+                        { label: 'Tuổi',             value: profile.age ? `${profile.age} tuổi` : '—' },
+                        { label: 'Giới tính',        value: GENDER_LABELS[profile.gender] || '—' },
+                        { label: 'Khu vực',          value: profile.location || '—' },
+                        { label: 'Trình độ',         value: SKILL_LEVEL_MAP[profile.skill_level] || '—' },
+                        { label: 'Điểm uy tín',      value: `${profile.reputation_score} điểm` },
+                        { label: 'Xác minh',         value: profile.is_verified ? '✅ Đã xác minh' : '⚠️ Chưa xác minh' },
+                        { label: 'Ngày tham gia',    value: formatDate(profile.joinedAt) },
                       ].map((item, i) => (
                         <div key={i}>
                           <p className="font-mono text-[11px] text-brand-muted mb-1">{item.label}</p>
@@ -499,12 +572,12 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="rounded-2xl p-5 bg-white border border-brand-border">
-                    <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Performance</h3>
+                    <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Hiệu suất</h3>
                     {[
-                      { label: 'Court Bookings',   value: profile.totalBookings,      icon: '📅' },
-                      { label: 'Matches Played',   value: profile.totalMatchesPlayed, icon: '🤝' },
-                      { label: 'Community Rating', value: `${profile.rating} ⭐`,     icon: '🌟' },
-                      { label: 'Reviews Received', value: profile.reviewCount,        icon: '💬' },
+                      { label: 'Lượt đặt sân',   value: profile.totalBookings,      icon: '📅' },
+                      { label: 'Trận đấu đã ghép',   value: profile.totalMatchesPlayed, icon: '🤝' },
+                      { label: 'Đánh giá cộng đồng', value: `${profile.rating} ⭐`,     icon: '🌟' },
+                      { label: 'Nhận xét đã nhận', value: profile.reviewCount,        icon: '💬' },
                     ].map((item, i) => (
                       <div key={i} className={`flex items-center justify-between py-2.5 text-[13px] ${i > 0 ? 'border-t border-brand-surface-warm' : ''}`}>
                         <span className="text-brand-body">{item.icon} {item.label}</span>
@@ -516,10 +589,10 @@ export default function ProfilePage() {
 
                 <div className="flex flex-col gap-5">
                   <div className="rounded-2xl p-5 bg-white border border-brand-border">
-                    <h3 className="font-heading text-base font-bold text-brand-dark mb-1">Sport Preferences</h3>
+                    <h3 className="font-heading text-base font-bold text-brand-dark mb-1">Môn thể thao yêu thích</h3>
                     <p className="font-mono text-[11px] text-brand-muted mb-3">sport_preference</p>
                     {profile.sport_preference.length === 0 ? (
-                      <p className="text-[13px] text-brand-muted italic">No sports added yet.</p>
+                      <p className="text-[13px] text-brand-muted italic">Chưa chọn bộ môn nào.</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {profile.sport_preference.map(s => {
@@ -535,18 +608,18 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="rounded-2xl p-5 bg-white border border-brand-border">
-                    <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Account</h3>
+                    <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Tài khoản</h3>
                     <div className="flex flex-col gap-3">
                       <div>
                         <p className="font-mono text-[11px] text-brand-muted mb-0.5">email</p>
                         <p className="text-sm font-semibold text-brand-dark">{authUser.email}</p>
                       </div>
                       <div>
-                        <p className="font-mono text-[11px] text-brand-muted mb-0.5">status</p>
+                        <p className="font-mono text-[11px] text-brand-muted mb-0.5">trạng thái</p>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-bold
                           ${authUser.status === 'active'  ? 'bg-[#d0f5ee] text-[#00785e]' :
                             authUser.status === 'warning' ? 'bg-[#fff3cd] text-[#856404]' : 'bg-[#ffd6d6] text-brand-red'}`}>
-                          {authUser.status}
+                          {STATUS_MAP[authUser.status] || authUser.status}
                         </span>
                       </div>
                     </div>
@@ -565,22 +638,26 @@ export default function ProfilePage() {
                 <Trophy size={18} className="text-brand-orange" />
                 <div>
                   <p className="font-heading text-base font-extrabold text-brand-orange leading-none">{unlockedCount}/{profile.achievements.length}</p>
-                  <p className="text-[11px] text-brand-muted">Unlocked</p>
+                  <p className="text-[11px] text-brand-muted">Đã mở khóa</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-surface-orange border border-brand-orange/15">
                 <Zap size={18} className="text-brand-orange" />
                 <div>
                   <p className="font-heading text-base font-extrabold text-brand-orange leading-none">{totalXp} XP</p>
-                  <p className="text-[11px] text-brand-muted">From achievements</p>
+                  <p className="text-[11px] text-brand-muted">Từ thành tựu</p>
                 </div>
               </div>
               <div className="ml-auto flex gap-2">
-                {(['all', 'unlocked', 'locked'] as const).map(f => (
-                  <button key={f} onClick={() => setAchFilter(f)}
+                {([
+    { value: 'all', label: 'Tất cả' },
+    { value: 'unlocked', label: 'Đã mở khóa' },
+    { value: 'locked', label: 'Chưa mở khóa' }
+  ] as const).map(f => (
+                  <button key={f.value} onClick={() => setAchFilter(f.value)}
                     className={`px-3 h-9 rounded-xl capitalize text-[13px] transition-all border-[1.5px]
-                      ${achFilter === f ? 'bg-brand-orange border-brand-orange text-white font-bold' : 'bg-white border-brand-border text-brand-body hover:bg-brand-surface-orange'}`}>
-                    {f}
+                      ${achFilter === f.value ? 'bg-brand-orange border-brand-orange text-white font-bold' : 'bg-white border-brand-border text-brand-body hover:bg-brand-surface-orange'}`}>
+                    {f.label}
                   </button>
                 ))}
               </div>
@@ -597,7 +674,7 @@ export default function ProfilePage() {
             {profile.recentActivity.length === 0 ? (
               <div className="text-center py-16">
                 <Calendar size={48} className="text-brand-border mx-auto mb-3" />
-                <p className="text-[15px] text-brand-muted">No activity yet</p>
+                <p className="text-[15px] text-brand-muted">Chưa có hoạt động nào</p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -612,7 +689,7 @@ export default function ProfilePage() {
                         <p className="text-xs text-brand-muted mt-0.5">{item.subtitle}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold capitalize bg-white border border-brand-border ${TYPE_COLOR[item.type]}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold bg-white border border-brand-border ${TYPE_COLOR[item.type]}`}>
                           {item.type}
                         </span>
                         <span className="text-[11px] text-brand-muted">{formatDate(item.date)}</span>

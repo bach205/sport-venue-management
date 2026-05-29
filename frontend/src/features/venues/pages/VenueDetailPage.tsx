@@ -149,14 +149,14 @@ export default function VenueDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', color: '#241914' }}>
-          Venue not found
+          Không tìm thấy địa điểm
         </p>
         <button
           onClick={() => navigate('/venues')}
           className="mt-4"
           style={{ color: '#a04100', fontFamily: 'Inter, sans-serif' }}
         >
-          ← Back to Venues
+          ← Quay lại danh sách sân
         </button>
       </div>
     );
@@ -184,7 +184,7 @@ export default function VenueDetailPage() {
           }}
         >
           <ArrowLeft size={16} />
-          Venues
+          Sân đấu
         </button>
         <div className="absolute bottom-6 left-6 right-6">
           <div className="flex flex-wrap gap-1.5 mb-2">
@@ -234,7 +234,7 @@ export default function VenueDetailPage() {
             {[
               {
                 icon: <Star size={16} fill="#a04100" color="#a04100" />,
-                label: `${venue.rating} (${venue.reviewCount} reviews)`,
+                label: `${venue.rating} (${venue.reviewCount} đánh giá)`,
               },
               {
                 icon: <MapPin size={16} style={{ color: '#8b7266' }} />,
@@ -243,7 +243,7 @@ export default function VenueDetailPage() {
               { icon: <Clock size={16} style={{ color: '#8b7266' }} />, label: venue.openHours },
               {
                 icon: <Users size={16} style={{ color: '#8b7266' }} />,
-                label: `${venue.courtCount} courts`,
+                label: `${venue.courtCount} sân`,
               },
             ].map((stat, i) => (
               <div
@@ -270,21 +270,21 @@ export default function VenueDetailPage() {
                     color: '#241914',
                   }}
                 >
-                  Availability Summary
+                  Tóm tắt trạng thái
                 </h3>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginTop: 4 }}>
-                  Live slot status for {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  Trạng thái trực tuyến cho {selectedDate.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
               <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: '#a04100' }}>
-                {availabilitySummary.totalSlots} total slots
+                {availabilitySummary.totalSlots} tổng số khung giờ
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <SummaryChip label="Available" value={availabilitySummary.availableSlots} tone="green" />
-              <SummaryChip label="Held" value={availabilitySummary.heldSlots} tone="brown" />
-              <SummaryChip label="Booked" value={availabilitySummary.bookedSlots} tone="orange" />
-              <SummaryChip label="Unavailable" value={availabilitySummary.unavailableSlots} tone="gray" />
+              <SummaryChip label="Còn trống" value={availabilitySummary.availableSlots} tone="green" />
+              <SummaryChip label="Tạm giữ" value={availabilitySummary.heldSlots} tone="brown" />
+              <SummaryChip label="Đã đặt" value={availabilitySummary.bookedSlots} tone="orange" />
+              <SummaryChip label="Không bán" value={availabilitySummary.unavailableSlots} tone="gray" />
             </div>
           </div>
 
@@ -298,7 +298,7 @@ export default function VenueDetailPage() {
                 marginBottom: 8,
               }}
             >
-              About this venue
+              Về địa điểm này
             </h3>
             <p
               style={{
@@ -342,7 +342,7 @@ export default function VenueDetailPage() {
                 }}
               >
                 <CalendarDays size={16} style={{ display: 'inline', marginRight: 8, color: '#a04100' }} />
-                Select Date & Time Slots
+                Chọn Ngày & Khung Giờ
               </h3>
             </div>
 
@@ -388,7 +388,7 @@ export default function VenueDetailPage() {
                             letterSpacing: '0.04em',
                           }}
                         >
-                          {isToday ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short' })}
+                          {isToday ? 'Hôm nay' : d.toLocaleDateString('vi-VN', { weekday: 'short' })}
                         </span>
                         <span
                           style={{
@@ -408,7 +408,7 @@ export default function VenueDetailPage() {
                             color: isSelected ? 'rgba(255,255,255,0.8)' : '#8b7266',
                           }}
                         >
-                          {d.toLocaleDateString('en-US', { month: 'short' })}
+                          {d.toLocaleDateString('vi-VN', { month: 'short' })}
                         </span>
                       </button>
                     );
@@ -428,11 +428,11 @@ export default function VenueDetailPage() {
 
               <div className="flex items-center gap-4 mb-4 flex-wrap">
                 {[
-                  { color: '#fff', border: '#dfc0b3', label: 'Available' },
-                  { color: '#a04100', border: '#a04100', label: 'Selected' },
-                  { color: '#f8e3d8', border: '#dfc0b3', label: 'Held' },
-                  { color: '#f4ded5', border: '#e8c4b3', label: 'Booked' },
-                  { color: '#f7f0ed', border: '#e8c4b3', label: 'Unavailable / Closed' },
+                  { color: '#fff', border: '#dfc0b3', label: 'Còn trống' },
+                  { color: '#a04100', border: '#a04100', label: 'Đang chọn' },
+                  { color: '#f8e3d8', border: '#dfc0b3', label: 'Tạm giữ' },
+                  { color: '#f4ded5', border: '#e8c4b3', label: 'Đã đặt' },
+                  { color: '#f7f0ed', border: '#e8c4b3', label: 'Không bán / Đóng cửa' },
                 ].map(({ color, border, label }) => (
                   <div key={label} className="flex items-center gap-1.5">
                     <div className="w-3.5 h-3.5 rounded" style={{ background: color, border: `1.5px solid ${border}` }} />
@@ -471,12 +471,12 @@ export default function VenueDetailPage() {
                   color: '#241914',
                 }}
               >
-                Booking Summary
+                Tóm tắt đặt sân
               </p>
             </div>
             <div className="px-5 py-4 flex flex-col gap-3">
               <div className="flex justify-between">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Date</span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Ngày</span>
                 <span
                   style={{
                     fontFamily: 'Inter, sans-serif',
@@ -485,7 +485,7 @@ export default function VenueDetailPage() {
                     color: '#241914',
                   }}
                 >
-                  {selectedDate.toLocaleDateString('en-GB', {
+                  {selectedDate.toLocaleDateString('vi-VN', {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
@@ -493,7 +493,7 @@ export default function VenueDetailPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Selected Slots</span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Khung giờ đã chọn</span>
                 <span
                   style={{
                     fontFamily: 'Inter, sans-serif',
@@ -502,7 +502,7 @@ export default function VenueDetailPage() {
                     color: '#241914',
                   }}
                 >
-                  {selectedSlots.length === 0 ? 'None' : `${selectedSlots.length} slot${selectedSlots.length > 1 ? 's' : ''}`}
+                  {selectedSlots.length === 0 ? 'Chưa chọn' : `${selectedSlots.length} khung giờ`}
                 </span>
               </div>
 
@@ -535,7 +535,7 @@ export default function VenueDetailPage() {
               )}
 
               <div className="pt-2 border-t border-[#dfc0b3] flex items-center justify-between">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Total</span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Tổng cộng</span>
                 <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '22px', fontWeight: 800, color: '#a04100' }}>
                   {formatPrice(totalPrice)}
                 </span>
@@ -555,18 +555,18 @@ export default function VenueDetailPage() {
                   boxShadow: '0 4px 14px rgba(160,65,0,0.35)',
                 }}
               >
-                Continue to Checkout
+                Tiếp tục thanh toán
               </button>
 
               {selectedSlots.length > 1 && (
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>
-                  Checkout currently supports one slot at a time. Please select a single slot before paying.
+                  Hệ thống hiện chỉ hỗ trợ thanh toán một khung giờ tại một thời điểm. Vui lòng chọn một khung giờ duy nhất để tiếp tục.
                 </p>
               )}
 
               {lastBooking && (
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#006a65' }}>
-                  Latest booking: #{lastBooking.id.slice(-8).toUpperCase()}
+                  Lịch đặt gần nhất: #{lastBooking.id.slice(-8).toUpperCase()}
                 </p>
               )}
             </div>

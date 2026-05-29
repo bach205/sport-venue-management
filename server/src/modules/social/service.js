@@ -10,11 +10,14 @@ const buildPagination = (page, limit, total) => ({
   pages: Math.ceil(total / limit),
 });
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 class SocialService {
   async createPost(userId, payload) {
     const post = await Post.create({
       user_id: userId,
-      content: String(payload.content).trim(),
+      content: payload.content ? String(payload.content).trim() : "",
+      image_url: payload.image_url ? String(payload.image_url).trim() : undefined,
     });
 
     return this.getFeedItemByPost(post._id, userId);
@@ -71,12 +74,73 @@ class SocialService {
     };
   }
 
+  async searchFeed(userId, query, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const filter = query
+      ? {
+          content: { $regex: escapeRegex(query), $options: "i" },
+        }
+      : {};
+
+    const [posts, total] = await Promise.all([
+      Post.find(filter)
+        .populate("user_id", "email status is_verified createdAt updatedAt")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Post.countDocuments(filter),
+    ]);
+
+    const postIds = posts.map((post) => post._id);
+    const [likeCounts, commentCounts, viewerLikes] = await Promise.all([
+      Like.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      Comment.aggregate([
+        { $match: { post_id: { $in: postIds } } },
+        { $group: { _id: "$post_id", count: { $sum: 1 } } },
+      ]),
+      Like.find({ post_id: { $in: postIds }, user_id: userId }).select("post_id"),
+    ]);
+
+    const authorIds = posts.map((post) => post.user_id?._id || post.user_id).filter(Boolean);
+    const authorProfiles = await Profile.find({ user_id: { $in: authorIds } });
+
+    const profileMap = new Map(authorProfiles.map((profile) => [String(profile.user_id), profile]));
+    const likeCountMap = new Map(likeCounts.map((item) => [String(item._id), item.count]));
+    const commentCountMap = new Map(commentCounts.map((item) => [String(item._id), item.count]));
+    const viewerLikeSet = new Set(viewerLikes.map((like) => String(like.post_id)));
+
+    const items = posts.map((post) =>
+      this.formatFeedItem(post, userId, {
+        profileMap,
+        likeCountMap,
+        commentCountMap,
+        viewerLikeSet,
+      })
+    );
+
+    return {
+      items,
+      pagination: buildPagination(page, limit, total),
+      meta: {
+        scope: "search",
+        query,
+      },
+    };
+  }
+
   async updatePost(postId, userId, payload) {
     const post = await this.getPostOrThrow(postId);
     this.assertOwnership(post.user_id, userId, "You can only update your own posts.");
 
     if (payload.content !== undefined) {
       post.content = String(payload.content).trim();
+    }
+
+    if (payload.image_url !== undefined) {
+      post.image_url = payload.image_url ? String(payload.image_url).trim() : undefined;
     }
 
     await post.save();
@@ -95,6 +159,10 @@ class SocialService {
     ]);
 
     return { message: "Post deleted successfully." };
+  }
+
+  async getPostDetail(postId, viewerUserId) {
+    return this.getFeedItemByPost(postId, viewerUserId);
   }
 
   async likePost(postId, userId) {
@@ -265,6 +333,7 @@ class SocialService {
       id: String(userJson._id),
       email: userJson.email,
       name: profile?.name || null,
+      avatarUrl: profile?.avatar_url || null,
     };
   }
 
@@ -276,6 +345,7 @@ class SocialService {
     return {
       id: postId,
       content: post.content,
+      imageUrl: post.image_url || null,
       author: this.formatAuthor(post.user_id, profile),
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,

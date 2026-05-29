@@ -10,13 +10,13 @@ const REFUND_WINDOW_MS = 5 * 60 * 1000;
 type Tab = 'all' | 'confirmed' | 'payment_pending' | 'refund_processing' | 'refunded' | 'expired';
 
 const STATUS_LABEL: Record<BookingStatus, string> = {
-  hold: 'On Hold',
-  payment_pending: 'Payment Pending',
-  confirmed: 'Confirmed',
-  refund_processing: 'Refund Processing',
-  refunded: 'Refunded',
-  refund_rejected: 'Refund Rejected',
-  expired: 'Expired',
+  hold: 'Tạm giữ',
+  payment_pending: 'Chờ thanh toán',
+  confirmed: 'Đã xác nhận',
+  refund_processing: 'Đang hoàn tiền',
+  refunded: 'Đã hoàn tiền',
+  refund_rejected: 'Từ chối hoàn tiền',
+  expired: 'Đã hết hạn',
 };
 
 const STATUS_STYLE: Record<BookingStatus, { bg: string; color: string }> = {
@@ -34,7 +34,7 @@ function formatPrice(n: number) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatCountdown(ms: number) {
@@ -81,7 +81,7 @@ function RefundCountdown({ booking }: { booking: Booking }) {
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: isUrgent ? '#856404' : '#006a65', fontWeight: 500 }}>
-            Auto-refund window
+            Hạn hoàn tiền tự động
           </span>
           <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '13px', fontWeight: 700, color: isUrgent ? '#856404' : '#006a65' }}>
             {formatCountdown(remaining)}
@@ -141,7 +141,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
           <div className="flex items-center gap-1.5 mt-1">
             <span style={{ fontSize: 13 }}>{SPORT_EMOJI[booking.sport]}</span>
             <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238', textTransform: 'capitalize' }}>
-              {booking.sport}
+              {SPORT_LABELS[booking.sport] || booking.sport}
             </span>
           </div>
         </div>
@@ -150,25 +150,25 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
       <div className="px-5 py-4 flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>DATE</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>NGÀY</p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>
               {formatDate(booking.date)}
             </p>
           </div>
           <div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>SLOTS</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>KHUNG GIỜ</p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>
               {booking.slots.map(s => s.startTime).join(', ')}
             </p>
           </div>
           <div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>BOOKING ID</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>MÃ ĐẶT SÂN</p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>
               #{booking.id.slice(-8).toUpperCase()}
             </p>
           </div>
           <div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>TOTAL PAID</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>ĐÃ THANH TOÁN</p>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 800, color: '#a04100' }}>
               {formatPrice(booking.totalPrice)}
             </p>
@@ -181,7 +181,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
             <Loader2 size={14} className="animate-spin" style={{ color: '#856404', flexShrink: 0 }} />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#856404' }}>
-              Waiting for payment confirmation. Hold expires at {new Date(booking.holdExpiresAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.
+              Đang chờ xác nhận thanh toán. Thời gian giữ sân hết hạn lúc {new Date(booking.holdExpiresAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}.
             </p>
           </div>
         )}
@@ -190,7 +190,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
             <Loader2 size={14} className="animate-spin" style={{ color: '#856404', flexShrink: 0 }} />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#856404' }}>
-              Refund request submitted and being processed by the server.
+              Yêu cầu hoàn tiền đã được gửi và đang được xử lý.
             </p>
           </div>
         )}
@@ -199,7 +199,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}>
             <CheckCircle2 size={14} style={{ color: '#006a65', flexShrink: 0 }} />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}>
-              <strong>{formatPrice(booking.totalPrice)}</strong> refunded to your account.
+              <strong>{formatPrice(booking.totalPrice)}</strong> đã được hoàn lại vào tài khoản của bạn.
             </p>
           </div>
         )}
@@ -208,7 +208,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#fff1eb', border: '1px solid rgba(160,65,0,0.15)' }}>
             <Phone size={14} style={{ color: '#a04100', flexShrink: 0 }} />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100' }}>
-              Refund request was rejected. Contact the venue for more details.
+              Yêu cầu hoàn tiền đã bị từ chối. Vui lòng liên hệ chủ sân để biết thêm chi tiết.
             </p>
           </div>
         )}
@@ -228,7 +228,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
               }}
             >
               <RotateCcw size={14} />
-              Request Refund
+              Yêu cầu hoàn tiền
             </button>
           )}
           {(booking.status === 'expired' || booking.status === 'refund_rejected') && (
@@ -243,7 +243,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
               }}
             >
               <Phone size={14} />
-              Contact Venue
+              Liên hệ chủ sân
             </button>
           )}
         </div>
@@ -285,12 +285,12 @@ export default function BookingsPage() {
   }, [loadBookings]);
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'all', label: `All (${bookings.length})` },
-    { id: 'confirmed', label: `Confirmed (${bookings.filter(b => b.status === 'confirmed').length})` },
-    { id: 'payment_pending', label: `Pending (${bookings.filter(b => b.status === 'payment_pending').length})` },
-    { id: 'refund_processing', label: `Refunding (${bookings.filter(b => b.status === 'refund_processing').length})` },
-    { id: 'refunded', label: `Refunded (${bookings.filter(b => b.status === 'refunded').length})` },
-    { id: 'expired', label: `Expired (${bookings.filter(b => b.status === 'expired').length})` },
+    { id: 'all', label: `Tất cả (${bookings.length})` },
+    { id: 'confirmed', label: `Đã xác nhận (${bookings.filter(b => b.status === 'confirmed').length})` },
+    { id: 'payment_pending', label: `Chờ thanh toán (${bookings.filter(b => b.status === 'payment_pending').length})` },
+    { id: 'refund_processing', label: `Đang hoàn tiền (${bookings.filter(b => b.status === 'refund_processing').length})` },
+    { id: 'refunded', label: `Đã hoàn tiền (${bookings.filter(b => b.status === 'refunded').length})` },
+    { id: 'expired', label: `Đã hết hạn (${bookings.filter(b => b.status === 'expired').length})` },
   ];
 
   return (
@@ -307,10 +307,10 @@ export default function BookingsPage() {
             </button>
             <div>
               <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 700, color: '#241914' }}>
-                My Bookings
+                Lịch đặt của tôi
               </h1>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 2 }}>
-                Manage your court reservations and refunds
+                Quản lý lịch đặt sân và hoàn tiền của bạn
               </p>
             </div>
           </div>
@@ -346,10 +346,10 @@ export default function BookingsPage() {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <CalendarDays size={56} style={{ color: '#dfc0b3', marginBottom: 16 }} />
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#241914' }}>
-              No bookings yet
+              Chưa có lịch đặt nào
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266', marginTop: 8, maxWidth: 280 }}>
-              Book a court on the Venues page to get started
+              Đặt sân tại trang Địa điểm để bắt đầu
             </p>
             <button
               onClick={() => navigate('/venues')}
@@ -363,7 +363,7 @@ export default function BookingsPage() {
                 border: 'none',
               }}
             >
-              Browse Venues
+              Tìm kiếm sân
             </button>
           </div>
         ) : (

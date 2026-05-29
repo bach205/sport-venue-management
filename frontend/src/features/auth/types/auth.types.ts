@@ -24,6 +24,7 @@ export interface ApiProfile {
   sport_preference: string[];
   skill_level?: string;
   location?: string;
+  avatar_url?: string | null;
   reputation_score: number;
 }
 
@@ -75,6 +76,7 @@ export interface UpdateProfilePayload {
   sport_preference?: string[];
   skill_level?: string;
   location?: string;
+  avatar_url?: string | null;
 }
 
 // ─── Response data shapes ─────────────────────────────────────────────────────

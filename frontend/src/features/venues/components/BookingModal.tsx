@@ -10,24 +10,33 @@ import {
 
 type Step = 'confirm' | 'payment' | 'success';
 
+const SPORT_LABELS: Record<string, string> = {
+  tennis: 'Tennis',
+  basketball: 'Bóng rổ',
+  badminton: 'Cầu lông',
+  football: 'Bóng đá',
+  pickleball: 'Pickleball',
+  volleyball: 'Bóng chuyền',
+};
+
 const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: React.ReactNode; desc: string }[] = [
   {
     id: 'bank',
-    label: 'Bank Transfer',
+    label: 'Chuyển khoản ngân hàng',
     icon: <Building2 size={18} />,
     desc: 'Vietcombank, Techcombank...',
   },
   {
     id: 'card',
-    label: 'Credit / Debit Card',
+    label: 'Thẻ tín dụng / Ghi nợ',
     icon: <Lock size={18} />,
-    desc: 'Temporarily unavailable for this flow',
+    desc: 'Tạm thời không khả dụng cho luồng này',
   },
   {
     id: 'momo',
-    label: 'MoMo Wallet',
+    label: 'Ví MoMo',
     icon: <Lock size={18} />,
-    desc: 'Temporarily unavailable for this flow',
+    desc: 'Tạm thời không khả dụng cho luồng này',
   },
 ];
 
@@ -36,7 +45,7 @@ function formatPrice(n: number) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(d).toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function ConfirmStep({
@@ -70,10 +79,10 @@ function ConfirmStep({
       <div className="flex items-center justify-between gap-3 border-b border-[#dfc0b3] px-4 py-4 sm:px-6 sm:py-5">
         <div>
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
-            Confirm Booking
+            Xác nhận đặt sân
           </h2>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginTop: 2 }}>
-            Review your selected slot
+            Kiểm tra lại khung giờ đã chọn
           </p>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#fff1eb] transition-colors" style={{ color: '#584238' }}>
@@ -98,10 +107,10 @@ function ConfirmStep({
               {venue.shortAddress}
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100', fontWeight: 600, marginTop: 4 }}>
-              Date: {formatDate(selectedDate)}
+              Ngày: {formatDate(selectedDate)}
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 4, textTransform: 'capitalize' }}>
-              {sport}
+              {SPORT_LABELS[sport] || sport}
             </p>
           </div>
         </div>
@@ -109,14 +118,14 @@ function ConfirmStep({
         {!isSingleSlot && (
           <div className="rounded-xl px-4 py-3" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#856404' }}>
-              Checkout currently supports one slot at a time. Please go back and keep a single slot selected.
+              Hệ thống hiện chỉ hỗ trợ đặt một khung giờ tại một thời điểm. Vui lòng quay lại và chọn một khung giờ duy nhất.
             </p>
           </div>
         )}
 
         <div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 8 }}>
-            Selected Slots ({slots.length})
+            Khung giờ đã chọn ({slots.length})
           </p>
           <div className="flex flex-col gap-2">
             {slots.map((slot) => (
@@ -148,12 +157,12 @@ function ConfirmStep({
 
         <div>
           <label style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', display: 'block', marginBottom: 6 }}>
-            Notes (optional)
+            Ghi chú (tùy chọn)
           </label>
           <textarea
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
-            placeholder="e.g. Need equipment rental, 4 players"
+            placeholder="Ví dụ: Cần thuê vợt, 4 người chơi"
             rows={3}
             style={{
               width: '100%',
@@ -174,7 +183,7 @@ function ConfirmStep({
 
       <div className="border-t border-[#dfc0b3] px-4 pb-4 pt-4 sm:px-6 sm:pb-6">
         <div className="flex items-center justify-between mb-4">
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Total</span>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Tổng cộng</span>
           <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '22px', fontWeight: 800, color: '#a04100' }}>
             {formatPrice(total)}
           </span>
@@ -195,7 +204,7 @@ function ConfirmStep({
           }}
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : <ChevronRight size={18} />}
-          {loading ? 'Creating booking...' : 'Continue to Payment'}
+          {loading ? 'Đang tạo lịch đặt...' : 'Tiếp tục thanh toán'}
         </button>
       </div>
     </div>
@@ -232,7 +241,7 @@ function PaymentStep({
             Payment
           </h2>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginTop: 2 }}>
-            Bank transfer only
+            Chỉ hỗ trợ chuyển khoản
           </p>
         </div>
         <div className="ml-auto flex items-center gap-1 rounded-full px-2 py-1" style={{ color: '#006a65', background: 'rgba(0,106,101,0.08)' }}>
@@ -249,17 +258,17 @@ function PaymentStep({
         )}
 
         <div className="rounded-xl p-4" style={{ background: '#eefbf7', border: '1px solid rgba(0,106,101,0.12)' }}>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Payment created</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Đã tạo yêu cầu thanh toán</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Payment ID: <strong>{payment?.id || 'N/A'}</strong></p>
-            <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Reference: <strong>{payment?.providerReference || payment?.id || 'N/A'}</strong></p>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Current status: <strong>{payment?.status || 'pending'}</strong></p>
+            <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Mã thanh toán: <strong>{payment?.id || 'N/A'}</strong></p>
+            <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Nội dung chuyển khoản: <strong>{payment?.providerReference || payment?.id || 'N/A'}</strong></p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>Trạng thái hiện tại: <strong>{payment?.status || 'pending'}</strong></p>
           </div>
         </div>
 
         <div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 8 }}>
-            Payment Method
+            Phương thức thanh toán
           </p>
           <div className="flex flex-col gap-2">
             {PAYMENT_OPTIONS.map((opt) => {
@@ -295,7 +304,7 @@ function PaymentStep({
         </div>
 
         <div className="rounded-xl p-4" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Transfer to:</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>Chuyển khoản tới:</p>
           <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,220px)_1fr]">
             {payment?.qrCodeUrl ? (
               <div className="mx-auto w-full max-w-[220px] rounded-2xl bg-white p-3" style={{ border: '1px solid rgba(223,192,179,0.7)' }}>
@@ -308,32 +317,32 @@ function PaymentStep({
             ) : null}
             <div className="grid gap-3 self-start">
               <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Bank</p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Ngân hàng</p>
                 <p className="break-words" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#241914', fontWeight: 600 }}>{payment?.bankName || 'N/A'}</p>
               </div>
               <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Account number</p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Số tài khoản</p>
                 <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#241914', fontWeight: 600 }}>{payment?.bankAccountNumber || 'N/A'}</p>
               </div>
               <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Account name</p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Tên tài khoản</p>
                 <p className="break-words" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#241914', fontWeight: 600 }}>{payment?.bankAccountName || 'N/A'}</p>
               </div>
               <div className="rounded-xl bg-white/70 px-3 py-2" style={{ border: '1px solid rgba(223,192,179,0.65)' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Transfer note</p>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>Nội dung chuyển khoản</p>
                 <p className="break-all" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#a04100', fontWeight: 700 }}>{payment?.providerReference || payment?.id || 'N/A'}</p>
               </div>
             </div>
           </div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 12 }}>
-            Scan the QR or transfer manually with the exact note above, then press <strong>Check Payment</strong>.
+            Quét mã QR hoặc chuyển khoản thủ công với nội dung chính xác như trên, sau đó nhấn <strong>Kiểm tra thanh toán</strong>.
           </p>
         </div>
       </div>
 
       <div className="border-t border-[#dfc0b3] px-4 pb-4 pt-4 sm:px-6 sm:pb-6">
         <div className="flex items-center justify-between mb-4">
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Total to pay</span>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Tổng số tiền cần trả</span>
           <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '22px', fontWeight: 800, color: '#a04100' }}>
             {formatPrice(total)}
           </span>
@@ -354,7 +363,7 @@ function PaymentStep({
           }}
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={16} />}
-          {loading ? 'Checking...' : 'Check Payment'}
+          {loading ? 'Đang kiểm tra...' : 'Kiểm tra thanh toán'}
         </button>
       </div>
     </div>
@@ -381,25 +390,25 @@ function SuccessStep({
 
       <div>
         <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '26px', fontWeight: 800, color: '#241914' }}>
-          Booking Confirmed!
+          Đã đặt sân thành công!
         </h2>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 6 }}>
-          Your slot has been reserved successfully
+          Khung giờ của bạn đã được giữ chỗ thành công
         </p>
       </div>
 
       <div className="w-full rounded-xl p-4 text-left flex flex-col gap-2" style={{ background: '#fff1eb', border: '1px solid rgba(223,192,179,0.4)' }}>
-        <Row label="Venue" value={booking.venueName} />
-        <Row label="Date" value={formatDate(booking.date)} />
-        <Row label="Slots" value={booking.slots.map((s) => `${s.startTime}-${s.endTime}`).join(', ')} />
-        <Row label="Booking ID" value={`#${booking.id.slice(-8).toUpperCase()}`} />
-        <Row label="Amount Paid" value={formatPrice(booking.totalPrice)} highlight />
+        <Row label="Địa điểm" value={booking.venueName} />
+        <Row label="Ngày" value={formatDate(booking.date)} />
+        <Row label="Khung giờ" value={booking.slots.map((s) => `${s.startTime}-${s.endTime}`).join(', ')} />
+        <Row label="Mã đặt sân" value={`#${booking.id.slice(-8).toUpperCase()}`} />
+        <Row label="Số tiền đã trả" value={formatPrice(booking.totalPrice)} highlight />
       </div>
 
       <div className="w-full rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}>
-        <span style={{ fontSize: 20 }}>Tip</span>
+        <span style={{ fontSize: 20 }}>Mẹo</span>
         <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}>
-          You can request a refund from Booking History. Instant auto-refund still depends on the backend refund window.
+          Bạn có thể yêu cầu hoàn tiền tại Lịch sử đặt sân. Việc hoàn tiền tự động tức thì phụ thuộc vào thời hạn hoàn tiền của hệ thống.
         </p>
       </div>
 
@@ -417,14 +426,14 @@ function SuccessStep({
             boxShadow: '0 4px 14px rgba(160,65,0,0.35)',
           }}
         >
-          View My Bookings
+          Xem lịch đặt của tôi
         </button>
         <button
           onClick={onClose}
           className="w-full h-12 rounded-xl hover:bg-[#fff1eb] transition-colors"
           style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', border: '1.5px solid #dfc0b3' }}
         >
-          Continue Browsing
+          Tiếp tục tìm sân
         </button>
       </div>
     </div>
@@ -473,7 +482,7 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
 
   const handleContinueToPayment = async () => {
     if (slots.length !== 1) {
-      setError('Please select exactly one slot for this checkout flow.');
+      setError('Vui lòng chọn chính xác một khung giờ cho quy trình thanh toán này.');
       return;
     }
 
@@ -505,7 +514,7 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
       setPaymentMethod('bank');
       setStep('payment');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to create booking payment.';
+      const message = err instanceof Error ? err.message : 'Không thể tạo yêu cầu thanh toán.';
       setError(message);
     } finally {
       setLoading(false);
@@ -514,7 +523,7 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
 
   const handleCheckPayment = async () => {
     if (!payment?.id) {
-      setError('Payment has not been created yet.');
+      setError('Yêu cầu thanh toán chưa được khởi tạo.');
       return;
     }
 
@@ -533,13 +542,13 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
       }
 
       if (statusResult.payment?.status === 'failed' || statusResult.booking.status === 'expired') {
-        setError('Payment is not completed or the booking hold has expired.');
+        setError('Thanh toán chưa hoàn tất hoặc thời gian tạm giữ sân đã hết hạn.');
         return;
       }
 
-      setError('Payment is still pending. Please complete the transfer and check again.');
+      setError('Thanh toán vẫn đang được xử lý. Vui lòng hoàn tất chuyển khoản và kiểm tra lại.');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to check payment status.';
+      const message = err instanceof Error ? err.message : 'Không thể kiểm tra trạng thái thanh toán.';
       setError(message);
     } finally {
       setLoading(false);

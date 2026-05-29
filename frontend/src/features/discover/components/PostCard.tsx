@@ -15,38 +15,38 @@ const SPORT_EMOJI: Record<Sport, string> = {
 
 const SPORT_LABEL: Record<Sport, string> = {
   tennis: "Tennis",
-  basketball: "Basketball",
-  badminton: "Badminton",
-  football: "Football",
+  basketball: "Bóng rổ",
+  badminton: "Cầu lông",
+  football: "Bóng đá",
   pickleball: "Pickleball",
-  volleyball: "Volleyball",
+  volleyball: "Bóng chuyền",
 };
 
 const SKILL_CONFIG: Record<SkillLevel, { label: string; bg: string; color: string }> = {
-  casual: { label: "Casual", bg: "#e6f9f5", color: "#006a65" },
-  intermediate: { label: "Intermediate", bg: "#fff1eb", color: "#a04100" },
-  competitive: { label: "Competitive", bg: "#ffdad6", color: "#ba1a1a" },
+  casual: { label: "Giải trí", bg: "#e6f9f5", color: "#006a65" },
+  intermediate: { label: "Bán chuyên", bg: "#fff1eb", color: "#a04100" },
+  competitive: { label: "Chuyên nghiệp", bg: "#ffdad6", color: "#ba1a1a" },
 };
 
 const TYPE_CONFIG: Record<PostType, { label: string; bg: string; color: string }> = {
-  teammate: { label: "Teammate", bg: "#e3f2fd", color: "#1565c0" },
-  opponent: { label: "Opponent", bg: "#f3e5f5", color: "#6a1b9a" },
+  teammate: { label: "Tìm đồng đội", bg: "#e3f2fd", color: "#1565c0" },
+  opponent: { label: "Tìm đối thủ", bg: "#f3e5f5", color: "#6a1b9a" },
 };
 
 function formatTime(iso: string) {
   const d = new Date(iso);
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
   const dayName = days[d.getDay()];
-  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  const time = d.toLocaleTimeString("vi-VN", { hour: "numeric", minute: "2-digit" });
   return `${dayName}, ${time}`;
 }
 
 function timeAgo(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return "Just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return "Vừa xong";
+  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+  return `${Math.floor(diff / 86400)} ngày trước`;
 }
 
 interface PostCardProps {
@@ -110,7 +110,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
                 <span
                   style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}
                 >
-                  {post.author.rating} · {post.author.postsCount} posts
+                  {post.author.rating} · {post.author.postsCount} bài đăng
                 </span>
               </div>
             </div>
@@ -192,9 +192,9 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
             <Users size={14} color="#8b7266" />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238" }}>
               {post.currentPlayers}/{post.currentPlayers + post.playersNeeded - 1 + spotsLeft}{" "}
-              players ·{" "}
+              người chơi ·{" "}
               <span style={{ color: spotsLeft <= 1 ? "#ba1a1a" : "#006a65", fontWeight: 600 }}>
-                {spotsLeft} {spotsLeft === 1 ? "spot" : "spots"} left
+                Còn {spotsLeft} chỗ trống
               </span>
             </span>
           </div>
@@ -216,7 +216,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
           }}
         >
           <MessageCircle size={16} />
-          Contact Now
+          Liên hệ ngay
         </button>
       </div>
     </div>

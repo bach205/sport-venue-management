@@ -57,12 +57,12 @@ const MOCK_OPPONENTS = [
 ];
 
 const MOCK_VENUES: Record<string, string[]> = {
-  tennis: ['Riverside Courts', 'Court 3, Main Arena'],
-  basketball: ['Downtown Sports Center', 'Court B, Upper Level'],
-  badminton: ['Binh Thanh Indoor Club', 'Hall 2, Court 1'],
-  football: ['Go Vap Complex', 'Field 4, East Wing'],
-  pickleball: ['Thu Duc Recreation Center', 'Court 6'],
-  volleyball: ['District 1 Beach Court', 'Zone A'],
+  tennis: ['Sân Riverside', 'Sân số 3, Sân vận động chính'],
+  basketball: ['Trung tâm Thể thao Downtown', 'Sân B, Tầng trên'],
+  badminton: ['CLB Trong nhà Bình Thạnh', 'Nhà thi đấu 2, Sân số 1'],
+  football: ['Khu Phức hợp Gò Vấp', 'Sân số 4, Khu Đông'],
+  pickleball: ['Trung tâm Giải trí Thủ Đức', 'Sân số 6'],
+  volleyball: ['Sân Bãi biển Quận 1', 'Khu A'],
 };
 
 export async function submitMatchRequest(
@@ -104,12 +104,12 @@ export async function simulateMatchSearch(
 
   // Pick random opponent
   const opponent = MOCK_OPPONENTS[Math.floor(Math.random() * MOCK_OPPONENTS.length)];
-  const venues = MOCK_VENUES[req.sport] ?? ['Sports Center', 'Court 1'];
+  const venues = MOCK_VENUES[req.sport] ?? ['Trung tâm Thể thao', 'Sân số 1'];
 
   const today = new Date();
   const timeDisplay = req.time
-    ? `Today, ${req.time}`
-    : `Today, ${today.getHours()}:${String(today.getMinutes()).padStart(2, '0')}`;
+    ? `Hôm nay, ${req.time}`
+    : `Hôm nay, ${today.getHours()}:${String(today.getMinutes()).padStart(2, '0')}`;
 
   return {
     requestId: `req-${Date.now()}`,

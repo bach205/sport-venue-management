@@ -2,19 +2,19 @@
  * Users API
  *
  * GET /api/v1/users/me
- *   Headers: Authorization: Bearer <token>
- *   200:     { message: "User profile fetched successfully.", data: { user: { _id, email, status, is_verified }, profile: { _id, user_id, name, age, gender, sport_preference, skill_level, location, reputation_score } } }
- *   401:     { message: "Unauthorized." | "Invalid or expired token." | "User not found." }
- *   403:     { message: "This account has been banned." }
- *   404:     { message: "User not found" }
+ * Headers: Authorization: Bearer <token>
+ * 200:     { message: "Tải thông tin hồ sơ người dùng thành công.", data: { user: { _id, email, status, is_verified }, profile: { _id, user_id, name, age, gender, sport_preference, skill_level, location, reputation_score } } }
+ * 401:     { message: "Không có quyền truy cập." | "Token không hợp lệ hoặc đã hết hạn." | "Không tìm thấy người dùng." }
+ * 403:     { message: "Tài khoản này đã bị khóa." }
+ * 404:     { message: "Không tìm thấy người dùng." }
  *
  * PUT /api/v1/users/profile
- *   Headers: Authorization: Bearer <token>
- *   Body:    { name?, age?, gender?, sport_preference?, skill_level?, location? }
- *   200:     { message: "User profile updated successfully.", data: { _id, user_id: { _id, email, status, is_verified }, name, age, gender, sport_preference, skill_level, location, reputation_score } }
- *   400:     { message: "Profile validation error message" }
- *   401:     { message: "Unauthorized." | "Invalid or expired token." | "User not found." }
- *   403:     { message: "This account has been banned." }
+ * Headers: Authorization: Bearer <token>
+ * Body:    { name?, age?, gender?, sport_preference?, skill_level?, location? }
+ * 200:     { message: "Cập nhật hồ sơ người dùng thành công.", data: { _id, user_id: { _id, email, status, is_verified }, name, age, gender, sport_preference, skill_level, location, reputation_score } }
+ * 400:     { message: "Thông báo lỗi xác thực dữ liệu hồ sơ" }
+ * 401:     { message: "Không có quyền truy cập." | "Token không hợp lệ hoặc đã hết hạn." | "Không tìm thấy người dùng." }
+ * 403:     { message: "Tài khoản này đã bị khóa." }
  */
 
 import axios from 'axios';
@@ -35,7 +35,7 @@ function authHeader() {
 }
 
 // ─── Mock profile store ───────────────────────────────────────────────────────
-// Keyed by user _id. Updated when updateProfile is called in mock mode.
+// Lưu trữ dữ liệu giả lập theo user _id. Được cập nhật khi gọi updateProfile trong chế độ mock.
 const _mockProfiles: Record<string, ApiProfile> = {
   'u-player': {
     _id: 'prof-player',
@@ -76,12 +76,12 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
   if (isMockApi) {
     await delay(500);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: 'Unauthorized.' };
+    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
     const profile = _mockProfiles[user._id];
-    if (!profile) return { success: false, message: 'User not found' };
+    if (!profile) return { success: false, message: 'Không tìm thấy người dùng.' };
     return {
       success: true,
-      message: 'User profile fetched successfully.',
+      message: 'Tải thông tin hồ sơ người dùng thành công.',
       data: {
         user: {
           _id: user._id,
@@ -98,9 +98,9 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
     const res = await axios.get(`${API_BASE_URL}/users/me`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || 'Tải thông tin hồ sơ người dùng thành công.', data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || 'Failed to fetch profile.' };
+    return { success: false, message: err.response?.data?.message || 'Không thể tải thông tin hồ sơ.' };
   }
 }
 
@@ -108,7 +108,7 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
   if (isMockApi) {
     await delay(600);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: 'Unauthorized.' };
+    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
 
     const existing = _mockProfiles[user._id] ?? {
       _id: `prof-${user._id}`,
@@ -122,7 +122,7 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
 
     return {
       success: true,
-      message: 'User profile updated successfully.',
+      message: 'Cập nhật hồ sơ người dùng thành công.',
       data: updated,
     };
   }
@@ -131,8 +131,8 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
     const res = await axios.put(`${API_BASE_URL}/users/profile`, payload, {
       headers: { ...authHeader(), 'Content-Type': 'application/json' },
     });
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || 'Cập nhật hồ sơ người dùng thành công.', data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || 'Update failed.' };
+    return { success: false, message: err.response?.data?.message || 'Cập nhật hồ sơ thất bại.' };
   }
 }

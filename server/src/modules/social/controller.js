@@ -7,6 +7,7 @@ const {
   validateUpdateCommentPayload,
   validatePaginationQuery,
   validateObjectIdParam,
+  validateSearchQuery,
 } = require("../../validations/social.validation");
 
 class SocialController {
@@ -67,6 +68,48 @@ class SocialController {
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Post updated successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async getPostDetail(req, res) {
+    const { isValid, errors } = validateObjectIdParam(req.params.postId, "Post");
+
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+    }
+
+    try {
+      const data = await socialService.getPostDetail(req.params.postId, req.user.id);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Post fetched successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async searchFeed(req, res) {
+    const { isValid, errors, value } = validateSearchQuery(req.query);
+
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+    }
+
+    try {
+      const data = await socialService.searchFeed(req.user.id, value.q, value.page, value.limit);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Feed searched successfully.",
         data,
       });
     } catch (error) {

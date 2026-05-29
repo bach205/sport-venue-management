@@ -70,8 +70,16 @@ export default function MessagesPage() {
         const knownUser = MOCK_USERS[withUserId];
         const user = knownUser ?? { id: withUserId, name, avatar, isOnline: false };
 
-        const sportLabel = sport ? `${sport.charAt(0).toUpperCase() + sport.slice(1)}` : 'sport';
-        const intro = `You reached out about ${name}'s ${sportLabel} post. Say hi! 👋`;
+        const SPORT_LABEL: Record<string, string> = {
+          tennis: 'tennis',
+          basketball: 'bóng rổ',
+          badminton: 'cầu lông',
+          football: 'bóng đá',
+          pickleball: 'pickleball',
+          volleyball: 'bóng chuyền',
+        };
+        const sportLabel = sport ? (SPORT_LABEL[sport.toLowerCase()] || sport) : 'thể thao';
+        const intro = `Bạn đã nhắn tin về bài đăng môn ${sportLabel} của ${name}. Hãy gửi lời chào! 👋`;
 
         const conv = createOrOpenConversation(user, intro);
         setConversations(getConversations());
@@ -306,10 +314,10 @@ export default function MessagesPage() {
               <MessageSquare size={36} style={{ color: '#a04100' }} />
             </div>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 700, color: '#241914' }}>
-              Your Messages
+              Tin nhắn của bạn
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266', marginTop: 8, maxWidth: 300 }}>
-              Select a conversation or contact someone from the Discover page
+              Chọn một cuộc hội thoại hoặc liên hệ với ai đó từ trang Khám Phá
             </p>
             <button
               onClick={() => navigate('/discover')}
@@ -323,7 +331,7 @@ export default function MessagesPage() {
                 border: 'none',
               }}
             >
-              Browse Discover
+              Đi tới Khám Phá
             </button>
           </div>
         )}

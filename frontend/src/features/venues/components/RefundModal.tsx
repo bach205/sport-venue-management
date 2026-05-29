@@ -5,6 +5,16 @@ import { requestBookingRefund } from '../api/venuesApi';
 
 const REFUND_WINDOW_MS = 5 * 60 * 1000;
 
+const STATUS_LABEL: Record<string, string> = {
+  hold: 'Tạm giữ',
+  payment_pending: 'Chờ thanh toán',
+  confirmed: 'Đã xác nhận',
+  refund_processing: 'Đang xử lý hoàn tiền',
+  refunded: 'Đã hoàn tiền',
+  refund_rejected: 'Từ chối hoàn tiền',
+  expired: 'Đã hết hạn',
+};
+
 function formatPrice(n: number) {
   return new Intl.NumberFormat('vi-VN').format(n) + '₫';
 }
@@ -59,7 +69,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
       setDone(true);
       await onRefunded(result.booking);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to request refund.');
+      setError(err instanceof Error ? err.message : 'Không thể thực hiện yêu cầu hoàn tiền.');
     } finally {
       setLoading(false);
     }
@@ -82,7 +92,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#dfc0b3]">
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
-            {done ? 'Refund Requested' : windowExpired ? 'Refund Unavailable' : 'Request Refund'}
+            {done ? 'Đã yêu cầu hoàn tiền' : windowExpired ? 'Không thể hoàn tiền' : 'Yêu cầu hoàn tiền'}
           </h2>
           <button
             onClick={onClose}
@@ -109,17 +119,17 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                 </div>
                 <div>
                   <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 700, color: '#241914' }}>
-                    {mode === 'auto' ? 'Refund Completed' : 'Refund Submitted'}
+                    {mode === 'auto' ? 'Hoàn tiền thành công' : 'Đã gửi yêu cầu hoàn tiền'}
                   </p>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 6 }}>
                     {mode === 'auto'
-                      ? `Your refund of ${formatPrice(displayBooking.totalPrice)} was completed automatically.`
-                      : `Your refund request for ${formatPrice(displayBooking.totalPrice)} was sent to the venue for manual processing.`}
+                      ? `Đơn hoàn tiền trị giá ${formatPrice(displayBooking.totalPrice)} đã được thực hiện tự động thành công.`
+                      : `Yêu cầu hoàn tiền trị giá ${formatPrice(displayBooking.totalPrice)} đã được gửi tới chủ sân để xử lý thủ công.`}
                   </p>
                 </div>
                 <div className="w-full rounded-xl px-4 py-3" style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}>
-                    Server status: <strong>{displayBooking.status}</strong>
+                    Trạng thái hệ thống: <strong>{STATUS_LABEL[displayBooking.status] || displayBooking.status}</strong>
                   </p>
                 </div>
               </div>
@@ -135,7 +145,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   border: 'none',
                 }}
               >
-                Done
+                Hoàn tất
               </button>
             </>
           )}
@@ -148,10 +158,10 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                 </div>
                 <div>
                   <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
-                    Instant Refund Window Closed
+                    Thời hạn hoàn tiền tự động đã hết
                   </p>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 6 }}>
-                    You can still submit a backend refund request, but it may require manual approval by the venue.
+                    Bạn vẫn có thể gửi yêu cầu hoàn tiền, nhưng yêu cầu này cần được chủ sân phê duyệt thủ công.
                   </p>
                 </div>
                 <div className="w-full rounded-xl p-4 flex items-start gap-3" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
@@ -161,7 +171,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                       {booking.venueName}
                     </p>
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238', marginTop: 2 }}>
-                      If the backend rejects the manual request, contact the venue owner directly.
+                      Nếu yêu cầu bị từ chối, vui lòng liên hệ trực tiếp chủ sân để được hỗ trợ.
                     </p>
                   </div>
                 </div>
@@ -172,7 +182,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   className="flex-1 h-12 rounded-xl hover:bg-[#fff1eb] transition-colors"
                   style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', border: '1.5px solid #dfc0b3' }}
                 >
-                  Close
+                  Đóng
                 </button>
                 <button
                   onClick={handleConfirm}
@@ -188,7 +198,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
-                  {loading ? 'Submitting…' : 'Submit Refund Request'}
+                  {loading ? 'Đang gửi…' : 'Gửi yêu cầu hoàn tiền'}
                 </button>
               </div>
             </>
@@ -199,7 +209,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
-                    Auto-refund window closes in
+                    Hạn hoàn tiền tự động sẽ đóng sau
                   </span>
                   <span
                     style={{
@@ -228,18 +238,18 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
 
               <div className="rounded-xl p-4 flex flex-col gap-2" style={{ background: '#fff1eb', border: '1px solid rgba(223,192,179,0.4)' }}>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 4 }}>
-                  Booking to refund
+                  Thông tin đơn đặt sân
                 </p>
-                <Row label="Venue" value={booking.venueName} />
-                <Row label="Date" value={new Date(booking.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} />
-                <Row label="Slots" value={booking.slots.map(s => s.startTime).join(', ')} />
-                <Row label="Refund amount" value={formatPrice(booking.totalPrice)} highlight />
+                <Row label="Sân" value={booking.venueName} />
+                <Row label="Ngày" value={new Date(booking.date).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })} />
+                <Row label="Khung giờ" value={booking.slots.map(s => s.startTime).join(', ')} />
+                <Row label="Số tiền hoàn lại" value={formatPrice(booking.totalPrice)} highlight />
               </div>
 
               <div className="rounded-xl px-4 py-3 flex items-start gap-2" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
                 <AlertTriangle size={16} style={{ color: '#996600', marginTop: 2, flexShrink: 0 }} />
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#664400' }}>
-                  The server decides whether this becomes an automatic refund or a manual review request.
+                  Hệ thống sẽ tự động quyết định hình thức hoàn tiền là tự động hay cần chủ sân phê duyệt.
                 </p>
               </div>
 
@@ -250,7 +260,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   className="flex-1 h-12 rounded-xl hover:bg-[#fff1eb] transition-colors"
                   style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', border: '1.5px solid #dfc0b3' }}
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   onClick={handleConfirm}
@@ -266,7 +276,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
-                  {loading ? 'Processing…' : 'Confirm Refund'}
+                  {loading ? 'Đang xử lý…' : 'Xác nhận hoàn tiền'}
                 </button>
               </div>
             </>

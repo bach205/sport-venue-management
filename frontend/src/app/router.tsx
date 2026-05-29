@@ -19,6 +19,7 @@ import VenueManagePage from "../features/owner/pages/VenueManagePage";
 import ProfilePage from "../features/profile/pages/ProfilePage";
 import AdminDashboard from "../features/admin/pages/AdminDashboard";
 import FeedPage from "../features/feed/pages/FeedPage";
+import FeedPostDetailPage from "../features/feed/pages/FeedPostDetailPage";
 import AppLayout from "@/shared/components/AppLayout";
 import AdminLayout from "@/shared/components/AdminLayout";
 import OwnerLayout from "@/shared/components/OwnerLayout";
@@ -47,6 +48,7 @@ export const router = createBrowserRouter([
           { path: "bookings", element: <BookingsPage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "feed", element: <FeedPage /> },
+          { path: "feed/:postId", element: <FeedPostDetailPage /> },
         ],
       },
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Rss, RefreshCw, Loader2 } from "lucide-react";
-import { getFeed } from "../api/socialApi";
+import { Plus, Rss, RefreshCw, Loader2, Search, X } from "lucide-react";
+import { getFeed, searchFeed } from "../api/socialApi";
 import type { ApiPost, Pagination } from "../types/feed.types";
 import { PostCard } from "../components/PostCard";
 import { CreatePostModal } from "../components/CreatePostModal";
@@ -15,11 +15,13 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadFeed = useCallback(async (page = 1, append = false) => {
     if (page === 1) setLoading(true);
     else setLoadingMore(true);
-    const result = await getFeed(page, 20);
+    const result = searchQuery ? await searchFeed(searchQuery, page, 20) : await getFeed(page, 20);
     if (result.success && result.data) {
       setPosts((prev) => (append ? [...prev, ...result.data!.items] : result.data!.items));
       setPagination(result.data.pagination);
@@ -28,7 +30,7 @@ export default function FeedPage() {
     }
     if (page === 1) setLoading(false);
     else setLoadingMore(false);
-  }, []);
+  }, [searchQuery]);
 
   useEffect(() => {
     loadFeed(1);
@@ -52,6 +54,15 @@ export default function FeedPage() {
     if (pagination && pagination.page < pagination.pages) {
       loadFeed(pagination.page + 1, true);
     }
+  };
+
+  const handleSearch = () => {
+    setSearchQuery(searchText.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchText("");
+    setSearchQuery("");
   };
 
   const initials =
@@ -89,7 +100,7 @@ export default function FeedPage() {
         >
           {user ? (
             <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-orange-diag font-heading">
-              {initials}
+              {user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-full" /> : initials}
             </div>
           ) : (
             <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-brand-surface-warm text-brand-muted">
@@ -107,6 +118,39 @@ export default function FeedPage() {
           >
             <Plus size={15} /> Đăng
           </button>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-brand-border p-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 px-3 h-10 rounded-xl bg-brand-surface border border-brand-border">
+              <Search size={15} className="text-brand-muted shrink-0" />
+              <input
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+                placeholder="Tìm kiếm bài viết trong feed..."
+                className="w-full bg-transparent outline-none text-sm text-brand-dark"
+              />
+              {searchText && (
+                <button onClick={handleClearSearch} className="text-brand-muted hover:text-brand-dark">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={handleSearch}
+              className="h-10 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading hover:opacity-90"
+            >
+              Tìm
+            </button>
+          </div>
+          {searchQuery && (
+            <p className="text-xs text-brand-muted mt-2">
+              Kết quả cho: <span className="font-semibold">{searchQuery}</span>
+            </p>
+          )}
         </div>
 
         {/* Feed */}

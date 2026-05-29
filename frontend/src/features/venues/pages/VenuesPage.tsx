@@ -6,23 +6,33 @@ import { VenueCard } from '../components/VenueCard';
 import type { Venue, Sport } from '../types/venues.types';
 
 const SPORT_OPTIONS = [
-  { value: 'all', label: 'All Sports' },
+  { value: 'all', label: 'Tất cả môn thể thao' },
   { value: 'tennis', label: '🎾 Tennis' },
-  { value: 'basketball', label: '🏀 Basketball' },
-  { value: 'badminton', label: '🏸 Badminton' },
-  { value: 'football', label: '⚽ Football' },
+  { value: 'basketball', label: '🏀 Bóng rổ' },
+  { value: 'badminton', label: '🏸 Cầu lông' },
+  { value: 'football', label: '⚽ Bóng đá' },
   { value: 'pickleball', label: '🏓 Pickleball' },
-  { value: 'volleyball', label: '🏐 Volleyball' },
+  { value: 'volleyball', label: '🏐 Bóng chuyền' },
 ];
 
 const DISTRICTS = ['all', 'District 1', 'Binh Thanh', 'Go Vap', 'Thu Duc', 'District 7', 'Vung Tau'];
+
+const DISTRICT_LABELS: Record<string, string> = {
+  all: 'Tất cả quận/huyện',
+  'District 1': 'Quận 1',
+  'Binh Thanh': 'Bình Thạnh',
+  'Go Vap': 'Gò Vấp',
+  'Thu Duc': 'Thủ Đức',
+  'District 7': 'Quận 7',
+  'Vung Tau': 'Vũng Tàu',
+};
 
 function toISODate(date: Date) {
   return date.toISOString().split('T')[0];
 }
 
 function formatBrowseDate(date: string) {
-  return new Date(date).toLocaleDateString('en-GB', {
+  return new Date(date).toLocaleDateString('vi-VN', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -76,10 +86,10 @@ export default function VenuesPage() {
               <h1
                 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 700, color: '#241914' }}
               >
-                Sports Venues
+                Địa điểm thể thao
               </h1>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 4 }}>
-                Browse, book courts & fields near you for {formatBrowseDate(selectedDate)}
+                Tìm kiếm và đặt sân thể thao gần bạn cho {formatBrowseDate(selectedDate)}
               </p>
             </div>
             <button
@@ -94,7 +104,7 @@ export default function VenuesPage() {
               }}
             >
               <CalendarDays size={16} />
-              My Bookings
+              Lịch đặt của tôi
             </button>
           </div>
 
@@ -103,7 +113,7 @@ export default function VenuesPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#8b7266' }} />
               <input
                 type="text"
-                placeholder="Search venue, location..."
+                placeholder="Tìm kiếm sân, địa điểm..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ ...selectStyle, paddingLeft: '34px', width: '100%', boxSizing: 'border-box' }}
@@ -126,7 +136,7 @@ export default function VenuesPage() {
             <select value={district} onChange={e => setDistrict(e.target.value)} style={selectStyle}>
               {DISTRICTS.map(d => (
                 <option key={d} value={d}>
-                  {d === 'all' ? 'All Districts' : d}
+                  {DISTRICT_LABELS[d] || d}
                 </option>
               ))}
             </select>
@@ -141,7 +151,7 @@ export default function VenuesPage() {
           </div>
 
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 10 }}>
-            Live availability is shown for {formatBrowseDate(selectedDate)}.
+            Trạng thái sân trống trực tuyến được hiển thị cho {formatBrowseDate(selectedDate)}.
           </p>
         </div>
       </div>
@@ -155,16 +165,16 @@ export default function VenuesPage() {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="text-5xl mb-4">🏟️</span>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#241914' }}>
-              No venues found
+              Không tìm thấy địa điểm nào
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266', marginTop: 8 }}>
-              Try adjusting your filters for {formatBrowseDate(selectedDate)}
+              Hãy thử thay đổi bộ lọc cho {formatBrowseDate(selectedDate)}
             </p>
           </div>
         ) : (
           <>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginBottom: '20px' }}>
-              {venues.length} venue{venues.length !== 1 ? 's' : ''} found · Availability for {formatBrowseDate(selectedDate)}
+              Tìm thấy {venues.length} địa điểm · Lịch trống cho {formatBrowseDate(selectedDate)}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {venues.map(venue => (

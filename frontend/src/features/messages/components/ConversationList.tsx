@@ -12,13 +12,13 @@ function formatTimestamp(iso: string) {
   const diffHour = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return "Now";
-  if (diffMin < 60) return `${diffMin}m`;
+  if (diffMin < 1) return "Vừa xong";
+  if (diffMin < 60) return `${diffMin} phút trước`;
   if (diffHour < 24) {
-    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    return d.toLocaleTimeString("vi-VN", { hour: "numeric", minute: "2-digit" });
   }
-  if (diffDay === 1) return "Yesterday";
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (diffDay === 1) return "Hôm qua";
+  return d.toLocaleDateString("vi-VN", { month: "short", day: "numeric" });
 }
 
 function AvatarBubble({
@@ -130,9 +130,9 @@ export function ConversationList({
   });
 
   const tabs: { value: "all" | "1-1" | "group"; label: string }[] = [
-    { value: "all", label: "All" },
+    { value: "all", label: "Tất cả" },
     { value: "1-1", label: "1-1" },
-    { value: "group", label: "Groups" },
+    { value: "group", label: "Nhóm" },
   ];
 
   return (
@@ -150,7 +150,7 @@ export function ConversationList({
             color: "#241914",
           }}
         >
-          Messages
+          Tin nhắn
         </h2>
       </div>
 
@@ -164,7 +164,7 @@ export function ConversationList({
           />
           <input
             type="text"
-            placeholder="Search people, groups..."
+            placeholder="Tìm kiếm người, nhóm..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full h-10 rounded-full pl-9 pr-4"
@@ -213,7 +213,7 @@ export function ConversationList({
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#8b7266" }}>
-              No conversations yet
+              Chưa có cuộc trò chuyện nào
             </p>
           </div>
         ) : (
@@ -222,16 +222,16 @@ export function ConversationList({
             const other =
               conv.type === "1-1" ? conv.participants.find((p) => p.id !== currentUserId) : null;
             const displayName =
-              conv.type === "group" ? (conv.name ?? "Group") : (other?.name ?? "");
+              conv.type === "group" ? (conv.name ?? "Nhóm") : (other?.name ?? "");
             const lastMsg = conv.lastMessage;
 
             let lastMsgPreview = "";
             if (lastMsg) {
-              if (lastMsg.type === "match_found") lastMsgPreview = "🎾 Match Found!";
-              else if (lastMsg.type === "venue_booked") lastMsgPreview = "📍 Venue Booked";
+              if (lastMsg.type === "match_found") lastMsgPreview = "🎾 Đã tìm thấy đối thủ!";
+              else if (lastMsg.type === "venue_booked") lastMsgPreview = "📍 Đã đặt sân thành công";
               else if (lastMsg.type === "system") lastMsgPreview = lastMsg.content;
               else if (lastMsg.senderId === currentUserId)
-                lastMsgPreview = `You: ${lastMsg.content}`;
+                lastMsgPreview = `Bạn: ${lastMsg.content}`;
               else if (conv.type === "group") {
                 const sender = conv.participants.find((p) => p.id === lastMsg.senderId);
                 lastMsgPreview = sender

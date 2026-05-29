@@ -5,12 +5,23 @@ import type { Sport, SkillLevel, PostType, CreatePostPayload } from '../types/di
 
 const SPORTS: { value: Sport; label: string; emoji: string }[] = [
   { value: 'tennis', label: 'Tennis', emoji: '🎾' },
-  { value: 'basketball', label: 'Basketball', emoji: '🏀' },
-  { value: 'badminton', label: 'Badminton', emoji: '🏸' },
-  { value: 'football', label: 'Football', emoji: '⚽' },
+  { value: 'basketball', label: 'Bóng rổ', emoji: '🏀' },
+  { value: 'badminton', label: 'Cầu lông', emoji: '🏸' },
+  { value: 'football', label: 'Bóng đá', emoji: '⚽' },
   { value: 'pickleball', label: 'Pickleball', emoji: '🏓' },
-  { value: 'volleyball', label: 'Volleyball', emoji: '🏐' },
+  { value: 'volleyball', label: 'Bóng chuyền', emoji: '🏐' },
 ];
+
+const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
+  casual: 'Giải trí',
+  intermediate: 'Bán chuyên',
+  competitive: 'Chuyên nghiệp',
+};
+
+const POST_TYPE_LABELS: Record<PostType, string> = {
+  teammate: 'Tìm đồng đội',
+  opponent: 'Tìm đối thủ',
+};
 
 interface Props {
   onClose: () => void;
@@ -31,7 +42,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!location.trim() || !time || !description.trim()) {
-      setError('Please fill in all required fields.');
+      setError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
       return;
     }
     setError('');
@@ -42,7 +53,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
     if (res.success) {
       onCreated();
     } else {
-      setError(res.message || 'Failed to create post.');
+      setError(res.message || 'Đăng bài thất bại.');
     }
   };
 
@@ -81,7 +92,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#dfc0b3]">
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 700, color: '#241914' }}>
-            Create Match Post
+            Tạo bài đăng ghép trận
           </h2>
           <button
             onClick={onClose}
@@ -95,7 +106,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
         <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-5">
           {/* Sport */}
           <div>
-            <label style={labelStyle}>Sport</label>
+            <label style={labelStyle}>Môn thể thao</label>
             <div className="grid grid-cols-3 gap-2">
               {SPORTS.map(s => (
                 <button
@@ -123,11 +134,11 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
           <div>
             <label style={labelStyle}>
               <MapPin size={13} style={{ display: 'inline', marginRight: 4 }} />
-              Location *
+              Địa điểm *
             </label>
             <input
               type="text"
-              placeholder="e.g. District 1 Sports Center, HCMC"
+              placeholder="Ví dụ: Nhà thi đấu Quận 1, TP.HCM"
               value={location}
               onChange={e => setLocation(e.target.value)}
               style={inputStyle}
@@ -140,7 +151,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
           <div>
             <label style={labelStyle}>
               <Clock size={13} style={{ display: 'inline', marginRight: 4 }} />
-              Date & Time *
+              Ngày & Giờ *
             </label>
             <input
               type="datetime-local"
@@ -154,14 +165,14 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
 
           {/* Skill Level */}
           <div>
-            <label style={labelStyle}>Skill Level</label>
+            <label style={labelStyle}>Cấp độ / Trình độ</label>
             <div className="flex gap-2">
               {(['casual', 'intermediate', 'competitive'] as SkillLevel[]).map(level => (
                 <button
                   key={level}
                   type="button"
                   onClick={() => setSkillLevel(level)}
-                  className="flex-1 py-2 rounded-xl border-2 transition-all capitalize"
+                  className="flex-1 py-2 rounded-xl border-2 transition-all"
                   style={{
                     borderColor: skillLevel === level ? '#a04100' : '#dfc0b3',
                     background: skillLevel === level ? '#fff1eb' : '#fff',
@@ -171,7 +182,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
                     color: skillLevel === level ? '#a04100' : '#584238',
                   }}
                 >
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                  {SKILL_LEVEL_LABELS[level]}
                 </button>
               ))}
             </div>
@@ -179,14 +190,14 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
 
           {/* Type */}
           <div>
-            <label style={labelStyle}>Looking for</label>
+            <label style={labelStyle}>Tìm kiếm</label>
             <div className="flex gap-2">
               {(['teammate', 'opponent'] as PostType[]).map(t => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setType(t)}
-                  className="flex-1 py-2 rounded-xl border-2 transition-all capitalize"
+                  className="flex-1 py-2 rounded-xl border-2 transition-all"
                   style={{
                     borderColor: type === t ? '#a04100' : '#dfc0b3',
                     background: type === t ? '#fff1eb' : '#fff',
@@ -196,7 +207,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
                     color: type === t ? '#a04100' : '#584238',
                   }}
                 >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {POST_TYPE_LABELS[t]}
                 </button>
               ))}
             </div>
@@ -206,7 +217,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
           <div>
             <label style={labelStyle}>
               <Users size={13} style={{ display: 'inline', marginRight: 4 }} />
-              Players Needed
+              Số lượng người cần tìm
             </label>
             <div className="flex items-center gap-3">
               {[1, 2, 3, 4, 5].map(n => (
@@ -228,16 +239,16 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
                 </button>
               ))}
               <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266' }}>
-                players
+                người
               </span>
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label style={labelStyle}>Description *</label>
+            <label style={labelStyle}>Mô tả *</label>
             <textarea
-              placeholder="Tell others about your game, your play style, what you're looking for..."
+              placeholder="Chia sẻ về trận đấu của bạn, phong cách chơi, yêu cầu tìm bạn chơi..."
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
@@ -246,7 +257,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
               onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
             />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginTop: 4 }}>
-              {description.length}/300 characters
+              {description.length}/300 ký tự
             </p>
           </div>
 
@@ -264,7 +275,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
               className="flex-1 h-11 rounded-xl border border-[#dfc0b3] transition-colors hover:bg-[#fff1eb]"
               style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
@@ -279,7 +290,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
                 border: 'none',
               }}
             >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : 'Post Match'}
+              {loading ? <Loader2 size={16} className="animate-spin" /> : 'Đăng bài'}
             </button>
           </div>
         </form>

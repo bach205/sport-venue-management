@@ -20,11 +20,11 @@ import imgOpponent from "../../../imports/Html→Body-2/781a656a29f4ab3f37bb8c8b
 
 const SPORTS: { value: Sport; label: string; emoji: string }[] = [
   { value: "tennis", label: "Tennis", emoji: "🎾" },
-  { value: "basketball", label: "Basketball", emoji: "🏀" },
-  { value: "badminton", label: "Badminton", emoji: "🏸" },
-  { value: "football", label: "Football", emoji: "⚽" },
+  { value: "basketball", label: "Bóng rổ", emoji: "🏀" },
+  { value: "badminton", label: "Cầu lông", emoji: "🏸" },
+  { value: "football", label: "Bóng đá", emoji: "⚽" },
   { value: "pickleball", label: "Pickleball", emoji: "🏓" },
-  { value: "volleyball", label: "Volleyball", emoji: "🏐" },
+  { value: "volleyball", label: "Bóng chuyền", emoji: "🏐" },
 ];
 
 const SPORT_ICONS: Record<Sport, string> = {
@@ -36,11 +36,28 @@ const SPORT_ICONS: Record<Sport, string> = {
   volleyball: "🏐",
 };
 
+const SKILL_LABELS: Record<SkillLevel, string> = {
+  casual: "Giải trí",
+  intermediate: "Trung bình",
+  competitive: "Cạnh tranh",
+};
+
+const TYPE_LABELS: Record<PostType, string> = {
+  opponent: "Đối thủ",
+  teammate: "Đồng đội",
+};
+
+const TIER_LABELS: Record<string, string> = {
+  "Rookie": "Tập sự",
+  "Amateur": "Phong trào",
+  "Pro": "Bán chuyên / Chuyên nghiệp",
+};
+
 const SPORT_LABELS: Record<Sport, string> = {
-  tennis: "Tennis Singles",
-  basketball: "Basketball 3v3",
-  badminton: "Badminton Doubles",
-  football: "Football 5v5",
+  tennis: "Đơn Tennis",
+  basketball: "Bóng rổ 3v3",
+  badminton: "Đôi Cầu lông",
+  football: "Bóng đá 5v5",
   pickleball: "Pickleball",
   volleyball: "Volleyball",
 };
@@ -67,7 +84,7 @@ function RequestForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!location.trim()) {
-      setError("Please enter your location.");
+      setError("Vui lòng nhập khu vực của bạn.");
       return;
     }
     setError("");
@@ -110,7 +127,7 @@ function RequestForm({
               marginTop: 2,
             }}
           >
-            We'll instantly connect you with the best player
+            Hệ thống sẽ kết nối bạn với đối thủ/đồng đội phù hợp nhất
           </p>
         </div>
         <button
@@ -175,11 +192,11 @@ function RequestForm({
             }}
           >
             <MapPin size={13} style={{ display: "inline", marginRight: 4 }} />
-            Your Location *
+            Khu vực của bạn *
           </label>
           <input
             type="text"
-            placeholder="e.g. District 1, HCMC"
+            placeholder="Ví dụ: Quận 1, TP.HCM"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             style={inputStyle}
@@ -205,7 +222,7 @@ function RequestForm({
             }}
           >
             <Clock size={13} style={{ display: "inline", marginRight: 4 }} />
-            Preferred Time
+            Thời gian mong muốn
           </label>
           <input
             type="time"
@@ -251,7 +268,7 @@ function RequestForm({
                   color: skillLevel === level ? "#a04100" : "#584238",
                 }}
               >
-                {level.charAt(0).toUpperCase() + level.slice(1)}
+                {SKILL_LABELS[level]}
               </button>
             ))}
           </div>
@@ -287,7 +304,7 @@ function RequestForm({
                   color: type === t ? "#a04100" : "#584238",
                 }}
               >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                {TYPE_LABELS[t]}
               </button>
             ))}
           </div>
@@ -315,13 +332,13 @@ function RequestForm({
             boxShadow: "0 4px 16px rgba(160,65,0,0.35)",
           }}
         >
-          ⚡ Find Match Now
+          ⚡ Tìm ghép cặp ngay
         </button>
         <p
           className="text-center mt-3"
           style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}
         >
-          Matches based on sport · skill · location · time
+          Ghép cặp dựa trên môn chơi · trình độ · khu vực · thời gian
         </p>
       </div>
     </div>
@@ -371,7 +388,7 @@ function SearchingScreen({ request, onCancel }: { request: MatchRequest; onCance
   const dots = ".".repeat(dotCount);
   const statusLine =
     elapsedSeconds >= 12
-      ? "No match yet. Waiting for another player..."
+      ? "Chưa tìm thấy đối thủ. Vẫn đang chờ người chơi khác..."
       : statusMessages[statusIndex];
 
   return (
@@ -429,7 +446,7 @@ function SearchingScreen({ request, onCancel }: { request: MatchRequest; onCance
               marginTop: 8,
             }}
           >
-            Scanning {request.skillLevel} {request.sport} players near {request.location}
+            Đang tìm người chơi {SPORT_LABELS[request.sport] || request.sport} trình độ {SKILL_LABELS[request.skillLevel] || request.skillLevel} gần {request.location}
           </p>
           <p
             style={{
@@ -446,9 +463,9 @@ function SearchingScreen({ request, onCancel }: { request: MatchRequest; onCance
         {/* Search criteria pills */}
         <div className="flex flex-wrap gap-2 justify-center">
           {[
-            `${sportEmoji} ${request.sport}`,
+            `${sportEmoji} ${SPORT_LABELS[request.sport] || request.sport}`,
             `📍 ${request.location}`,
-            `🎯 ${request.skillLevel}`,
+            `🎯 ${SKILL_LABELS[request.skillLevel] || request.skillLevel}`,
             `⏰ ${request.time}`,
           ].map((tag) => (
             <span
@@ -474,7 +491,7 @@ function SearchingScreen({ request, onCancel }: { request: MatchRequest; onCance
         className="w-full h-11 rounded-xl border border-[#dfc0b3] hover:bg-[#fff1eb] transition-colors"
         style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#584238" }}
       >
-        Cancel Search
+        Hủy tìm kiếm
       </button>
 
       <style>{`
@@ -628,7 +645,7 @@ function MatchFoundScreen({
                 letterSpacing: "0.06em",
               }}
             >
-              CONFIRMED
+              ĐÃ XÁC NHẬN
             </span>
           </div>
 
@@ -712,7 +729,7 @@ function MatchFoundScreen({
                         color: "#584238",
                       }}
                     >
-                      ({result.opponent.matchCount} Matches)
+                      ({result.opponent.matchCount} Trận đấu)
                     </span>
                   </div>
                 </div>
@@ -727,7 +744,7 @@ function MatchFoundScreen({
                   color: "#141c28",
                 }}
               >
-                {result.opponent.tier}
+                {TIER_LABELS[result.opponent.tier] || result.opponent.tier}
               </span>
             </div>
           </div>
@@ -752,7 +769,7 @@ function MatchFoundScreen({
           }}
         >
           <MessageSquare size={20} />
-          GO TO CHAT ROOM
+          ĐẾN PHÒNG CHAT
         </button>
         <button
           onClick={onViewDetails}
@@ -768,7 +785,7 @@ function MatchFoundScreen({
           }}
         >
           <Info size={18} />
-          View Match Details
+          Xem chi tiết trận đấu
         </button>
       </div>
 
@@ -776,7 +793,7 @@ function MatchFoundScreen({
       <div className="flex items-center gap-2 pb-6">
         <ShieldCheck size={14} style={{ color: "#584238" }} />
         <span style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238" }}>
-          Safe Match Verified
+          Ghép cặp an toàn đã xác minh
         </span>
       </div>
     </div>
@@ -882,14 +899,14 @@ export function MatchingModal({ onClose }: Props) {
     }
 
     if (!date) {
-      return requestForTime?.time ? `Today, ${requestForTime.time}` : "Scheduled";
+      return requestForTime?.time ? `Hôm nay, ${requestForTime.time}` : "Đã lên lịch";
     }
 
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
     const hh = String(date.getHours()).padStart(2, "0");
     const mm = String(date.getMinutes()).padStart(2, "0");
-    return isToday ? `Today, ${hh}:${mm}` : `${date.toLocaleDateString()} ${hh}:${mm}`;
+    return isToday ? `Hôm nay, ${hh}:${mm}` : `${date.toLocaleDateString('vi-VN')} ${hh}:${mm}`;
   };
 
   const buildMatchResultFromPayload = (payload: any, requestForTime: MatchRequest): MatchResult => {
@@ -937,7 +954,7 @@ export function MatchingModal({ onClose }: Props) {
 
     createOrOpenConversation(
       user,
-      `Match Found! You and ${user.name} are confirmed for ${SPORT_LABELS[matchResult.sport]}. Time: ${matchResult.time} · ${matchResult.venue}`
+      `Đã ghép cặp thành công! Bạn và ${user.name} đã được xác nhận chơi môn ${SPORT_LABELS[matchResult.sport] || matchResult.sport}. Thời gian: ${matchResult.time} · Địa điểm: ${matchResult.venue}`
     );
   };
 

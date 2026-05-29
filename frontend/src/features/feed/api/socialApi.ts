@@ -2,64 +2,64 @@
  * Social Feed API
  *
  * GET /api/v1/social/feed
- *   Headers: Authorization: Bearer <token>
- *   Query:   ?page=1&limit=20
- *   200:     { message: "Feed fetched successfully.", data: { items: Post[], pagination: { page, limit, total, pages }, meta: { scope: "global" } } }
- *   401:     { message: "Unauthorized." | "Invalid or expired token." | "User not found." }
+ * Headers: Authorization: Bearer <token>
+ * Query:   ?page=1&limit=20
+ * 200:     { message: "Tải bảng tin thành công.", data: { items: Post[], pagination: { page, limit, total, pages }, meta: { scope: "global" } } }
+ * 401:     { message: "Không có quyền truy cập." | "Token không hợp lệ hoặc đã hết hạn." | "Không tìm thấy người dùng." }
  *
  * POST /api/v1/social/posts
- *   Headers: Authorization: Bearer <token>
- *   Body:    { content: string }  (max 2000 chars)
- *   201:     { message: "Post created successfully.", data: Post }
- *   400:     { errors: ["Content is required."] }
- *   401:     { message: "Unauthorized." }
+ * Headers: Authorization: Bearer <token>
+ * Body:    { content: string }  (max 2000 chars)
+ * 201:     { message: "Tạo bài viết thành công.", data: Post }
+ * 400:     { errors: ["Vui lòng nhập nội dung bài viết."] }
+ * 401:     { message: "Không có quyền truy cập." }
  *
  * PATCH /api/v1/social/posts/:postId
- *   Headers: Authorization: Bearer <token>
- *   Body:    { content: string }
- *   200:     { message: "Post updated successfully.", data: Post }
- *   403:     { message: "You can only update your own posts." }
- *   404:     { message: "Post not found." }
+ * Headers: Authorization: Bearer <token>
+ * Body:    { content: string }
+ * 200:     { message: "Cập nhật bài viết thành công.", data: Post }
+ * 403:     { message: "Bạn chỉ có thể chỉnh sửa bài viết của chính mình." }
+ * 404:     { message: "Không tìm thấy bài viết." }
  *
  * POST /api/v1/social/posts/:postId/like
- *   Headers: Authorization: Bearer <token>
- *   200:     { message: "Post liked successfully.", data: Post }
- *   400:     { message: "Post already liked." }
+ * Headers: Authorization: Bearer <token>
+ * 200:     { message: "Thích bài viết thành công.", data: Post }
+ * 400:     { message: "Bạn đã thích bài viết này rồi." }
  *
  * DELETE /api/v1/social/posts/:postId/like
- *   Headers: Authorization: Bearer <token>
- *   200:     { message: "Post unliked successfully.", data: Post }
- *   400:     { message: "Post is not liked yet." }
+ * Headers: Authorization: Bearer <token>
+ * 200:     { message: "Bỏ thích bài viết thành công.", data: Post }
+ * 400:     { message: "Bạn chưa thích bài viết này." }
  *
  * DELETE /api/v1/social/posts/:postId
- *   Headers: Authorization: Bearer <token>
- *   200:     { message: "Post deleted successfully." }
- *   403:     { message: "You can only delete your own posts." }
- *   404:     { message: "Post not found." }
+ * Headers: Authorization: Bearer <token>
+ * 200:     { message: "Xóa bài viết thành công." }
+ * 403:     { message: "Bạn chỉ có thể xóa bài viết của chính mình." }
+ * 404:     { message: "Không tìm thấy bài viết." }
  *
  * POST /api/v1/social/posts/:postId/comments
- *   Headers: Authorization: Bearer <token>
- *   Body:    { content: string }  (max 2000 chars)
- *   201:     { message: "Comment created successfully.", data: Comment }
- *   400:     { errors: ["Content is required."] }
+ * Headers: Authorization: Bearer <token>
+ * Body:    { content: string }  (max 2000 chars)
+ * 201:     { message: "Bình luận thành công.", data: Comment }
+ * 400:     { errors: ["Vui lòng nhập nội dung bình luận."] }
  *
  * GET /api/v1/social/posts/:postId/comments
- *   Headers: Authorization: Bearer <token>
- *   Query:   ?page=1&limit=20
- *   200:     { message: "Comments fetched successfully.", data: { items: Comment[], pagination: { page, limit, total, pages } } }
+ * Headers: Authorization: Bearer <token>
+ * Query:   ?page=1&limit=20
+ * 200:     { message: "Tải danh sách bình luận thành công.", data: { items: Comment[], pagination: { page, limit, total, pages } } }
  *
  * PATCH /api/v1/social/comments/:commentId
- *   Headers: Authorization: Bearer <token>
- *   Body:    { content: string }
- *   200:     { message: "Comment updated successfully.", data: Comment }
- *   403:     { message: "You can only update your own comments." }
- *   404:     { message: "Comment not found." }
+ * Headers: Authorization: Bearer <token>
+ * Body:    { content: string }
+ * 200:     { message: "Cập nhật bình luận thành công.", data: Comment }
+ * 403:     { message: "Bạn chỉ có thể chỉnh sửa bình luận của chính mình." }
+ * 404:     { message: "Không tìm thấy bình luận." }
  *
  * DELETE /api/v1/social/comments/:commentId
- *   Headers: Authorization: Bearer <token>
- *   200:     { message: "Comment deleted successfully." }
- *   403:     { message: "You can only delete your own comments." }
- *   404:     { message: "Comment not found." }
+ * Headers: Authorization: Bearer <token>
+ * 200:     { message: "Xóa bình luận thành công." }
+ * 403:     { message: "Bạn chỉ có thể xóa bình luận của chính mình." }
+ * 404:     { message: "Không tìm thấy bình luận." }
  */
 
 import axios from "axios";
@@ -79,10 +79,10 @@ function authHeader(): Record<string, string> {
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
-// Explicit base types avoid Omit<> at module level (better esbuild compat)
 interface PostBase {
   id: string;
   content: string;
+  imageUrl?: string | null;
   author: ApiAuthor;
   createdAt: string;
   updatedAt: string;
@@ -175,7 +175,6 @@ const _posts: PostBase[] = [
   },
 ];
 
-// Like state: userId → Set of liked postIds
 const _likedByUser: Record<string, Set<string>> = {};
 
 const _comments: Record<string, CommentBase[]> = {
@@ -275,6 +274,7 @@ function resolvePost(base: PostBase, userId: string | null): ApiPost {
   return {
     id: base.id,
     content: base.content,
+    imageUrl: base.imageUrl ?? null,
     author: base.author,
     createdAt: base.createdAt,
     updatedAt: base.updatedAt,
@@ -314,7 +314,7 @@ export async function getFeed(
     const pages = Math.ceil(total / limit);
     return {
       success: true,
-      message: "Feed fetched successfully.",
+      message: "Tải bảng tin thành công.",
       data: { items, pagination: { page, limit, total, pages }, meta: { scope: "global" } },
     };
   }
@@ -323,23 +323,81 @@ export async function getFeed(
       headers: authHeader(),
       params: { page, limit },
     });
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Tải bảng tin thành công.", data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to load feed." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể tải bảng tin." };
   }
 }
 
-export async function createPost(content: string): Promise<ApiResponse<ApiPost>> {
+export async function searchFeed(
+  q: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<ApiResponse<FeedData>> {
+  if (isMockApi) {
+    await delay(400);
+    const user = getCurrentUser();
+    const userId = user ? user._id : null;
+    const keyword = q.trim().toLowerCase();
+    const filtered = _posts
+      .filter((p) => !keyword || p.content.toLowerCase().includes(keyword))
+      .slice()
+      .reverse();
+    const start = (page - 1) * limit;
+    const items = filtered.slice(start, start + limit).map((p) => resolvePost(p, userId));
+    const total = filtered.length;
+    const pages = Math.ceil(total / limit) || 1;
+    return {
+      success: true,
+      message: "Tìm kiếm bảng tin thành công.",
+      data: { items, pagination: { page, limit, total, pages }, meta: { scope: "search", query: q } },
+    };
+  }
+  try {
+    const res = await axios.get(`${API_BASE_URL}/social/posts/search`, {
+      headers: authHeader(),
+      params: { q, page, limit },
+    });
+    return { success: true, message: res.data.message || "Tìm kiếm bảng tin thành công.", data: res.data.data };
+  } catch (err: any) {
+    return { success: false, message: err.response?.data?.message ?? "Không thể tìm kiếm bảng tin." };
+  }
+}
+
+export async function getPostDetail(postId: string): Promise<ApiResponse<ApiPost>> {
+  if (isMockApi) {
+    await delay(250);
+    const user = getCurrentUser();
+    const userId = user ? user._id : null;
+    const post = _posts.find((p) => p.id === postId);
+    if (!post) return { success: false, message: "Không tìm thấy bài viết." };
+    return { success: true, message: "Tải chi tiết bài viết thành công.", data: resolvePost(post, userId) };
+  }
+  try {
+    const res = await axios.get(`${API_BASE_URL}/social/posts/${postId}`, {
+      headers: authHeader(),
+    });
+    return { success: true, message: res.data.message || "Tải chi tiết bài viết thành công.", data: res.data.data };
+  } catch (err: any) {
+    return { success: false, message: err.response?.data?.message ?? "Không thể tải chi tiết bài viết." };
+  }
+}
+
+export async function createPost(
+  content: string,
+  imageUrl?: string | null
+): Promise<ApiResponse<ApiPost>> {
   if (isMockApi) {
     await delay(500);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
-    if (!content.trim()) return { success: false, message: "Content is required." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!content.trim() && !imageUrl) return { success: false, message: "Vui lòng nhập nội dung hoặc đính kèm hình ảnh." };
     const now = new Date().toISOString();
     const newPost: PostBase = {
       id: `post-${++_postIdCounter}`,
       content: content.trim(),
-      author: { id: user._id, email: user.email, name: user.name },
+      imageUrl: imageUrl ?? null,
+      author: { id: user._id, email: user.email, name: user.name, avatarUrl: user.avatar },
       createdAt: now,
       updatedAt: now,
       likeCount: 0,
@@ -348,22 +406,23 @@ export async function createPost(content: string): Promise<ApiResponse<ApiPost>>
     _posts.push(newPost);
     return {
       success: true,
-      message: "Post created successfully.",
+      message: "Tạo bài viết thành công.",
       data: resolvePost(newPost, user._id),
     };
   }
   try {
     const res = await axios.post(
       `${API_BASE_URL}/social/posts`,
-      { content },
+      { content, image_url: imageUrl },
       {
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Tạo bài viết thành công.", data: res.data.data };
   } catch (err: any) {
     const msg =
-      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? "Failed to create post.";
+      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? "Không thể tạo bài viết.";
+    if (msg === "Content is required.") return { success: false, message: "Vui lòng nhập nội dung bài viết." };
     return { success: false, message: msg };
   }
 }
@@ -372,16 +431,16 @@ export async function updatePost(postId: string, content: string): Promise<ApiRe
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
     const idx = _posts.findIndex((p) => p.id === postId);
-    if (idx === -1) return { success: false, message: "Post not found." };
+    if (idx === -1) return { success: false, message: "Không tìm thấy bài viết." };
     if (_posts[idx].author.id !== user._id)
-      return { success: false, message: "You can only update your own posts." };
+      return { success: false, message: "Bạn chỉ có thể chỉnh sửa bài viết của chính mình." };
     _posts[idx].content = content.trim();
     _posts[idx].updatedAt = new Date().toISOString();
     return {
       success: true,
-      message: "Post updated successfully.",
+      message: "Cập nhật bài viết thành công.",
       data: resolvePost(_posts[idx], user._id),
     };
   }
@@ -393,9 +452,9 @@ export async function updatePost(postId: string, content: string): Promise<ApiRe
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Cập nhật bài viết thành công.", data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to update post." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể cập nhật bài viết." };
   }
 }
 
@@ -403,21 +462,21 @@ export async function deletePost(postId: string): Promise<ApiResponse<void>> {
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
     const idx = _posts.findIndex((p) => p.id === postId);
-    if (idx === -1) return { success: false, message: "Post not found." };
+    if (idx === -1) return { success: false, message: "Không tìm thấy bài viết." };
     if (_posts[idx].author.id !== user._id)
-      return { success: false, message: "You can only delete your own posts." };
+      return { success: false, message: "Bạn chỉ có thể xóa bài viết của chính mình." };
     _posts.splice(idx, 1);
-    return { success: true, message: "Post deleted successfully." };
+    return { success: true, message: "Xóa bài viết thành công." };
   }
   try {
     const res = await axios.delete(`${API_BASE_URL}/social/posts/${postId}`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message };
+    return { success: true, message: res.data.message || "Xóa bài viết thành công." };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to delete post." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể xóa bài viết." };
   }
 }
 
@@ -425,15 +484,15 @@ export async function likePost(postId: string): Promise<ApiResponse<ApiPost>> {
   if (isMockApi) {
     await delay(200);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
     const userId = user._id;
     if (!_likedByUser[userId]) _likedByUser[userId] = new Set();
-    if (_likedByUser[userId].has(postId)) return { success: false, message: "Post already liked." };
+    if (_likedByUser[userId].has(postId)) return { success: false, message: "Bạn đã thích bài viết này rồi." };
     _likedByUser[userId].add(postId);
     const post = _posts.find((p) => p.id === postId);
-    if (!post) return { success: false, message: "Post not found." };
+    if (!post) return { success: false, message: "Không tìm thấy bài viết." };
     post.likeCount += 1;
-    return { success: true, message: "Post liked successfully.", data: resolvePost(post, userId) };
+    return { success: true, message: "Thích bài viết thành công.", data: resolvePost(post, userId) };
   }
   try {
     const res = await axios.post(
@@ -441,9 +500,9 @@ export async function likePost(postId: string): Promise<ApiResponse<ApiPost>> {
       {},
       { headers: authHeader() }
     );
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Thích bài viết thành công.", data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to like post." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể thích bài viết." };
   }
 }
 
@@ -451,15 +510,15 @@ export async function unlikePost(postId: string): Promise<ApiResponse<ApiPost>> 
   if (isMockApi) {
     await delay(200);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
     const userId = user._id;
     if (_likedByUser[userId]) _likedByUser[userId].delete(postId);
     const post = _posts.find((p) => p.id === postId);
-    if (!post) return { success: false, message: "Post not found." };
+    if (!post) return { success: false, message: "Không tìm thấy bài viết." };
     post.likeCount = Math.max(0, post.likeCount - 1);
     return {
       success: true,
-      message: "Post unliked successfully.",
+      message: "Bỏ thích bài viết thành công.",
       data: resolvePost(post, userId),
     };
   }
@@ -467,9 +526,9 @@ export async function unlikePost(postId: string): Promise<ApiResponse<ApiPost>> 
     const res = await axios.delete(`${API_BASE_URL}/social/posts/${postId}/like`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Bỏ thích bài viết thành công.", data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to unlike post." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể bỏ thích bài viết." };
   }
 }
 
@@ -489,7 +548,7 @@ export async function getComments(
     const pages = Math.ceil(total / limit) || 1;
     return {
       success: true,
-      message: "Comments fetched successfully.",
+      message: "Tải danh sách bình luận thành công.",
       data: { items, pagination: { page, limit, total, pages } },
     };
   }
@@ -498,9 +557,9 @@ export async function getComments(
       headers: authHeader(),
       params: { page, limit },
     });
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Tải danh sách bình luận thành công.", data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to load comments." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể tải bình luận." };
   }
 }
 
@@ -511,8 +570,8 @@ export async function createComment(
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
-    if (!content.trim()) return { success: false, message: "Content is required." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!content.trim()) return { success: false, message: "Vui lòng nhập nội dung bình luận." };
     const now = new Date().toISOString();
     const newComment: CommentBase = {
       id: `c-${++_commentIdCounter}`,
@@ -528,7 +587,7 @@ export async function createComment(
     if (post) post.commentCount += 1;
     return {
       success: true,
-      message: "Comment created successfully.",
+      message: "Bình luận thành công.",
       data: resolveComment(newComment, user._id),
     };
   }
@@ -540,10 +599,11 @@ export async function createComment(
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Bình luận thành công.", data: res.data.data };
   } catch (err: any) {
     const msg =
-      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? "Failed to create comment.";
+      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? "Không thể gửi bình luận.";
+    if (msg === "Content is required.") return { success: false, message: "Vui lòng nhập nội dung bình luận." };
     return { success: false, message: msg };
   }
 }
@@ -555,22 +615,22 @@ export async function updateComment(
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
     for (const postId of Object.keys(_comments)) {
       const idx = _comments[postId].findIndex((c) => c.id === commentId);
       if (idx !== -1) {
         if (_comments[postId][idx].author.id !== user._id)
-          return { success: false, message: "You can only update your own comments." };
+          return { success: false, message: "Bạn chỉ có thể chỉnh sửa bình luận của chính mình." };
         _comments[postId][idx].content = content.trim();
         _comments[postId][idx].updatedAt = new Date().toISOString();
         return {
           success: true,
-          message: "Comment updated successfully.",
+          message: "Cập nhật bình luận thành công.",
           data: resolveComment(_comments[postId][idx], user._id),
         };
       }
     }
-    return { success: false, message: "Comment not found." };
+    return { success: false, message: "Không tìm thấy bình luận." };
   }
   try {
     const res = await axios.patch(
@@ -580,9 +640,9 @@ export async function updateComment(
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || "Cập nhật bình luận thành công.", data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to update comment." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể cập nhật bình luận." };
   }
 }
 
@@ -590,7 +650,7 @@ export async function deleteComment(commentId: string): Promise<ApiResponse<void
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Unauthorized." };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
     for (const postId of Object.keys(_comments)) {
       const idx = _comments[postId].findIndex((c) => c.id === commentId);
       if (idx !== -1) {
@@ -599,17 +659,17 @@ export async function deleteComment(commentId: string): Promise<ApiResponse<void
         _comments[postId].splice(idx, 1);
         const post = _posts.find((p) => p.id === postId);
         if (post) post.commentCount = Math.max(0, post.commentCount - 1);
-        return { success: true, message: "Comment deleted successfully." };
+        return { success: true, message: "Xóa bình luận thành công." };
       }
     }
-    return { success: false, message: "Comment not found." };
+    return { success: false, message: "Không tìm thấy bình luận." };
   }
   try {
     const res = await axios.delete(`${API_BASE_URL}/social/comments/${commentId}`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message };
+    return { success: true, message: res.data.message || "Xóa bình luận thành công." };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Failed to delete comment." };
+    return { success: false, message: err.response?.data?.message ?? "Không thể xóa bình luận." };
   }
 }

@@ -74,7 +74,7 @@ export function loginWithApiData(token: string, user: ApiUser, profile: ApiProfi
     sport_preference: profile.sport_preference,
     reputation_score: profile.reputation_score,
     role: user.role ?? "user",
-    avatar: `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
+    avatar: profile.avatar_url || `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.name)}`,
     ownedVenueIds: [],
   };
   store.dispatch(loginSuccess({ token, user: authUser }));

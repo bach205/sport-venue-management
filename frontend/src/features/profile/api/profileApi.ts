@@ -2,26 +2,26 @@
  * Profile API
  *
  * GET /api/v1/users/me
- *   Headers: Authorization: Bearer <token>
- *   200: { message: "User profile fetched successfully.",
- *          data: { user: { _id, email, status, is_verified },
- *                  profile: { _id, user_id: { _id, email, status, is_verified },
- *                             name, age?, gender?, sport_preference, skill_level?,
- *                             location?, reputation_score } } }
- *   401: { message: "Unauthorized." | "Invalid or expired token." | "User not found." }
- *   403: { message: "This account has been banned." }
- *   404: { message: "User not found" }
+ * Headers: Authorization: Bearer <token>
+ * 200: { message: "Tải thông tin hồ sơ người dùng thành công.",
+ * data: { user: { _id, email, status, is_verified },
+ * profile: { _id, user_id: { _id, email, status, is_verified },
+ * name, age?, gender?, sport_preference, skill_level?,
+ * location?, reputation_score } } }
+ * 401: { message: "Không có quyền truy cập." | "Token không hợp lệ hoặc đã hết hạn." | "Không tìm thấy người dùng." }
+ * 403: { message: "Tài khoản này đã bị khóa." }
+ * 404: { message: "Không tìm thấy người dùng." }
  *
  * PUT /api/v1/users/profile
- *   Headers: Authorization: Bearer <token>
- *   Body: { name?, age?, gender?, sport_preference?, skill_level?, location? }
- *   200: { message: "User profile updated successfully.",
- *          data: { _id, user_id: { _id, email, status, is_verified },
- *                  name, age, gender, sport_preference, skill_level,
- *                  location, reputation_score } }
- *   400: { message: "Profile validation error message" }
- *   401: { message: "Unauthorized." | "Invalid or expired token." | "User not found." }
- *   403: { message: "This account has been banned." }
+ * Headers: Authorization: Bearer <token>
+ * Body: { name?, age?, gender?, sport_preference?, skill_level?, location? }
+ * 200: { message: "Cập nhật hồ sơ người dùng thành công.",
+ * data: { _id, user_id: { _id, email, status, is_verified },
+ * name, age, gender, sport_preference, skill_level,
+ * location, reputation_score } }
+ * 400: { message: "Thông báo lỗi xác thực dữ liệu hồ sơ" }
+ * 401: { message: "Không có quyền truy cập." | "Token không hợp lệ hoặc đã hết hạn." | "Không tìm thấy người dùng." }
+ * 403: { message: "Tài khoản này đã bị khóa." }
  */
 
 import axios from 'axios';
@@ -33,18 +33,18 @@ import type { ApiResponse, GetMeResponseData, ApiProfile, UpdateProfilePayload }
 
 const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
-/** Read JWT from Redux state — no dependency on authStore bridge. */
+/** Đọc JWT từ Redux state — không phụ thuộc vào bridge authStore. */
 function authHeader(): Record<string, string> {
   const token = store.getState().auth.token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-/** Read current user from Redux state for mock handlers. */
+/** Đọc thông tin người dùng hiện tại từ Redux state cho các mock handler. */
 function getAuthUser() {
   return store.getState().auth.user;
 }
 
-// ─── Mock data (mirrors real DB records) ──────────────────────────────────────
+// ─── Mock data (mô phỏng các bản ghi trong DB thật) ──────────────────────────────
 
 const _mockProfiles: Record<string, ApiProfile> = {
   'u-player': {
@@ -56,6 +56,7 @@ const _mockProfiles: Record<string, ApiProfile> = {
     sport_preference: ['badminton', 'tennis', 'pickleball'],
     skill_level: 'intermediate',
     location: 'Ho Chi Minh City',
+    avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Alex',
     reputation_score: 755,
   },
   'u-owner': {
@@ -67,6 +68,7 @@ const _mockProfiles: Record<string, ApiProfile> = {
     sport_preference: ['tennis', 'badminton'],
     skill_level: 'competitive',
     location: 'Ho Chi Minh City',
+    avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Minh',
     reputation_score: 2100,
   },
   'u-admin': {
@@ -78,6 +80,7 @@ const _mockProfiles: Record<string, ApiProfile> = {
     sport_preference: [],
     skill_level: 'casual',
     location: 'Ho Chi Minh City',
+    avatar_url: 'https://api.dicebear.com/8.x/avataaars/svg?seed=Admin',
     reputation_score: 9999,
   },
 };
@@ -88,12 +91,12 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
   if (isMockApi) {
     await delay(500);
     const user = getAuthUser();
-    if (!user) return { success: false, message: 'Unauthorized.' };
+    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
     const profile = _mockProfiles[user._id];
-    if (!profile) return { success: false, message: 'User not found' };
+    if (!profile) return { success: false, message: 'Không tìm thấy người dùng.' };
     return {
       success: true,
-      message: 'User profile fetched successfully.',
+      message: 'Tải thông tin hồ sơ người dùng thành công.',
       data: {
         user: {
           _id: user._id,
@@ -108,9 +111,9 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
 
   try {
     const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: authHeader() });
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || 'Tải thông tin hồ sơ người dùng thành công.', data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? 'Failed to fetch profile.' };
+    return { success: false, message: err.response?.data?.message ?? 'Không thể tải thông tin hồ sơ.' };
   }
 }
 
@@ -118,7 +121,7 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
   if (isMockApi) {
     await delay(600);
     const user = getAuthUser();
-    if (!user) return { success: false, message: 'Unauthorized.' };
+    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
     const existing = _mockProfiles[user._id] ?? {
       _id: `prof-${user._id}`,
       user_id: user._id,
@@ -128,15 +131,15 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
     };
     const updated: ApiProfile = { ...existing, ...payload };
     _mockProfiles[user._id] = updated;
-    return { success: true, message: 'User profile updated successfully.', data: updated };
+    return { success: true, message: 'Cập nhật hồ sơ người dùng thành công.', data: updated };
   }
 
   try {
     const res = await axios.put(`${API_BASE_URL}/users/profile`, payload, {
       headers: { ...authHeader(), 'Content-Type': 'application/json' },
     });
-    return { success: true, message: res.data.message, data: res.data.data };
+    return { success: true, message: res.data.message || 'Cập nhật hồ sơ người dùng thành công.', data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? 'Update failed.' };
+    return { success: false, message: err.response?.data?.message ?? 'Cập nhật hồ sơ thất bại.' };
   }
 }

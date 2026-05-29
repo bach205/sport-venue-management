@@ -1,9 +1,11 @@
 const mongoose = require("mongoose");
 
 const MAX_CONTENT_LENGTH = 2000;
+const MAX_IMAGE_URL_LENGTH = 1000;
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
+const MAX_SEARCH_LENGTH = 100;
 
 const validateRequiredContent = (content, fieldLabel, errors) => {
   if (content === undefined || content === null || String(content).trim() === "") {
@@ -31,10 +33,38 @@ const validateOptionalContent = (content, fieldLabel, errors) => {
   }
 };
 
+const validateOptionalImageUrl = (imageUrl, errors) => {
+  if (imageUrl === undefined || imageUrl === null || String(imageUrl).trim() === "") {
+    return;
+  }
+
+  if (String(imageUrl).trim().length > MAX_IMAGE_URL_LENGTH) {
+    errors.push(`Image URL must not exceed ${MAX_IMAGE_URL_LENGTH} characters.`);
+  }
+};
+
+const validateOptionalPostContent = (content, errors) => {
+  if (content === undefined || content === null || String(content).trim() === "") {
+    return;
+  }
+
+  if (String(content).trim().length > MAX_CONTENT_LENGTH) {
+    errors.push(`Content must not exceed ${MAX_CONTENT_LENGTH} characters.`);
+  }
+};
+
 const validateCreatePostPayload = (payload = {}) => {
   const errors = [];
 
-  validateRequiredContent(payload.content, "Content", errors);
+  validateOptionalPostContent(payload.content, errors);
+  validateOptionalImageUrl(payload.image_url, errors);
+
+  if (
+    (payload.content === undefined || payload.content === null || String(payload.content).trim() === "") &&
+    (payload.image_url === undefined || payload.image_url === null || String(payload.image_url).trim() === "")
+  ) {
+    errors.push("Content or image is required.");
+  }
 
   return {
     isValid: errors.length === 0,
@@ -50,6 +80,7 @@ const validateUpdatePostPayload = (payload = {}) => {
   }
 
   validateOptionalContent(payload.content, "Content", errors);
+  validateOptionalImageUrl(payload.image_url, errors);
 
   return {
     isValid: errors.length === 0,
@@ -128,6 +159,26 @@ const validateObjectIdParam = (value, fieldLabel = "Resource") => {
   };
 };
 
+const validateSearchQuery = (query = {}) => {
+  const errors = [];
+  const pagination = validatePaginationQuery(query);
+  const q = query.q === undefined ? "" : String(query.q).trim();
+
+  if (q.length > MAX_SEARCH_LENGTH) {
+    errors.push(`Search query must not exceed ${MAX_SEARCH_LENGTH} characters.`);
+  }
+
+  return {
+    isValid: errors.length === 0 && pagination.isValid,
+    errors: [...errors, ...pagination.errors],
+    value: {
+      q,
+      page: pagination.value.page,
+      limit: pagination.value.limit,
+    },
+  };
+};
+
 module.exports = {
   validateCreatePostPayload,
   validateUpdatePostPayload,
@@ -135,4 +186,5 @@ module.exports = {
   validateUpdateCommentPayload,
   validatePaginationQuery,
   validateObjectIdParam,
+  validateSearchQuery,
 };

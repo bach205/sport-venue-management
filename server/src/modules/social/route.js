@@ -7,6 +7,8 @@ const router = express.Router();
 
 router.post("/posts", authMiddleware, asyncHandler((req, res) => socialController.createPost(req, res)));
 router.get("/feed", authMiddleware, asyncHandler((req, res) => socialController.getFeed(req, res)));
+router.get("/posts/search", authMiddleware, asyncHandler((req, res) => socialController.searchFeed(req, res)));
+router.get("/posts/:postId", authMiddleware, asyncHandler((req, res) => socialController.getPostDetail(req, res)));
 router.patch("/posts/:postId", authMiddleware, asyncHandler((req, res) => socialController.updatePost(req, res)));
 router.delete("/posts/:postId", authMiddleware, asyncHandler((req, res) => socialController.deletePost(req, res)));
 

@@ -20,7 +20,7 @@ export function MatchingFAB() {
           color: '#fff',
           border: 'none',
         }}
-        title="Find a Match Now"
+        title="Tìm ghép cặp ngay"
       >
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center"
@@ -28,7 +28,7 @@ export function MatchingFAB() {
         >
           <Zap size={15} fill="#fff" color="#fff" />
         </div>
-        <span>Find Match</span>
+        <span>Tìm ghép cặp</span>
 
         {/* Pulse ring */}
         <span

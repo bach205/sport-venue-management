@@ -34,7 +34,7 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
   if (slots.length === 0) {
     return (
       <div className="text-center py-8" style={{ color: '#8b7266', fontFamily: 'Inter, sans-serif', fontSize: '14px' }}>
-        No slots available for this date.
+        Không có khung giờ nào khả dụng cho ngày này.
       </div>
     );
   }
@@ -94,15 +94,15 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
         }
 
         const statusLabel = isBooked
-          ? 'Booked'
+          ? 'Đã đặt'
           : isHeld
-            ? 'Held'
+            ? 'Tạm giữ'
             : isUnavailable
-              ? 'Unavailable'
+              ? 'Không khả dụng'
               : isPast
-                ? 'Expired'
+                ? 'Đã qua'
               : isClosed
-                ? 'Closed'
+                ? 'Đóng cửa'
                 : formatPrice(slot.price);
 
         return (
