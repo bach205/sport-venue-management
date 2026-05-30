@@ -23,7 +23,6 @@ export interface ApiPost {
   priceMax?: number;
   currency: string;
   condition?: "new" | "like_new" | "used";
-  location: string;
   status: "open" | "matched" | "closed" | "expired";
   author: ApiAuthor;
   createdAt: string;

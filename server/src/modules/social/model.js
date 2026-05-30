@@ -13,10 +13,9 @@ const PostSchema = new Schema(
     image_url: { type: String },
     
     // Trade Listing Fields
-    intentType: { type: String, enum: ["buy", "sell"] },
+    intentType: { type: String, enum: ["post", "sell"] },
     sport: { type: String },
     category: { type: String },
-    itemType: { type: String },
     title: { type: String },
     details: { type: String },
     quantity: { type: Number },
@@ -24,8 +23,7 @@ const PostSchema = new Schema(
     priceMin: { type: Number },
     priceMax: { type: Number },
     currency: { type: String, default: "VND" },
-    condition: { type: String, enum: ["new", "like_new", "used"] },
-    location: { type: String },
+    condition: { type: String, enum: ["new", "like_new", "used"], default: "new" },
     status: { type: String, enum: ["open", "matched", "closed", "expired"], default: "open" },
     expiresAt: { type: Date },
 

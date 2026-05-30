@@ -23,26 +23,31 @@ export default function FeedPage() {
   const [filterSport, setFilterSport] = useState("");
   const [sortOrder, setSortOrder] = useState<"newest" | "price_asc" | "price_desc">("newest");
 
-  const loadFeed = useCallback(async (page = 1, append = false) => {
-    if (page === 1) setLoading(true);
-    else setLoadingMore(true);
+  const loadFeed = useCallback(
+    async (page = 1, append = false) => {
+      if (page === 1) setLoading(true);
+      else setLoadingMore(true);
 
-    const filters = {
-      intentType: filterIntent || undefined,
-      sport: filterSport || undefined,
-      sort: sortOrder,
-    };
+      const filters = {
+        intentType: filterIntent || undefined,
+        sport: filterSport || undefined,
+        sort: sortOrder,
+      };
 
-    const result = searchQuery ? await searchFeed(searchQuery, page, 20) : await getFeed(filters as any);
-    if (result.success && result.data) {
-      setPosts((prev) => (append ? [...prev, ...result.data!.items] : result.data!.items));
-      setPagination(result.data.pagination);
-    } else {
-      toast.error(result.message);
-    }
-    if (page === 1) setLoading(false);
-    else setLoadingMore(false);
-  }, [searchQuery, filterIntent, filterSport, sortOrder]);
+      const result = searchQuery
+        ? await searchFeed(searchQuery, page, 20)
+        : await getFeed(filters as any);
+      if (result.success && result.data) {
+        setPosts((prev) => (append ? [...prev, ...result.data!.items] : result.data!.items));
+        setPagination(result.data.pagination);
+      } else {
+        toast.error(result.message);
+      }
+      if (page === 1) setLoading(false);
+      else setLoadingMore(false);
+    },
+    [searchQuery, filterIntent, filterSport, sortOrder]
+  );
 
   useEffect(() => {
     loadFeed(1);
@@ -92,7 +97,8 @@ export default function FeedPage() {
           <div className="flex items-center gap-3">
             <div>
               <h1 className="font-heading text-[22px] font-extrabold text-brand-dark leading-tight">
-                {t("feed.page.title")} <span className="text-brand-teal">{t("feed.page.titleAccent")}</span>
+                {t("feed.page.title")}{" "}
+                <span className="text-brand-teal">{t("feed.page.titleAccent")}</span>
               </h1>
             </div>
           </div>
@@ -112,7 +118,15 @@ export default function FeedPage() {
         >
           {user ? (
             <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-orange-diag font-heading">
-              {user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-full" /> : initials}
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                initials
+              )}
             </div>
           ) : (
             <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-brand-surface-warm text-brand-muted">
@@ -146,7 +160,10 @@ export default function FeedPage() {
                 className="w-full bg-transparent outline-none text-sm text-brand-dark"
               />
               {searchText && (
-                <button onClick={handleClearSearch} className="text-brand-muted hover:text-brand-dark">
+                <button
+                  onClick={handleClearSearch}
+                  className="text-brand-muted hover:text-brand-dark"
+                >
                   <X size={14} />
                 </button>
               )}
@@ -158,7 +175,7 @@ export default function FeedPage() {
               {t("common:search")}
             </button>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={filterIntent}
@@ -167,7 +184,7 @@ export default function FeedPage() {
             >
               <option value="">Tất cả loại tin</option>
               <option value="post">Tin thường</option>
-              <option value="sell">Tin rao bán</option>
+              <option value="sell">Tin Bán</option>
             </select>
             <select
               value={filterSport}
@@ -238,7 +255,9 @@ export default function FeedPage() {
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 rounded-2xl bg-white border-2 border-dashed border-brand-border">
             <span className="text-4xl mb-3">🔥</span>
-            <p className="font-heading text-base text-brand-dark mb-1.5">{t("feed.page.emptyTitle")}</p>
+            <p className="font-heading text-base text-brand-dark mb-1.5">
+              {t("feed.page.emptyTitle")}
+            </p>
             <p className="text-[13px] text-brand-muted mb-4">{t("feed.page.emptySubtitle")}</p>
             <button
               onClick={() => setShowCreateModal(true)}
