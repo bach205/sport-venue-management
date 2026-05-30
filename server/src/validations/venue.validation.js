@@ -5,6 +5,7 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const HTTP_URL_PATTERN = /^https?:\/\/\S+$/i;
 
 const normalizeOptionalString = (value) =>
   value === undefined || value === null ? undefined : String(value).trim();
@@ -166,6 +167,25 @@ const validateDate = (value, fieldLabel, errors) => {
   if (!DATE_PATTERN.test(String(value))) {
     errors.push(`${fieldLabel} must be in YYYY-MM-DD format.`);
   }
+};
+
+const validateOptionalImageUrl = (value, errors, fieldLabel = "Image url") => {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  if (!HTTP_URL_PATTERN.test(normalized)) {
+    errors.push(`${fieldLabel} must be a valid http or https URL.`);
+    return undefined;
+  }
+
+  if (normalized.length > 2048) {
+    errors.push(`${fieldLabel} must not exceed 2048 characters.`);
+    return undefined;
+  }
+
+  return normalized;
 };
 
 const validateTime = (value, fieldLabel, errors) => {
@@ -330,6 +350,10 @@ const validateVenueUpdatePayload = (payload = {}) => {
     value.description = String(payload.description).trim();
   }
 
+  if (payload.image_url !== undefined) {
+    value.image_url = validateOptionalImageUrl(payload.image_url, errors) || "";
+  }
+
   if (Object.keys(value).length === 0) {
     errors.push("At least one field is required.");
   }
@@ -346,6 +370,7 @@ const validateCreateVenuePayload = (payload = {}) => {
   const name = normalizeOptionalString(payload.name);
   const location = normalizeOptionalString(payload.location);
   const description = normalizeOptionalString(payload.description) || "";
+  const imageUrl = validateOptionalImageUrl(payload.image_url, errors) || "";
   const slotPrice = Number(payload.slot_price);
   const slotDuration = Number(payload.slot_duration_minutes);
   const weeklySchedule = payload.weekly_schedule === undefined
@@ -375,6 +400,7 @@ const validateCreateVenuePayload = (payload = {}) => {
       name,
       location,
       description,
+      image_url: imageUrl,
       slot_price: Number.isFinite(slotPrice) ? slotPrice : undefined,
       slot_duration_minutes: Number.isInteger(slotDuration) ? slotDuration : undefined,
       weekly_schedule: Array.isArray(weeklySchedule) ? weeklySchedule : [],

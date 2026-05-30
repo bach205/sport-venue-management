@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { uploadImage } from "@/shared/api/uploadApi";
+import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import {
   createOwnerVenue,
   deleteOwnerVenue,
@@ -41,6 +43,7 @@ const EMPTY_FORM: CreateVenuePayload = {
   name: "",
   location: "",
   description: "",
+  image_url: "",
   slot_price: 120000,
   slot_duration_minutes: 60,
   weekly_schedule: [createScheduleRange()],
@@ -77,6 +80,8 @@ export default function VenueOwnerDashboard() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState<CreateVenuePayload>(EMPTY_FORM);
   const [scheduleDraft, setScheduleDraft] = useState<CreateVenuePayload["weekly_schedule"][number]>(createScheduleRange());
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
 
   const loadVenues = async () => {
     try {
@@ -126,10 +131,24 @@ export default function VenueOwnerDashboard() {
 
     setSubmitting(true);
     try {
-      const created = await createOwnerVenue(form);
+      let imageUrl = form.image_url || "";
+      if (imageFile) {
+        const uploadResult = await uploadImage(imageFile);
+        if (!uploadResult.success || !uploadResult.data?.imageUrl) {
+          throw new Error(uploadResult.message || t("owner.dashboard.imageUploadError"));
+        }
+        imageUrl = uploadResult.data.imageUrl;
+      }
+
+      const created = await createOwnerVenue({
+        ...form,
+        image_url: imageUrl,
+      });
       setVenues((current) => [created, ...current]);
       setForm(EMPTY_FORM);
       setScheduleDraft(createScheduleRange());
+      setImageFile(null);
+      setImagePreviewUrl("");
       setShowCreateForm(false);
       toast.success(t("owner.dashboard.createSuccess"));
     } catch (error: any) {
@@ -198,7 +217,7 @@ export default function VenueOwnerDashboard() {
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "#dfc0b3", background: "#fff1eb" }}>
                 <Sparkles size={14} className="text-[#a04100]" />
                 <span className="uppercase tracking-[0.18em] text-[#a04100]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
-                  Owner Control Center
+                  {t("owner.dashboard.heroBadge", { defaultValue: "Owner Control Center" })}
                 </span>
               </div>
 
@@ -240,7 +259,7 @@ export default function VenueOwnerDashboard() {
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-2xl">{item.icon}</span>
                       <span className="rounded-full px-2 py-1" style={{ background: "#fff1eb", border: "1px solid #dfc0b3", color: "#a04100", fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
-                        API
+                        {t("owner.dashboard.apiBadge", { defaultValue: "API" })}
                       </span>
                     </div>
                     <h3 style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700, color: "#241914" }}>{item.value}</h3>
@@ -256,7 +275,7 @@ export default function VenueOwnerDashboard() {
           <section className="rounded-[28px] border bg-white p-6 lg:p-7" style={{ borderColor: "#dfc0b3" }}>
             <div className="mb-5">
               <p className="text-[#a04100] uppercase tracking-[0.18em]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
-                Create Venue
+                {t("owner.dashboard.createBadge", { defaultValue: "Create Venue" })}
               </p>
               <h2 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700 }}>
                 {t("owner.dashboard.createTitle")}
@@ -271,6 +290,33 @@ export default function VenueOwnerDashboard() {
               <div className="space-y-1.5">
                 <Label>{t("owner.dashboard.fields.location")}</Label>
                 <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5 lg:col-span-2">
+                <Label>{t("owner.dashboard.fields.image")}</Label>
+                <div className="grid gap-3 lg:grid-cols-[180px_1fr]">
+                  <div className="overflow-hidden rounded-2xl border bg-[#fffaf7]" style={{ borderColor: "#dfc0b3", height: 140 }}>
+                    {imagePreviewUrl || form.image_url ? (
+                      <ImageWithFallback src={imagePreviewUrl || form.image_url || ""} alt={form.name || t("owner.dashboard.venuePreviewAlt", { defaultValue: "Venue preview" })} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-5xl">🏟️</div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setImageFile(file);
+                        setImagePreviewUrl(file ? URL.createObjectURL(file) : "");
+                      }}
+                      className="h-11 border-[#dfc0b3] pt-2 focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                    />
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>
+                      {t("owner.dashboard.imageHint")}
+                    </p>
+                  </div>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label>{t("owner.dashboard.fields.slotPrice")}</Label>
@@ -305,7 +351,7 @@ export default function VenueOwnerDashboard() {
                 <div className="mb-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">
                     <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
-                      Weekly Schedule List
+                      {t("owner.dashboard.scheduleListTitle", { defaultValue: "Weekly Schedule List" })}
                     </p>
                     <Button
                       type="button"
@@ -315,7 +361,7 @@ export default function VenueOwnerDashboard() {
                       style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
                     >
                       <Plus data-icon="inline-start" />
-                      Add Range
+                      {t("owner.dashboard.addRange", { defaultValue: "Add Range" })}
                     </Button>
                   </div>
                   {form.weekly_schedule.length ? (
@@ -327,7 +373,7 @@ export default function VenueOwnerDashboard() {
                       >
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
-                            Range {index + 1}
+                            {t("owner.dashboard.rangeLabel", { defaultValue: "Range {{count}}", count: index + 1 })}
                           </p>
                           <Button
                             type="button"
@@ -337,7 +383,7 @@ export default function VenueOwnerDashboard() {
                             style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
                           >
                             <Trash2 data-icon="inline-start" />
-                            Remove
+                            {t("owner.dashboard.remove", { defaultValue: "Remove" })}
                           </Button>
                         </div>
                         <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
@@ -369,8 +415,8 @@ export default function VenueOwnerDashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-2xl border border-dashed p-4 text-[#8b7266]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px" }}>
-                      No schedule ranges yet. You can create the venue first or add weekly schedule rows now.
+                <div className="rounded-2xl border border-dashed p-4 text-[#8b7266]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px" }}>
+                      {t("owner.dashboard.noScheduleDraft", { defaultValue: "No schedule ranges yet. You can create the venue first or add weekly schedule rows now." })}
                     </div>
                   )}
                 </div>
@@ -382,7 +428,7 @@ export default function VenueOwnerDashboard() {
               <Button onClick={handleCreateVenue} disabled={submitting} className="h-11 rounded-xl px-5 border-0" style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}>
                 {submitting ? t("owner.dashboard.creating") : t("owner.dashboard.saveVenue")}
               </Button>
-              <Button type="button" variant="outline" onClick={() => { setForm(EMPTY_FORM); setScheduleDraft(createScheduleRange()); setShowCreateForm(false); }} className="h-11 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]" style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}>
+              <Button type="button" variant="outline" onClick={() => { setForm(EMPTY_FORM); setScheduleDraft(createScheduleRange()); setImageFile(null); setImagePreviewUrl(""); setShowCreateForm(false); }} className="h-11 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]" style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}>
                 {t("owner.dashboard.cancel")}
               </Button>
             </div>
@@ -393,7 +439,7 @@ export default function VenueOwnerDashboard() {
           <div className="mb-4 flex items-end justify-between gap-4 flex-wrap">
             <div>
               <p className="text-[#a04100] uppercase tracking-[0.18em]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
-                Venue Library
+                {t("owner.dashboard.libraryBadge", { defaultValue: "Venue Library" })}
               </p>
               <h2 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "28px", fontWeight: 700 }}>
                 {t("owner.dashboard.libraryTitle")}
@@ -419,7 +465,13 @@ export default function VenueOwnerDashboard() {
             <div className="grid gap-5 lg:grid-cols-2">
               {filteredVenues.map((venue) => (
                 <article key={venue.id} className="overflow-hidden rounded-[28px] border bg-white" style={{ borderColor: "#dfc0b3", boxShadow: "0 14px 32px rgba(36,25,20,0.06)" }}>
-                  <div className="flex h-48 items-center justify-center bg-gradient-to-br from-[#ffd9c6] to-[#fff1eb] text-6xl">🏟️</div>
+                  <div className="h-48 overflow-hidden bg-gradient-to-br from-[#ffd9c6] to-[#fff1eb]">
+                    {venue.imageUrl ? (
+                      <ImageWithFallback src={venue.imageUrl} alt={venue.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-6xl">🏟️</div>
+                    )}
+                  </div>
                   <div className="p-5">
                     <div className="mb-4 flex items-start justify-between gap-3">
                       <div>

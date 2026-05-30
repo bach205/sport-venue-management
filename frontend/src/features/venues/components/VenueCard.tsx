@@ -168,37 +168,6 @@ export function VenueCard({ venue, onClick }: Props) {
             </div>
           </div>
         )}
-
-        <div className="flex flex-wrap gap-1 pt-1">
-          {venue.facilities.slice(0, 3).map((f) => (
-            <span
-              key={f}
-              className="px-2 py-0.5 rounded-md"
-              style={{
-                background: '#fff1eb',
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '11px',
-                color: '#a04100',
-                border: '1px solid rgba(160,65,0,0.15)',
-              }}
-            >
-              {f}
-            </span>
-          ))}
-          {venue.facilities.length > 3 && (
-            <span
-              className="px-2 py-0.5 rounded-md"
-              style={{
-                background: '#f4ded5',
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '11px',
-                color: '#8b7266',
-              }}
-            >
-              {t('venues.card.moreFacilities', { count: venue.facilities.length - 3 })}
-            </span>
-          )}
-        </div>
       </div>
     </button>
   );

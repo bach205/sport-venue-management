@@ -6,7 +6,6 @@ import {
   MapPin,
   Clock,
   Users,
-  CheckCircle2,
   Loader2,
   CalendarDays,
   ChevronLeft,
@@ -357,25 +356,6 @@ export default function VenueDetailPage() {
             >
               {venue.description}
             </p>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {venue.facilities.map((f) => (
-                <span
-                  key={f}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                  style={{
-                    background: '#fff1eb',
-                    border: '1px solid rgba(160,65,0,0.15)',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '12px',
-                    color: '#a04100',
-                    fontWeight: 500,
-                  }}
-                >
-                  <CheckCircle2 size={11} />
-                  {f}
-                </span>
-              ))}
-            </div>
           </div>
 
           <div className="rounded-xl overflow-hidden" style={{ background: '#fff', border: '1px solid #dfc0b3' }}>

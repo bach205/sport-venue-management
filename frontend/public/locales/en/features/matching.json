@@ -84,6 +84,7 @@
       "deleteConfirm": "Delete {{name}}?",
       "deleteSuccess": "Deleted {{name}}.",
       "deleteError": "Could not delete this venue.",
+      "imageUploadError": "Could not upload the venue image.",
       "title": "Manage venues with live backend data.",
       "subtitle": "The venue list, create action, and delete action now call the owner API directly instead of using mock data.",
       "closeCreateForm": "Close create form",
@@ -93,12 +94,14 @@
       "fields": {
         "name": "Venue name",
         "location": "Location",
+        "image": "Venue image",
         "slotPrice": "Price per slot",
         "slotDuration": "Slot duration (minutes)",
         "activeDay": "Active day",
         "timeRange": "Time range",
         "description": "Description"
       },
+      "imageHint": "Choose an image to display this venue in player and owner views.",
       "creating": "Creating...",
       "saveVenue": "Save venue",
       "cancel": "Cancel",
@@ -116,19 +119,31 @@
     "manage": {
       "player": "Player",
       "noEmail": "No email",
+      "heroBadge": "Owner Venue Studio",
+      "clearFilter": "Clear filter",
       "manualRefundRequest": "Manual refund request",
       "reject": "Reject",
       "approveRefund": "Approve refund",
+      "stats": {
+        "totalBookings": "Total Bookings",
+        "confirmed": "Confirmed",
+        "manualRefund": "Manual Refund",
+        "revenue": "Revenue"
+      },
       "editTitle": "Edit venue information",
       "fields": {
         "name": "Venue name",
         "location": "Location",
+        "image": "Venue image",
         "slotPrice": "Price per slot",
         "slotDuration": "Slot duration",
         "activeDay": "Active day",
         "timeRange": "Time range",
         "description": "Description"
       },
+      "openAllUnavailable": "Open all unavailable slots",
+      "blockAllAvailable": "Block all available slots",
+      "imageHint": "Upload a new image if you want to replace the current venue image.",
       "save": "Save changes",
       "deleteVenue": "Delete venue",
       "previewDescription": "The venue description will appear here.",
@@ -141,6 +156,7 @@
       "slotUpdateError": "Could not update the slot status.",
       "updateSuccess": "Venue information updated.",
       "updateError": "Could not update venue information.",
+      "imageUploadError": "Could not upload the venue image.",
       "deleteConfirm": "Delete {{name}}?",
       "deleteSuccess": "Deleted {{name}}.",
       "deleteError": "Could not delete this venue.",
@@ -160,7 +176,12 @@
       "scheduleSubtitle": "Slot data is loaded directly",
       "today": "Today",
       "blockAllSuccess": "Blocked all available slots",
-      "openAllSuccess": "Reopened all unavailable slots"
+      "openAllSuccess": "Reopened all unavailable slots",
+      "preview": "Preview",
+      "scheduleListTitle": "Weekly Schedule List",
+      "addRange": "Add Range",
+      "remove": "Remove",
+      "rangeLabel": "range {{count}}"
     }
   },
   "admin": {

@@ -15,6 +15,7 @@ import { logout } from "../../features/auth/store/authSlice";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
 
 const NAV = [
   { to: "/owner/venues", icon: <Building2 size={18} />, key: "owner.nav.venues" },
@@ -127,7 +128,12 @@ export default function OwnerLayout() {
             <Menu size={20} />
           </button>
           <div className="flex-1" />
-          <button className="p-2 rounded-full hover:bg-brand-surface-orange transition-colors text-brand-body">
+          <LanguageSwitcher className="mr-1" />
+          <button
+            type="button"
+            title={t("owner.layout.notifications", { defaultValue: "Notifications" })}
+            className="p-2 rounded-full hover:bg-brand-surface-orange transition-colors text-brand-body"
+          >
             <Bell size={18} />
           </button>
           <div className="w-8 h-8 rounded-full flex items-center justify-center gradient-orange-diag text-[13px] font-bold text-white font-heading">

@@ -81,6 +81,7 @@ class VenueService {
       name: payload.name,
       location: payload.location,
       description: payload.description,
+      image_url: payload.image_url || "",
       slot_price: payload.slot_price,
       slot_duration_minutes: payload.slot_duration_minutes,
       weekly_schedule: payload.weekly_schedule,
@@ -784,15 +785,25 @@ class VenueService {
     const venue = await this.getOwnedVenueOrThrow(ownerId, venueId);
     await this.expireStaleBookings({ venue_id: venueId });
 
-    const filter = { venue_id: venueId };
+    const bookingItemFilter = { venue_id: venueId };
     if (query.date) {
-      filter.date = query.date;
+      bookingItemFilter.date = query.date;
     }
     if (query.status) {
-      filter.status = query.status;
+      bookingItemFilter.booking_status = query.status;
     }
 
-    const result = await this.getBookingCollection(filter, query.page, query.limit, {
+    const bookingIds = await BookingItem.find(bookingItemFilter).distinct("booking_id");
+
+    if (bookingIds.length === 0) {
+      return {
+        venue: this.formatVenue(venue),
+        items: [],
+        pagination: buildPagination(query.page, query.limit, 0),
+      };
+    }
+
+    const result = await this.getBookingCollection({ _id: { $in: bookingIds } }, query.page, query.limit, {
       includeUser: true,
     });
 
@@ -1365,6 +1376,7 @@ class VenueService {
       name: venue.name,
       location: venue.location,
       description: venue.description || "",
+      imageUrl: venue.image_url || "",
       slotPrice: venue.slot_price,
       slotDurationMinutes: venue.slot_duration_minutes,
       weeklySchedule: venue.weekly_schedule.map((item) => ({

@@ -42,6 +42,8 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { uploadImage } from "@/shared/api/uploadApi";
+import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 
 type Tab = "bookings" | "schedule" | "settings";
 type SlotAction = "unavailable" | "open";
@@ -50,6 +52,7 @@ type SettingsForm = {
   name: string;
   location: string;
   description: string;
+  imageUrl: string;
   slotPrice: number;
   slotDurationMinutes: number;
   weeklySchedule: Array<{
@@ -88,7 +91,11 @@ function addDays(base: Date, amount: number) {
 }
 
 function toISO(d: Date) {
-  return d.toISOString().split("T")[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function toSettingsForm(venue: OwnerVenue): SettingsForm {
@@ -96,6 +103,7 @@ function toSettingsForm(venue: OwnerVenue): SettingsForm {
     name: venue.name,
     location: venue.location,
     description: venue.description,
+    imageUrl: venue.imageUrl || "",
     slotPrice: venue.slotPrice,
     slotDurationMinutes: venue.slotDurationMinutes,
     weeklySchedule: venue.weeklySchedule.length
@@ -105,14 +113,15 @@ function toSettingsForm(venue: OwnerVenue): SettingsForm {
 }
 
 function StatusChip({ status }: { status: string }) {
+  const { t } = useTranslation("matching");
   const map: Record<string, { bg: string; color: string; label: string }> = {
-    hold: { bg: "#fff3cd", color: "#856404", label: "Hold" },
-    payment_pending: { bg: "#fff3cd", color: "#856404", label: "Pending" },
-    confirmed: { bg: "#e7f8f7", color: "#006a65", label: "Confirmed" },
-    refund_processing: { bg: "#fff3cd", color: "#856404", label: "Refunding" },
-    refunded: { bg: "#f4ded5", color: "#8b7266", label: "Refunded" },
-    refund_rejected: { bg: "#fbe9e7", color: "#ba1a1a", label: "Rejected" },
-    expired: { bg: "#f4ded5", color: "#8b7266", label: "Expired" },
+    hold: { bg: "#fff3cd", color: "#856404", label: t("venues.bookingStatuses.hold") },
+    payment_pending: { bg: "#fff3cd", color: "#856404", label: t("venues.bookingStatuses.payment_pending") },
+    confirmed: { bg: "#e7f8f7", color: "#006a65", label: t("venues.bookingStatuses.confirmed") },
+    refund_processing: { bg: "#fff3cd", color: "#856404", label: t("venues.bookingStatuses.refund_processing") },
+    refunded: { bg: "#f4ded5", color: "#8b7266", label: t("venues.bookingStatuses.refunded") },
+    refund_rejected: { bg: "#fbe9e7", color: "#ba1a1a", label: t("venues.bookingStatuses.refund_rejected") },
+    expired: { bg: "#f4ded5", color: "#8b7266", label: t("venues.bookingStatuses.expired") },
   };
   const item = map[status] ?? { bg: "#f4ded5", color: "#8b7266", label: status };
   return (
@@ -139,6 +148,9 @@ function BookingCard({
   const { t, i18n } = useTranslation("matching");
   const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
   const hasManualRefund = refundRequest?.status === "pending_manual";
+  const slotRange = booking.slots?.length
+    ? booking.slots.map((slot) => `${slot.startTime}-${slot.endTime}`).join(", ")
+    : `${booking.slot.startTime}-${booking.slot.endTime}`;
 
   return (
     <div className="overflow-hidden rounded-[24px] border bg-white" style={{ borderColor: "#dfc0b3" }}>
@@ -151,7 +163,7 @@ function BookingCard({
             <StatusChip status={booking.status} />
           </div>
           <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", marginTop: 4 }}>
-            📅 {formatDate(booking.slot.date, locale)} | ⏰ {booking.slot.startTime} - {booking.slot.endTime}
+            📅 {formatDate(booking.slot.date, locale)} | ⏰ {slotRange}
           </p>
           <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266", marginTop: 4 }}>
             {booking.user?.email || t("owner.manage.noEmail")}
@@ -163,7 +175,7 @@ function BookingCard({
             {formatPrice(booking.amount, locale)}
           </p>
           <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266" }}>
-            {booking.payment?.status || "no payment"}
+            {booking.payment?.status || t("owner.manage.noPayment", { defaultValue: "No payment" })}
           </p>
         </div>
       </div>
@@ -202,6 +214,8 @@ function BookingCard({
 function SettingsTab({
   form,
   onChange,
+  imagePreviewUrl,
+  onImageChange,
   onSave,
   onDelete,
   saving,
@@ -209,6 +223,8 @@ function SettingsTab({
 }: {
   form: SettingsForm;
   onChange: React.Dispatch<React.SetStateAction<SettingsForm>>;
+  imagePreviewUrl: string;
+  onImageChange: (file: File | null) => void;
   onSave: () => void;
   onDelete: () => void;
   saving: boolean;
@@ -240,8 +256,8 @@ function SettingsTab({
       ...prev,
       weeklySchedule: prev.weeklySchedule.some((item) => item.dayOfWeek === scheduleDraft.dayOfWeek)
         ? prev.weeklySchedule.map((item) =>
-            item.dayOfWeek === scheduleDraft.dayOfWeek ? { ...scheduleDraft } : item
-          )
+          item.dayOfWeek === scheduleDraft.dayOfWeek ? { ...scheduleDraft } : item
+        )
         : [...prev.weeklySchedule, { ...scheduleDraft }],
     }));
   };
@@ -260,7 +276,7 @@ function SettingsTab({
       <div className="rounded-[24px] border bg-white p-6" style={{ borderColor: "#dfc0b3" }}>
         <div className="mb-5">
           <p className="text-[#a04100] uppercase tracking-[0.18em]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700 }}>
-            Venue Settings
+            {t("owner.manage.settingsBadge", { defaultValue: "Venue Settings" })}
           </p>
           <h3 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700 }}>
             {t("owner.manage.editTitle")}
@@ -275,6 +291,29 @@ function SettingsTab({
           <div className="space-y-1.5">
             <Label>{t("owner.manage.fields.location")}</Label>
             <Input value={form.location} onChange={(e) => onChange((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <Label>{t("owner.manage.fields.image")}</Label>
+            <div className="grid gap-3 lg:grid-cols-[180px_1fr]">
+              <div className="overflow-hidden rounded-2xl border bg-[#fffaf7]" style={{ borderColor: "#dfc0b3", height: 140 }}>
+                {imagePreviewUrl || form.imageUrl ? (
+                  <ImageWithFallback src={imagePreviewUrl || form.imageUrl || ""} alt={form.name || t("owner.manage.venuePreviewAlt", { defaultValue: "Venue preview" })} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-5xl">🏟️</div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => onImageChange(e.target.files?.[0] || null)}
+                  className="h-11 border-[#dfc0b3] pt-2 focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                />
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>
+                  {t("owner.manage.imageHint")}
+                </p>
+              </div>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>{t("owner.manage.fields.slotPrice")}</Label>
@@ -302,7 +341,7 @@ function SettingsTab({
             <div className="mb-4 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
                 <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
-                  Weekly Schedule List
+                  {t("owner.manage.scheduleListTitle", { defaultValue: "Weekly Schedule List" })}
                 </p>
                 <Button
                   type="button"
@@ -312,7 +351,7 @@ function SettingsTab({
                   style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
                 >
                   <CalendarDays size={14} />
-                  Add Range
+                  {t("owner.manage.addRange", { defaultValue: "Add Range" })}
                 </Button>
               </div>
               {form.weeklySchedule.length ? (
@@ -324,7 +363,7 @@ function SettingsTab({
                   >
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
-                        Range {index + 1}
+                        {t("owner.manage.rangeLabel", { defaultValue: "Range {{count}}", count: index + 1 })}
                       </p>
                       <Button
                         type="button"
@@ -334,7 +373,7 @@ function SettingsTab({
                         style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}
                       >
                         <Trash2 size={14} />
-                        Remove
+                        {t("owner.manage.remove", { defaultValue: "Remove" })}
                       </Button>
                     </div>
                     <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
@@ -365,7 +404,7 @@ function SettingsTab({
                 ))
               ) : (
                 <div className="rounded-2xl border border-dashed p-4 text-[#8b7266]" style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontSize: "14px" }}>
-                  No schedule ranges yet. Add weekly schedule rows here.
+                  {t("owner.manage.noScheduleDraft", { defaultValue: "No schedule ranges yet. Add weekly schedule rows here." })}
                 </div>
               )}
             </div>
@@ -387,10 +426,17 @@ function SettingsTab({
 
       <div className="space-y-4">
         <div className="rounded-[24px] border bg-white p-5" style={{ borderColor: "#dfc0b3" }}>
+          <div className="mb-4 overflow-hidden rounded-2xl border bg-[#fffaf7]" style={{ borderColor: "#dfc0b3", height: 180 }}>
+            {imagePreviewUrl || form.imageUrl ? (
+              <ImageWithFallback src={imagePreviewUrl || form.imageUrl || ""} alt={form.name || t("owner.manage.venuePreviewAlt", { defaultValue: "Venue preview" })} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-6xl">🏟️</div>
+            )}
+          </div>
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "#dfc0b3", background: "#fff1eb" }}>
             <Sparkles size={14} className="text-[#a04100]" />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700, color: "#a04100", textTransform: "uppercase", letterSpacing: "0.18em" }}>
-              Preview
+              {t("owner.manage.preview", { defaultValue: "Preview" })}
             </span>
           </div>
           <h4 style={{ fontFamily: "Lexend, sans-serif", fontSize: "20px", fontWeight: 700, color: "#241914" }}>{form.name || t("owner.manage.fields.name")}</h4>
@@ -426,10 +472,13 @@ export default function VenueManagePage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [settingsImageFile, setSettingsImageFile] = useState<File | null>(null);
+  const [settingsImagePreviewUrl, setSettingsImagePreviewUrl] = useState("");
 
   const today = new Date();
   const [weekOffset, setWeekOffset] = useState(0);
   const [dayIdx, setDayIdx] = useState(0);
+  const [bookingDateFilter, setBookingDateFilter] = useState("");
   const dateTabs = Array.from({ length: 7 }, (_, i) => addDays(addDays(today, weekOffset * 7), i));
   const selectedDateStr = toISO(dateTabs[dayIdx]);
 
@@ -438,18 +487,22 @@ export default function VenueManagePage() {
     const items = await fetchOwnerVenues();
     const currentVenue = items.find((item) => item.id === venueId) || null;
     setVenue(currentVenue);
-    if (currentVenue) setSettingsForm(toSettingsForm(currentVenue));
+    if (currentVenue) {
+      setSettingsForm(toSettingsForm(currentVenue));
+      setSettingsImageFile(null);
+      setSettingsImagePreviewUrl("");
+    }
   }, [venueId]);
 
   const loadBookingsAndRefunds = useCallback(async () => {
     if (!venueId) return;
     const [bookingData, refundData] = await Promise.all([
-      fetchOwnerVenueBookings(venueId, { date: selectedDateStr }),
+      fetchOwnerVenueBookings(venueId, bookingDateFilter ? { date: bookingDateFilter } : undefined),
       fetchOwnerRefundRequests(venueId, { status: "pending_manual" }),
     ]);
     setBookings(bookingData.items);
     setRefundRequests(refundData);
-  }, [venueId, selectedDateStr]);
+  }, [venueId, bookingDateFilter]);
 
   const loadSlots = useCallback(async () => {
     if (!venueId) return;
@@ -476,8 +529,12 @@ export default function VenueManagePage() {
   useEffect(() => {
     if (!venueId) return;
     loadBookingsAndRefunds().catch(() => undefined);
+  }, [bookingDateFilter, venueId, loadBookingsAndRefunds]);
+
+  useEffect(() => {
+    if (!venueId) return;
     loadSlots().catch(() => undefined);
-  }, [selectedDateStr, venueId, loadBookingsAndRefunds, loadSlots]);
+  }, [selectedDateStr, venueId, loadSlots]);
 
   const handleSlotAction = async (slot: OwnerSlot, action: SlotAction) => {
     if (!venueId) return;
@@ -499,10 +556,20 @@ export default function VenueManagePage() {
     if (!venueId || !settingsForm) return;
     try {
       setSaving(true);
+      let imageUrl = settingsForm.imageUrl || "";
+      if (settingsImageFile) {
+        const uploadResult = await uploadImage(settingsImageFile);
+        if (!uploadResult.success || !uploadResult.data?.imageUrl) {
+          throw new Error(uploadResult.message || t("owner.manage.imageUploadError"));
+        }
+        imageUrl = uploadResult.data.imageUrl;
+      }
+
       const payload: UpdateVenuePayload = {
         name: settingsForm.name,
         location: settingsForm.location,
         description: settingsForm.description,
+        image_url: imageUrl,
       };
       await updateOwnerVenue(venueId, payload);
       await updateOwnerVenueSchedule(venueId, {
@@ -562,7 +629,7 @@ export default function VenueManagePage() {
   const refundMap = useMemo(() => new Map(refundRequests.map((refund) => [refund.bookingId, refund])), [refundRequests]);
 
   const tabs = [
-    { id: "bookings" as Tab, icon: <ClipboardList size={16} />, label: `Bookings (${bookings.length})` },
+    { id: "bookings" as Tab, icon: <ClipboardList size={16} />, label: t("owner.manage.tabs.bookings", { defaultValue: "Bookings ({{count}})", count: bookings.length }) },
     { id: "schedule" as Tab, icon: <CalendarDays size={16} />, label: t("owner.manage.tabs.schedule") },
     { id: "settings" as Tab, icon: <Settings2 size={16} />, label: t("owner.manage.tabs.settings") },
   ];
@@ -584,15 +651,9 @@ export default function VenueManagePage() {
           <Button asChild variant="outline" className="h-10 rounded-xl border-white/30 bg-white/10 px-4 text-white hover:bg-white/20">
             <Link to="/owner/venues">
               <ArrowLeft size={16} />
-              Venues
+              {t("owner.nav.venues")}
             </Link>
           </Button>
-          <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "rgba(255,255,255,0.24)", background: "rgba(255,255,255,0.14)" }}>
-            <Sparkles size={14} className="text-white" />
-            <span style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700, color: "#fff", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-              Owner Venue Studio
-            </span>
-          </div>
         </div>
         <div className="absolute bottom-6 left-6 right-6">
           <h1 style={{ fontFamily: "Lexend, sans-serif", fontSize: "30px", fontWeight: 800, color: "#fff" }}>{venue.name}</h1>
@@ -610,10 +671,10 @@ export default function VenueManagePage() {
       <div className="mx-auto -mt-10 max-w-screen-xl px-6 pb-8">
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
-            { label: "Total Bookings", value: bookings.length, color: "#241914", icon: <ClipboardList size={16} /> },
-            { label: "Confirmed", value: summary.confirmedCount, color: "#006a65", icon: <CheckCircle2 size={16} /> },
-            { label: "Manual Refund", value: summary.manualRefundCount, color: "#856404", icon: <AlertTriangle size={16} /> },
-            { label: "Revenue", value: formatPrice(summary.revenue, locale), color: "#a04100", icon: <Wallet size={16} /> },
+            { label: t("owner.manage.stats.totalBookings", { defaultValue: "Total Bookings" }), value: bookings.length, color: "#241914", icon: <ClipboardList size={16} /> },
+            { label: t("owner.manage.stats.confirmed", { defaultValue: "Confirmed" }), value: summary.confirmedCount, color: "#006a65", icon: <CheckCircle2 size={16} /> },
+            { label: t("owner.manage.stats.manualRefund", { defaultValue: "Manual Refund" }), value: summary.manualRefundCount, color: "#856404", icon: <AlertTriangle size={16} /> },
+            { label: t("owner.manage.stats.revenue", { defaultValue: "Revenue" }), value: formatPrice(summary.revenue, locale), color: "#a04100", icon: <Wallet size={16} /> },
           ].map((item) => (
             <div key={item.label} className="rounded-[24px] border bg-white p-5" style={{ borderColor: "#dfc0b3", boxShadow: "0 14px 30px rgba(36,25,20,0.06)" }}>
               <div className="mb-2 text-[#8b7266]">{item.icon}</div>
@@ -636,21 +697,46 @@ export default function VenueManagePage() {
           <div className="p-6">
             {tab === "bookings" && (
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#584238" }}>
-                    {bookings.length === 0 ? t("owner.manage.noVenueBookings") : t("owner.manage.bookingsForDate", { count: bookings.length, date: selectedDateStr })}
-                  </p>
-                  {summary.manualRefundCount > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1" style={{ background: "#fff1eb", color: "#a04100", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
-                      <ClipboardList size={12} /> {t("owner.manage.manualRequestCount", { count: summary.manualRefundCount })}
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1">
+
+                      <Input
+                        type="date"
+                        value={bookingDateFilter}
+                        onChange={(event) => setBookingDateFilter(event.target.value)}
+                        className="h-10 w-[220px] rounded-xl border-[#dfc0b3] bg-white"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setBookingDateFilter("")}
+                      disabled={!bookingDateFilter}
+                      className="h-10 rounded-xl border-[#dfc0b3] px-4 text-[#584238] hover:bg-[#fff1eb]"
+                    >
+                      {t("owner.manage.clearFilter", { defaultValue: "Clear filter" })}
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+
+                    {summary.manualRefundCount > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1" style={{ background: "#fff1eb", color: "#a04100", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
+                        <ClipboardList size={12} /> {t("owner.manage.manualRequestCount", { count: summary.manualRefundCount })}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {bookings.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-[24px] border border-dashed py-16" style={{ borderColor: "#dfc0b3" }}>
                     <CalendarDays size={48} style={{ color: "#dfc0b3", marginBottom: 12 }} />
-                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", color: "#8b7266" }}>{t("owner.manage.noBookings")}</p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", color: "#8b7266" }}>
+                      {bookingDateFilter
+                        ? t("owner.manage.noBookingsForDate", { defaultValue: "No bookings found for the selected date." })
+                        : t("owner.manage.noBookings")}
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -710,7 +796,7 @@ export default function VenueManagePage() {
                         return (
                           <button key={`${slot.startTime}-${slot.endTime}`} onClick={() => isAvailable ? handleSlotAction(slot, "unavailable") : isUnavailable ? handleSlotAction(slot, "open") : undefined} disabled={!isAvailable && !isUnavailable} className="flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl border-2 transition-all disabled:cursor-not-allowed disabled:opacity-70" style={{ background: bg, borderColor: border }}>
                             <span style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color }}>{slot.startTime}</span>
-                            <span style={{ fontFamily: "Inter, sans-serif", fontSize: "10px", color }}>{slot.status}</span>
+                            <span style={{ fontFamily: "Inter, sans-serif", fontSize: "10px", color }}>{t(`venues.status.${slot.status}`, { defaultValue: slot.status })}</span>
                           </button>
                         );
                       })}
@@ -718,10 +804,10 @@ export default function VenueManagePage() {
 
                     <div className="mt-5 flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: "#f4ded5" }}>
                       <Button onClick={async () => { for (const slot of slots.filter((item) => item.status === "available")) { await updateOwnerAvailability(venue.id, { date: selectedDateStr, start_time: slot.startTime, end_time: slot.endTime, status: "unavailable" }); } await loadSlots(); toast.success(t("owner.manage.blockAllSuccess")); }} className="h-9 rounded-xl border-0 px-3" style={{ background: "#856404", color: "#fff", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
-                        <Ban size={12} /> Block all available
+                        <Ban size={12} /> {t("owner.manage.blockAllAvailable", { defaultValue: "Block all available" })}
                       </Button>
                       <Button onClick={async () => { for (const slot of slots.filter((item) => item.status === "unavailable")) { await updateOwnerAvailability(venue.id, { date: selectedDateStr, start_time: slot.startTime, end_time: slot.endTime, status: "available" }); } await loadSlots(); toast.success(t("owner.manage.openAllSuccess")); }} className="h-9 rounded-xl border-0 px-3" style={{ background: "#006a65", color: "#fff", fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
-                        <LockOpen size={12} /> Open all unavailable
+                        <LockOpen size={12} /> {t("owner.manage.openAllUnavailable", { defaultValue: "Open all unavailable" })}
                       </Button>
                     </div>
                   </div>
@@ -738,6 +824,11 @@ export default function VenueManagePage() {
                     return typeof action === "function" ? action(current) : action;
                   })
                 }
+                imagePreviewUrl={settingsImagePreviewUrl}
+                onImageChange={(file) => {
+                  setSettingsImageFile(file);
+                  setSettingsImagePreviewUrl(file ? URL.createObjectURL(file) : "");
+                }}
                 onSave={handleSaveSettings}
                 onDelete={handleDeleteVenue}
                 saving={saving}

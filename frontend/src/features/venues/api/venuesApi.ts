@@ -25,7 +25,6 @@ export interface UpsertVenuePayload {
   sports: Sport[];
   imageUrl: string;
   priceFrom: number;
-  facilities: string[];
   openHours: string;
   description: string;
   courtCount: number;
@@ -100,7 +99,6 @@ export function subscribeVenues(listener: () => void) {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const DEFAULT_FACILITIES = ['Parking', 'Lighting'];
 const DEFAULT_VENUE_IMAGE = 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80';
 
 const PAYMENT_METHOD_BY_PROVIDER: Record<string, PaymentMethod> = {
@@ -125,6 +123,7 @@ type BackendVenue = {
   name: string;
   location: string;
   description: string;
+  imageUrl?: string;
   slotPrice: number;
   slotDurationMinutes: number;
   weeklySchedule?: BackendWeeklySchedule[];
@@ -245,9 +244,8 @@ function mapVenue(backendVenue: BackendVenue): Venue {
     sports: inferSports(backendVenue.name, backendVenue.description),
     rating: 4.8,
     reviewCount: 0,
-    imageUrl: DEFAULT_VENUE_IMAGE,
+    imageUrl: backendVenue.imageUrl || DEFAULT_VENUE_IMAGE,
     priceFrom: backendVenue.slotPrice,
-    facilities: DEFAULT_FACILITIES,
     openHours: formatOpenHours(backendVenue.weeklySchedule),
     description: backendVenue.description,
     courtCount: backendVenue.weeklySchedule?.length || 1,
@@ -397,7 +395,6 @@ export let MOCK_VENUES: Venue[] = [
     reviewCount: 312,
     imageUrl: 'https://images.unsplash.com/photo-1761941336817-1c258e7ef78c?w=800&q=80',
     priceFrom: 120_000,
-    facilities: ['Locker Room', 'Parking', 'Lighting', 'Equipment Rental', 'Cafe'],
     openHours: '06:00 – 22:00',
     description: 'Premium hard-surface tennis courts in the heart of District 1. Fully lit for night sessions with professional maintenance.',
     courtCount: 6,
@@ -579,7 +576,6 @@ export async function createVenue(payload: UpsertVenuePayload): Promise<{ succes
       reviewCount: 0,
       imageUrl: payload.imageUrl,
       priceFrom: payload.priceFrom,
-      facilities: payload.facilities,
       openHours: payload.openHours,
       description: payload.description,
       courtCount: payload.courtCount,

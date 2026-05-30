@@ -9,6 +9,7 @@ export type OwnerVenue = {
   name: string;
   location: string;
   description: string;
+  imageUrl: string;
   slotPrice: number;
   slotDurationMinutes: number;
   weeklySchedule: Array<{
@@ -24,12 +25,18 @@ export type OwnerBooking = {
   id: string;
   status: string;
   amount: number;
+  slotCount: number;
   holdExpiresAt: string | null;
   slot: {
     date: string;
     startTime: string;
     endTime: string;
   };
+  slots: Array<{
+    date: string;
+    startTime: string;
+    endTime: string;
+  }>;
   venue?: OwnerVenue;
   user?: {
     id: string;
@@ -94,6 +101,7 @@ export type CreateVenuePayload = {
   name: string;
   location: string;
   description: string;
+  image_url?: string;
   slot_price: number;
   slot_duration_minutes: number;
   weekly_schedule: Array<{
@@ -103,7 +111,7 @@ export type CreateVenuePayload = {
   }>;
 };
 
-export type UpdateVenuePayload = Partial<Pick<CreateVenuePayload, "name" | "location" | "description">>;
+export type UpdateVenuePayload = Partial<Pick<CreateVenuePayload, "name" | "location" | "description" | "image_url">>;
 
 export async function fetchOwnerVenues() {
   const res = await api.get<{ message: string; data: { items: OwnerVenue[] } }>("/my-venues");

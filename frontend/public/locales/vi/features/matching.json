@@ -84,6 +84,7 @@
       "deleteConfirm": "Xóa sân {{name}}?",
       "deleteSuccess": "Đã xóa {{name}}.",
       "deleteError": "Không thể xóa sân này.",
+      "imageUploadError": "Không thể tải ảnh sân lên.",
       "title": "Quản lý sân bằng dữ liệu thật từ backend.",
       "subtitle": "Danh sách sân, tạo sân mới và xóa sân hiện đang gọi trực tiếp owner API thay vì dữ liệu mẫu.",
       "closeCreateForm": "Đóng form tạo sân",
@@ -92,13 +93,15 @@
       "createTitle": "Tạo sân mới",
       "fields": {
         "name": "Tên sân",
-        "location": "Địa điểm",
+        "location": "Địa chỉ",
+        "image": "Ảnh sân",
         "slotPrice": "Giá mỗi slot",
         "slotDuration": "Thời lượng slot (phút)",
         "activeDay": "Thứ hoạt động",
         "timeRange": "Khung giờ",
         "description": "Mô tả"
       },
+      "imageHint": "Chọn ảnh để hiển thị sân trên giao diện người chơi và owner.",
       "creating": "Đang tạo...",
       "saveVenue": "Lưu sân mới",
       "cancel": "Hủy",
@@ -114,6 +117,14 @@
       "manageVenue": "Quản lý sân"
     },
     "manage": {
+      "heroBadge": "Owner Venue Studio",
+      "clearFilter": "Bỏ lọc",
+      "stats": {
+        "totalBookings": "Tổng booking",
+        "confirmed": "Đã xác nhận",
+        "manualRefund": "Hoàn tiền thủ công",
+        "revenue": "Doanh thu"
+      },
       "player": "Người chơi",
       "noEmail": "Không có email",
       "manualRefundRequest": "Yêu cầu hoàn tiền thủ công",
@@ -122,13 +133,17 @@
       "editTitle": "Chỉnh sửa thông tin sân",
       "fields": {
         "name": "Tên sân",
-        "location": "Địa điểm",
+        "location": "Địa chỉ",
+        "image": "Ảnh sân",
         "slotPrice": "Giá mỗi slot",
         "slotDuration": "Thời lượng slot",
         "activeDay": "Thứ hoạt động",
         "timeRange": "Khung giờ",
         "description": "Mô tả"
       },
+      "openAllUnavailable": "Mở lại toàn bộ slot không khả dụng",
+      "blockAllAvailable": "Chặn tất cả slot trống",
+      "imageHint": "Tải ảnh mới nếu bạn muốn thay ảnh hiện tại của sân.",
       "save": "Lưu thay đổi",
       "deleteVenue": "Xóa sân",
       "previewDescription": "Mô tả sân sẽ hiển thị tại đây.",
@@ -141,6 +156,7 @@
       "slotUpdateError": "Không thể cập nhật trạng thái slot.",
       "updateSuccess": "Cập nhật thông tin sân thành công.",
       "updateError": "Không thể cập nhật thông tin sân.",
+      "imageUploadError": "Không thể tải ảnh sân lên.",
       "deleteConfirm": "Xóa sân {{name}}?",
       "deleteSuccess": "Đã xóa {{name}}.",
       "deleteError": "Không thể xóa sân này.",
@@ -160,7 +176,12 @@
       "scheduleSubtitle": "Dữ liệu slot được lấy trực tiếp",
       "today": "Hôm nay",
       "blockAllSuccess": "Đã chặn tất cả slot trống",
-      "openAllSuccess": "Đã mở lại toàn bộ slot unavailable"
+      "openAllSuccess": "Đã mở lại toàn bộ slot unavailable",
+      "preview": "Xem trước",
+      "scheduleListTitle": "Danh sách lịch hàng tuần",
+      "addRange": "Thêm khung giờ",
+      "remove": "Xóa",
+      "rangeLabel": "khung giờ {{count}}"
     }
   },
   "admin": {

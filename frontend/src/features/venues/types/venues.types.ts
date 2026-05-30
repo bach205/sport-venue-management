@@ -37,11 +37,6 @@ export interface VenueSlot {
   bookingId?: string | null;
 }
 
-export interface VenueFacility {
-  icon: string;
-  label: string;
-}
-
 export interface Venue {
   id: string;
   ownerId?: string;
@@ -53,7 +48,6 @@ export interface Venue {
   reviewCount: number;
   imageUrl: string;
   priceFrom: number;
-  facilities: string[];
   openHours: string;
   description: string;
   courtCount: number;
