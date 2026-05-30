@@ -22,7 +22,7 @@ This phase does not support:
 - group matching
 - group chat for matches
 - automatic matching for more than two users
-- fuzzy location matching
+- custom free-text location matching
 - flexible skill matching
 - discover posts inside the social feed
 
@@ -47,18 +47,19 @@ The following decisions are fixed for this phase:
 - auto matching only matches two users
 - auto matching creates or reuses a `direct` conversation
 - skill level must match exactly: `casual`, `intermediate`, or `competitive`
-- location must match exactly as text
+- location matches by radius when both requests include coordinates; otherwise it falls back to exact selected location value
 - time may differ by at most two hours
 - `teammate` only matches `teammate`, and `opponent` only matches `opponent`
 - `Contact Now` must open or reuse the same direct conversation for the same pair of users
 
 ## Data Model
 
-The matching domain keeps four collections:
+The matching domain keeps five collections:
 
 - `match_requests`
 - `matches`
 - `match_participants`
+- `match_ratings`
 - `discover_posts`
 
 ### MatchRequest
@@ -68,6 +69,9 @@ Fields:
 - `user_id`
 - `sport`
 - `location`
+- `location_lat`
+- `location_lng`
+- `search_radius_km`
 - `time`
 - `time_type`: `fixed | flexible`
 - `skill_level`: `casual | intermediate | competitive`
@@ -79,9 +83,10 @@ Fields:
 Rules:
 
 - only `pending` requests are eligible for matching
-- one user may have only one `pending` request at a time
+- one user may have only one `pending` request at a time; creating a new request cancels older pending requests from that user
 - `number_of_players` remains in the schema for future growth, but validation restricts it to `1` in this phase
 - `time` must not be in the past
+- when coordinates exist on both requests, location compatibility uses distance within the smaller selected search radius
 
 Recommended indexes:
 
@@ -94,6 +99,9 @@ Fields:
 
 - `sport`
 - `location`
+- `location_lat`
+- `location_lng`
+- `search_radius_km`
 - `time`
 - `status`
 - `conversation_id`
@@ -123,6 +131,27 @@ Recommended index:
 
 - unique `{ match_id: 1, user_id: 1 }`
 
+### MatchRating
+
+Fields:
+
+- `match_id`
+- `reviewer_user_id`
+- `rated_user_id`
+- `rating`: integer from `1` to `5`
+- timestamps
+
+Rules:
+
+- only match participants may rate a match
+- the reviewer rates the other participant in the same match
+- one reviewer may submit one rating per match; later submissions update the same rating row
+
+Recommended indexes:
+
+- unique `{ match_id: 1, reviewer_user_id: 1 }`
+- `{ rated_user_id: 1 }`
+
 ### DiscoverPost
 
 Fields:
@@ -130,6 +159,9 @@ Fields:
 - `user_id`
 - `sport`
 - `location`
+- `location_lat`
+- `location_lng`
+- `search_radius_km`
 - `time`
 - `time_type`: `fixed | flexible`
 - `skill_level`: `casual | intermediate | competitive`
@@ -159,7 +191,7 @@ Two requests are compatible only when all rules below pass:
 - both requests are `pending`
 - requests belong to different users
 - `sport` matches exactly
-- `location` matches exactly
+- location is within the selected search radius when coordinates exist on both requests; otherwise `location` matches exactly
 - `skill_level` matches exactly
 - `match_type` matches exactly
 - requested times differ by no more than two hours
@@ -210,6 +242,9 @@ Request body:
 {
   "sport": "football",
   "location": "District 1",
+  "location_lat": 10.7769,
+  "location_lng": 106.7009,
+  "search_radius_km": 5,
   "time": "2026-05-11T19:00:00.000Z",
   "time_type": "fixed",
   "skill_level": "intermediate",
@@ -282,6 +317,43 @@ Each item should include:
 #### GET `/api/v1/matching/matches/:matchId`
 
 Return one match if the caller is a participant.
+
+#### POST `/api/v1/matching/matches/:matchId/rating`
+
+Submit or update the caller's rating for the other match participant.
+
+Request body:
+
+```json
+{
+  "rating": 5
+}
+```
+
+Rules:
+
+- caller must be a participant in the match
+- rating must be an integer from `1` to `5`
+- caller cannot choose an arbitrary rated user; the service rates the other participant automatically
+
+Response:
+
+```json
+{
+  "message": "Match rating submitted successfully.",
+  "data": {
+    "id": "rating-id",
+    "matchId": "match-id",
+    "reviewerUserId": "current-user-id",
+    "ratedUserId": "partner-user-id",
+    "rating": 5,
+    "ratedUserStats": {
+      "averageRating": 5,
+      "ratingCount": 1
+    }
+  }
+}
+```
 
 ### Discover Posts
 
@@ -368,6 +440,9 @@ Add `src/validations/matching.validation.js`.
 
 - `sport` is required
 - `location` is required
+- optional `location_lat` must be a valid latitude between `-90` and `90`
+- optional `location_lng` must be a valid longitude between `-180` and `180`
+- when coordinates are provided, `search_radius_km` must be between `1` and `50`
 - `time` is required and must be a valid date
 - `time` must not be in the past
 - `time_type` must be `fixed` or `flexible`
@@ -386,9 +461,16 @@ Add `src/validations/matching.validation.js`.
 - `page` and `limit` follow the same pattern as `chat`
 - optional filter values must match allowed enums when provided
 
+### Match Rating Validation
+
+- `rating` is required
+- `rating` must be an integer from `1` to `5`
+
 ## Realtime Design
 
 REST remains the source of truth. Socket events notify clients after a successful server-side state change.
+
+User room joins must include a valid JWT for the requested user ID. Match events are emitted by the server after persistence; clients must not relay authoritative match events to other users.
 
 Recommended new events:
 
@@ -414,7 +496,7 @@ Expected errors:
   - invalid payload
   - invalid ObjectId
   - time in the past
-  - second pending request attempt
+  - invalid rating
   - contacting your own post
   - cancelling a non-pending request
   - contacting a closed or cancelled post
@@ -445,18 +527,22 @@ The repository does not yet have a finished test setup for this module, so this 
 
 1. Create a valid request and return `pending` when no partner exists.
 2. Create a valid request and match it with an existing compatible request.
-3. Reject a second `pending` request from the same user.
+3. Cancel older pending requests from the same user when a new request is created.
 4. Reject requests with past time values.
-5. Reject matches when sport, location, skill level, or match type differ.
+5. Reject matches when sport, location/radius, skill level, or match type differ.
 6. Reject matches when time difference is greater than two hours.
 7. Cancel a pending request successfully.
 8. Reject cancelling a matched or already cancelled request.
+9. Match users with different location text when their coordinates are inside the selected radius.
 
 ### Match Result Cases
 
 1. List only matches that belong to the current user.
 2. Return a match detail only to a participant.
 3. Store and return the direct conversation created from auto matching.
+4. Allow a participant to rate the matched partner.
+5. Reject ratings from users who did not join the match.
+6. Reject ratings outside the `1` to `5` range.
 
 ### Discover Cases
 

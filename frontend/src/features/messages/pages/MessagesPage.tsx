@@ -12,7 +12,7 @@ import {
 } from '../store/messagesStore';
 import { ConversationList } from '../components/ConversationList';
 import { ChatWindow } from '../components/ChatWindow';
-import { socket } from '@/shared/socket/socketClient';
+import { joinUserRoom, socket } from '@/shared/socket/socketClient';
 import { isMockApi } from '@/shared/constants/api';
 import { useAppSelector } from '@/shared/hooks/useAppSelector';
 import {
@@ -170,18 +170,17 @@ export default function MessagesPage() {
   }, [activeId]);
 
   useEffect(() => {
-    const joinUser = () => socket.emit('user:join', currentUserId);
+    const joinUser = () => joinUserRoom(currentUserId);
 
     if (socket.connected) {
       joinUser();
-    } else {
-      socket.once('connect', joinUser);
     }
+    socket.on('connect', joinUser);
 
     return () => {
       socket.off('connect', joinUser);
     };
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     if (!activeId) return;

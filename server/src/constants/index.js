@@ -16,7 +16,6 @@ const SOCKET_EVENTS = {
   CHAT_JOIN: "chat:join",
   MATCHING_REQUEST_CREATED: "matching:request:created",
   MATCHING_REQUEST_MATCHED: "matching:request:matched",
-  MATCHING_REQUEST_CLIENT_MATCHED: "matching:request:client-matched",
   DISCOVER_CONTACT_STARTED: "discover:contact:started",
 };
 

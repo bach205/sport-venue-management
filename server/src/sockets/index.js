@@ -1,4 +1,5 @@
 const { SOCKET_EVENTS } = require("../constants");
+const { verifyToken } = require("../utils/jwt");
 const matchingService = require("../modules/matching/service");
 
 const SOCKET_DISCONNECT_GRACE_MS = 5000;
@@ -7,13 +8,22 @@ const registerSocketHandlers = (io) => {
   io.on(SOCKET_EVENTS.CONNECTION, (socket) => {
     console.log(`Socket connected: ${socket.id}`);
     
-    socket.on(SOCKET_EVENTS.USER_JOIN, (userId) => {
-      if (!userId) {
+    socket.on(SOCKET_EVENTS.USER_JOIN, ({ userId, token } = {}) => {
+      if (!userId || !token) {
         return;
       }
 
-      socket.data.userId = String(userId);
-      socket.join(`user:${userId}`);
+      try {
+        const payload = verifyToken(token);
+        if (String(payload.id) !== String(userId)) {
+          return;
+        }
+
+        socket.data.userId = String(userId);
+        socket.join(`user:${userId}`);
+      } catch (error) {
+        console.warn(`Rejected user room join for socket ${socket.id}.`);
+      }
     });
 
     socket.on(SOCKET_EVENTS.CHAT_JOIN, (roomId) => {
@@ -26,21 +36,6 @@ const registerSocketHandlers = (io) => {
         message,
         sender,
       });
-    });
-
-    socket.on(SOCKET_EVENTS.MATCHING_REQUEST_CLIENT_MATCHED, (payload) => {
-      const targetUserId = payload?.targetUserId;
-      if (!targetUserId) {
-        return;
-      }
-      
-      const forwardPayload = payload?.data ?? payload;
-      const nextPayload =
-        forwardPayload && typeof forwardPayload === "object"
-          ? { ...forwardPayload, clientEcho: true }
-          : { clientEcho: true };
-
-      io.to(`user:${targetUserId}`).emit(SOCKET_EVENTS.MATCHING_REQUEST_MATCHED, nextPayload);
     });
 
     socket.on(SOCKET_EVENTS.DISCONNECT, () => {

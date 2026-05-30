@@ -4,9 +4,47 @@ const { HTTP_STATUS, SOCKET_EVENTS } = require("../../constants");
 const createHttpError = require("../../utils/createHttpError");
 const { Profile, User } = require("../user/model");
 const chatService = require("../chat/service");
-const { MatchRequest, Match, MatchParticipant, DiscoverPost } = require("./model");
+const { MatchRequest, Match, MatchParticipant, MatchRating, DiscoverPost } = require("./model");
 
 const TIME_MATCH_WINDOW_MS = 2 * 60 * 60 * 1000;
+const DEFAULT_SEARCH_RADIUS_KM = 5;
+const EARTH_RADIUS_KM = 6371;
+
+const hasCoordinates = (item) =>
+  Number.isFinite(Number(item?.location_lat)) && Number.isFinite(Number(item?.location_lng));
+
+const toRadians = (value) => (Number(value) * Math.PI) / 180;
+
+const getDistanceKm = (a, b) => {
+  const dLat = toRadians(Number(b.location_lat) - Number(a.location_lat));
+  const dLng = toRadians(Number(b.location_lng) - Number(a.location_lng));
+  const lat1 = toRadians(a.location_lat);
+  const lat2 = toRadians(b.location_lat);
+  const haversine =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  return 2 * EARTH_RADIUS_KM * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+};
+
+const isLocationCompatible = (request, candidate) => {
+  if (hasCoordinates(request) && hasCoordinates(candidate)) {
+    const distanceKm = getDistanceKm(request, candidate);
+    const requestRadius = Number(request.search_radius_km) || DEFAULT_SEARCH_RADIUS_KM;
+    const candidateRadius = Number(candidate.search_radius_km) || DEFAULT_SEARCH_RADIUS_KM;
+    return distanceKm <= Math.min(requestRadius, candidateRadius);
+  }
+
+  return String(request.location).trim() === String(candidate.location).trim();
+};
+
+const normalizeOptionalNumber = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  return Number(value);
+};
 
 const buildPagination = (page, limit, total) => ({
   page,
@@ -38,6 +76,12 @@ class MatchingService {
       user_id: userId,
       sport: String(payload.sport).trim(),
       location: String(payload.location).trim(),
+      location_lat: normalizeOptionalNumber(payload.location_lat),
+      location_lng: normalizeOptionalNumber(payload.location_lng),
+      search_radius_km:
+        payload.search_radius_km !== undefined
+          ? Number(payload.search_radius_km)
+          : DEFAULT_SEARCH_RADIUS_KM,
       time: new Date(payload.time),
       time_type: payload.time_type,
       skill_level: payload.skill_level,
@@ -46,12 +90,11 @@ class MatchingService {
       status: "pending",
     });
 
-    const partnerRequest = await MatchRequest.findOne({
+    const partnerRequests = await MatchRequest.find({
       _id: { $ne: request._id },
       user_id: { $ne: userId },
       status: "pending",
       sport: request.sport,
-      location: request.location,
       skill_level: request.skill_level,
       match_type: request.match_type,
       time: {
@@ -59,6 +102,9 @@ class MatchingService {
         $lte: new Date(request.time.getTime() + TIME_MATCH_WINDOW_MS),
       },
     }).sort({ createdAt: 1 });
+    const partnerRequest = partnerRequests.find((candidate) =>
+      isLocationCompatible(request, candidate)
+    );
 
     let responseData = {
       matched: false,
@@ -73,6 +119,9 @@ class MatchingService {
       const match = await Match.create({
         sport: request.sport,
         location: request.location,
+        location_lat: request.location_lat,
+        location_lng: request.location_lng,
+        search_radius_km: request.search_radius_km,
         time: request.time,
         status: "matched",
         conversation_id: conversation.id,
@@ -96,17 +145,19 @@ class MatchingService {
       responseData = {
         matched: true,
         request: this.formatMatchRequest(request),
-        match: this.formatMatchSummary(match, conversation.id, partnerSummary),
+        match: this.formatMatchSummary(match, conversation.id, partnerSummary, partnerRequest),
         conversation,
         partner: partnerSummary,
         notificationTargets: [
           {
             userId: String(userId),
             partner: partnerSummary,
+            match: this.formatMatchSummary(match, conversation.id, partnerSummary, partnerRequest),
           },
           {
             userId: String(partnerRequest.user_id),
             partner: requestOwner,
+            match: this.formatMatchSummary(match, conversation.id, requestOwner, request),
           },
         ],
       };
@@ -116,10 +167,7 @@ class MatchingService {
       responseData.notificationTargets.forEach((target) => {
         io.to(this.getUserRoom(target.userId)).emit(SOCKET_EVENTS.MATCHING_REQUEST_MATCHED, {
           request: responseData.request,
-          match: {
-            ...responseData.match,
-            partner: target.partner,
-          },
+          match: target.match,
           conversation: responseData.conversation,
           partner: target.partner,
         });
@@ -201,6 +249,74 @@ class MatchingService {
 
     await this.assertMatchParticipant(match._id, userId);
     return this.getMatchSummaryForUser(match, userId);
+  }
+
+  async rateMatch(matchId, userId, rating) {
+    const match = await Match.findById(matchId);
+
+    if (!match) {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Match not found.");
+    }
+
+    const participants = await MatchParticipant.find({ match_id: match._id }).lean();
+    const reviewer = participants.find(
+      (participant) => String(participant.user_id) === String(userId)
+    );
+    const ratedParticipant = participants.find(
+      (participant) => String(participant.user_id) !== String(userId)
+    );
+
+    if (!reviewer) {
+      throw createHttpError(HTTP_STATUS.FORBIDDEN, "You can only rate matches you joined.");
+    }
+
+    if (!ratedParticipant) {
+      throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This match has no partner to rate.");
+    }
+
+    const matchRating = await MatchRating.findOneAndUpdate(
+      {
+        match_id: match._id,
+        reviewer_user_id: userId,
+      },
+      {
+        $set: {
+          rated_user_id: ratedParticipant.user_id,
+          rating,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    const [stats] = await MatchRating.aggregate([
+      { $match: { rated_user_id: ratedParticipant.user_id } },
+      {
+        $group: {
+          _id: "$rated_user_id",
+          averageRating: { $avg: "$rating" },
+          ratingCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return {
+      id: String(matchRating._id),
+      matchId: String(match._id),
+      reviewerUserId: String(userId),
+      ratedUserId: String(ratedParticipant.user_id),
+      rating: matchRating.rating,
+      ratedUserStats: {
+        averageRating: stats ? Number(stats.averageRating.toFixed(2)) : matchRating.rating,
+        ratingCount: stats?.ratingCount || 1,
+      },
+      createdAt: matchRating.createdAt,
+      updatedAt: matchRating.updatedAt,
+    };
   }
 
   async createDiscoverPost(userId, payload) {
@@ -362,25 +478,47 @@ class MatchingService {
     const peerParticipant = participants.find(
       (participant) => String(participant.user_id) !== String(userId)
     );
-    const partner = peerParticipant ? await this.getUserSummary(peerParticipant.user_id) : null;
+    const [partner, peerRequest] = peerParticipant
+      ? await Promise.all([
+          this.getUserSummary(peerParticipant.user_id),
+          MatchRequest.findOne({
+            _id: { $in: match.request_ids },
+            user_id: peerParticipant.user_id,
+          }),
+        ])
+      : [null, null];
 
-    return this.formatMatchSummary(match, match.conversation_id, partner);
+    return this.formatMatchSummary(match, match.conversation_id, partner, peerRequest || match);
   }
 
   async getUserSummary(userId, session = null) {
-    const [user, profile] = await Promise.all([
+    const [user, profile, ratingRows] = await Promise.all([
       User.findById(userId).select("email").session(session),
-      Profile.findOne({ user_id: userId }).select("name").session(session),
+      Profile.findOne({ user_id: userId }).select("name reputation_score").session(session),
+      MatchRating.aggregate([
+        { $match: { rated_user_id: new mongoose.Types.ObjectId(String(userId)) } },
+        {
+          $group: {
+            _id: "$rated_user_id",
+            averageRating: { $avg: "$rating" },
+            ratingCount: { $sum: 1 },
+          },
+        },
+      ]).session(session),
     ]);
 
     if (!user) {
       return null;
     }
 
+    const ratingStats = ratingRows[0];
+
     return {
       id: String(user._id),
       email: user.email,
       name: profile?.name || null,
+      rating: ratingStats ? Number(ratingStats.averageRating.toFixed(2)) : profile?.reputation_score || 0,
+      matchCount: ratingStats?.ratingCount || 0,
     };
   }
 
@@ -390,6 +528,9 @@ class MatchingService {
       userId: String(request.user_id),
       sport: request.sport,
       location: request.location,
+      locationLat: request.location_lat,
+      locationLng: request.location_lng,
+      searchRadiusKm: request.search_radius_km,
       time: request.time,
       timeType: request.time_type,
       skillLevel: request.skill_level,
@@ -401,11 +542,14 @@ class MatchingService {
     };
   }
 
-  formatMatchSummary(match, conversationId, partner) {
+  formatMatchSummary(match, conversationId, partner, locationSource = match) {
     return {
       id: String(match._id),
       sport: match.sport,
-      location: match.location,
+      location: locationSource.location,
+      locationLat: locationSource.location_lat,
+      locationLng: locationSource.location_lng,
+      searchRadiusKm: locationSource.search_radius_km,
       time: match.time,
       status: match.status,
       conversationId: conversationId ? String(conversationId) : null,

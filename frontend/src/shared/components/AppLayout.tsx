@@ -5,13 +5,15 @@ import { MatchingFAB } from '../../features/matching/components/MatchingFAB';
 import { logout } from '../../features/auth/store/authSlice';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const NAV_LINKS = [
-  { label: 'Trang chủ',   to: '/discover' },
-  { label: 'Bản tin',     to: '/feed' },
-  { label: 'Sân đấu',     to: '/venues' },
-  { label: 'Đơn đặt sân', to: '/bookings' },
-  { label: 'Cộng đồng',   to: '/messages' },
+  { key: 'nav.home',       to: '/discover' },
+  { key: 'nav.feed',       to: '/feed' },
+  { key: 'nav.venues',     to: '/venues' },
+  { key: 'nav.bookings',   to: '/bookings' },
+  { key: 'nav.messages',   to: '/messages' },
 ];
 
 const ROLE_BADGE = {
@@ -21,6 +23,7 @@ const ROLE_BADGE = {
 };
 
 export default function AppLayout() {
+  const { t } = useTranslation('matching');
   const { pathname } = useLocation();
   const navigate     = useNavigate();
   const dispatch     = useAppDispatch();
@@ -35,7 +38,7 @@ export default function AppLayout() {
 
   const handleLogout = () => {
     dispatch(logout()); // also auto-clears profile via profileSlice extraReducers
-    toast.success('Đã đăng xuất');
+    toast.success(t('layout.logoutSuccess'));
     navigate('/login');
     setUserMenuOpen(false);
   };
@@ -49,21 +52,23 @@ export default function AppLayout() {
               <img src="/public/logo.png" alt="Logo" className="w-14 h-14 inline-block " />
               Matchill
             </Link>
-            <nav className="hidden md:flex items-center gap-7">
+            <nav className="hidden md:flex items-center gap-5 lg:gap-7">
               {NAV_LINKS.map(link => (
                 <Link key={link.to} to={link.to}
                   className={`relative pb-1.5 transition-colors no-underline font-heading text-[15px]
                     ${isActive(link.to) ? 'font-bold text-brand-orange' : 'font-normal text-brand-body'}`}>
-                  {link.label}
+                  {t(link.key)}
                   {isActive(link.to) && (
                     <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-brand-orange" />
                   )}
                 </Link>
               ))}
+              <MatchingFAB />
             </nav>
           </div>
 
           <div className="flex items-center gap-1">
+            <LanguageSwitcher className="hidden sm:flex mr-2" />
             <button className="p-2 rounded-full hover:bg-brand-surface-orange transition-colors text-brand-body">
               <Bell size={18} />
             </button>
@@ -104,18 +109,18 @@ export default function AppLayout() {
                       <div className="px-2 py-2">
                         <Link to="/profile" onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline">
-                          <User size={16} className="text-brand-orange" /> Trang cá nhân
+                          <User size={16} className="text-brand-orange" /> {t('layout.profile')}
                         </Link>
                         {user.role === 'owner' && (
                           <Link to="/owner/venues" onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#ddeeff] transition-colors text-sm text-brand-navy no-underline">
-                            <Building2 size={16} /> Kênh chủ sân
+                            <Building2 size={16} /> {t('layout.ownerDashboard')}
                           </Link>
                         )}
                         {user.role === 'admin' && (
                           <Link to="/admin" onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#ffd6d6] transition-colors text-sm text-brand-red no-underline">
-                            <ShieldCheck size={16} /> Trang quản trị
+                            <ShieldCheck size={16} /> {t('layout.adminPanel')}
                           </Link>
                         )}
                       </div>
@@ -123,7 +128,7 @@ export default function AppLayout() {
                       <div className="px-2 pb-2 border-t border-brand-surface-warm pt-2">
                         <button onClick={handleLogout}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#ffeeee] transition-colors text-sm text-[#ba1a1a] font-medium">
-                          <LogOut size={16} /> Đăng xuất
+                          <LogOut size={16} /> {t('layout.logout')}
                         </button>
                       </div>
                     </div>
@@ -133,7 +138,7 @@ export default function AppLayout() {
             ) : (
               <Link to="/login"
                 className="flex items-center gap-1.5 ml-2 h-9 px-4 rounded-xl hover:opacity-90 transition-opacity gradient-orange text-sm font-bold text-white no-underline font-heading">
-                <LogIn size={14} /> Đăng nhập
+                <LogIn size={14} /> {t('layout.login')}
               </Link>
             )}
           </div>
@@ -143,7 +148,6 @@ export default function AppLayout() {
       <main className="flex-1 flex flex-col">
         <Outlet />
       </main>
-      <MatchingFAB />
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import type { SportOptionValue, SkillLevelOptionValue } from '@/shared/constants/matchOptions';
+
 /**
  * Profile types — field names match PUT /api/v1/users/profile and GET /api/v1/users/me responses exactly.
  *
@@ -6,8 +8,8 @@
  */
 
 export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
-export type SkillLevel = 'casual' | 'intermediate' | 'competitive';
-export type Sport = 'badminton' | 'tennis' | 'pickleball' | 'football' | 'basketball' | 'volleyball' | 'swimming' | 'table_tennis';
+export type SkillLevel = SkillLevelOptionValue;
+export type Sport = SportOptionValue;
 
 export interface Achievement {
   id: string;

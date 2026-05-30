@@ -6,6 +6,7 @@ const {
   validateCreateDiscoverPostPayload,
   validateUpdateDiscoverPostPayload,
   validateDiscoverListQuery,
+  validateCreateMatchRatingPayload,
 } = require("../../validations/matching.validation");
 const matchingService = require("./service");
 
@@ -115,6 +116,33 @@ class MatchingController {
       const data = await matchingService.getMatchById(req.params.matchId, req.user.id);
       return res.status(HTTP_STATUS.OK).json({
         message: "Match fetched successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async rateMatch(req, res) {
+    const idValidation = validateObjectIdParam(req.params.matchId, "Match");
+    const payloadValidation = validateCreateMatchRatingPayload(req.body);
+
+    if (!idValidation.isValid || !payloadValidation.isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        errors: [...idValidation.errors, ...payloadValidation.errors],
+      });
+    }
+
+    try {
+      const data = await matchingService.rateMatch(
+        req.params.matchId,
+        req.user.id,
+        payloadValidation.value.rating
+      );
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Match rating submitted successfully.",
         data,
       });
     } catch (error) {

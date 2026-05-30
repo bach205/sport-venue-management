@@ -5,6 +5,9 @@ export type MatchingStatus = 'idle' | 'searching' | 'matched' | 'expired';
 export interface MatchRequest {
   sport: Sport;
   location: string;
+  locationLat?: number;
+  locationLng?: number;
+  searchRadiusKm?: number;
   date: string;       // e.g. "2026-05-09"
   time: string;       // e.g. "18:00"
   skillLevel: SkillLevel;
@@ -21,6 +24,7 @@ export interface MatchedOpponent {
 }
 
 export interface MatchResult {
+  matchId?: string;
   requestId: string;
   sport: Sport;
   skillLevel: SkillLevel;

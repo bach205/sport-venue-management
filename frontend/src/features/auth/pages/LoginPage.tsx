@@ -96,7 +96,7 @@ export default function LoginPage() {
           Sẵn Sàng Sân Chơi?
         </h1>
         <p className="text-sm text-brand-body leading-relaxed">
-          Đăng nhập để đặt sân, tìm trận đấu và kết nối với cộng đồng.
+          Log in to book courts, find matches, and message other players.
         </p>
       </div>
 

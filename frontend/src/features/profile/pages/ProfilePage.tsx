@@ -14,60 +14,19 @@ import { getLevelProgress, getFEOnlyData } from '../store/profileStore';
 import type { UserProfile, Achievement, Gender, SkillLevel, Sport } from '../types/profile.types';
 import type { ApiUser, UpdateProfilePayload } from '../../auth/types/auth.types';
 import { toast } from 'sonner';
-import { uploadImage } from '@/shared/api/uploadApi';
+import { LOCATION_OPTIONS, SKILL_LEVEL_OPTIONS, SPORT_OPTIONS } from '@/shared/constants/matchOptions';
+import { useTranslation } from 'react-i18next';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 type Tab = 'info' | 'achievements' | 'activity';
 
-const CATEGORY_LABELS: Record<string, string> = {
-  booking: 'Đặt sân',
-  social: 'Cộng đồng',
-  skill: 'Kỹ năng',
-  loyalty: 'Thân thiết',
-};
-
-const GENDER_LABELS: Record<string, string> = {
-  male: 'Nam',
-  female: 'Nữ',
-  other: 'Khác',
-  prefer_not_to_say: 'Không muốn tiết lộ',
-};
-
-const SKILL_LEVEL_MAP: Record<string, string> = {
-  casual: 'Giải trí',
-  intermediate: 'Trung bình',
-  competitive: 'Thi đấu',
-};
-
-const STATUS_MAP: Record<string, string> = {
-  active: 'Hoạt động',
-  warning: 'Cảnh cáo',
-  suspended: 'Bị khóa',
-};
-
-const ACTIVITY_TYPE_LABELS: Record<string, string> = {
-  booking: 'Đặt sân',
-  match: 'Trận đấu',
-  message: 'Tin nhắn',
-  achievement: 'Thành tựu',
-};
-
-const SPORTS: { value: Sport; label: string; emoji: string }[] = [
-  { value: 'tennis',       label: 'Tennis',       emoji: '🎾' },
-  { value: 'basketball',   label: 'Bóng rổ',      emoji: '🏀' },
-  { value: 'badminton',    label: 'Cầu lông',     emoji: '🏸' },
-  { value: 'football',     label: 'Bóng đá',      emoji: '⚽' },
-  { value: 'pickleball',   label: 'Pickleball',   emoji: '🏓' },
-  { value: 'volleyball',   label: 'Bóng chuyền',  emoji: '🏐' },
-  { value: 'swimming',     label: 'Bơi lội',      emoji: '🏊' },
-  { value: 'table_tennis', label: 'Bóng bàn',     emoji: '🏓' },
-];
+const SPORTS = SPORT_OPTIONS;
 
 const SKILL_LEVELS: { value: SkillLevel; label: string; desc: string; active: string }[] = [
-  { value: 'casual',       label: 'Giải trí',     desc: 'Chơi cho vui',     active: 'bg-brand-teal/15 border-brand-teal text-brand-teal' },
-  { value: 'intermediate', label: 'Trung bình',   desc: 'Chơi thường xuyên',   active: 'bg-brand-navy/10 border-brand-navy text-brand-navy' },
-  { value: 'competitive',  label: 'Thi đấu',      desc: 'Trình độ giải đấu', active: 'bg-brand-orange/10 border-brand-orange text-brand-orange' },
+  { value: SKILL_LEVEL_OPTIONS[0].value, label: SKILL_LEVEL_OPTIONS[0].label, desc: SKILL_LEVEL_OPTIONS[0].description, active: 'bg-brand-teal/15 border-brand-teal text-brand-teal' },
+  { value: SKILL_LEVEL_OPTIONS[1].value, label: SKILL_LEVEL_OPTIONS[1].label, desc: SKILL_LEVEL_OPTIONS[1].description, active: 'bg-brand-navy/10 border-brand-navy text-brand-navy' },
+  { value: SKILL_LEVEL_OPTIONS[2].value, label: SKILL_LEVEL_OPTIONS[2].label, desc: SKILL_LEVEL_OPTIONS[2].description, active: 'bg-brand-orange/10 border-brand-orange text-brand-orange' },
 ];
 
 const GENDERS: { value: Gender; label: string }[] = [
@@ -148,6 +107,7 @@ function EditForm({
   onCancel: () => void;
   saving: boolean;
 }) {
+  const { t } = useTranslation('matching');
   const [form, setForm] = useState({
     name:             profile.name,
     age:              profile.age !== null ? String(profile.age) : '',
@@ -156,6 +116,9 @@ function EditForm({
     sport_preference: [...profile.sport_preference],
     skill_level:      profile.skill_level,
   });
+  const locationChoices = LOCATION_OPTIONS.includes(form.location as typeof LOCATION_OPTIONS[number])
+    ? LOCATION_OPTIONS
+    : [form.location, ...LOCATION_OPTIONS].filter(Boolean);
 
   const toggleSport = (s: Sport) =>
     setForm(f => ({
@@ -187,8 +150,10 @@ function EditForm({
           <input className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div>
-          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">Khu vực</label>
-          <input className={inputCls} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Ví dụ: Thành phố Hồ Chí Minh" />
+          <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">{t('form.location')}</label>
+          <select className={inputCls + ' cursor-pointer'} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}>
+            {locationChoices.map(location => <option key={location} value={location}>{t(`locations.${location}`, location)}</option>)}
+          </select>
         </div>
       </div>
 
@@ -216,7 +181,7 @@ function EditForm({
               <button key={s.value} type="button" onClick={() => toggleSport(s.value)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] transition-all border-[1.5px]
                   ${active ? 'bg-brand-orange border-brand-orange text-white font-bold' : 'bg-white border-brand-border text-brand-body hover:border-brand-orange'}`}>
-                {s.emoji} {s.label} {active && <CheckCircle2 size={13} />}
+                {s.emoji} {t(`sports.${s.value}`, s.label)} {active && <CheckCircle2 size={13} />}
               </button>
             );
           })}
@@ -234,8 +199,8 @@ function EditForm({
               <button key={sl.value} type="button" onClick={() => setForm(f => ({ ...f, skill_level: sl.value }))}
                 className={`flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all
                   ${active ? sl.active : 'bg-white border-brand-border text-brand-dark'}`}>
-                <span className="text-sm font-bold font-heading">{sl.label}</span>
-                <span className="text-[11px] text-brand-muted">{sl.desc}</span>
+                <span className="text-sm font-bold font-heading">{t(`skillLevels.${sl.value}.label`, sl.label)}</span>
+                <span className="text-[11px] text-brand-muted">{t(`skillLevels.${sl.value}.description`, sl.desc)}</span>
               </button>
             );
           })}
@@ -261,6 +226,7 @@ function EditForm({
 // ─── Main ProfilePage ─────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const { t } = useTranslation('matching');
   const dispatch   = useAppDispatch();
   const authUser   = useAppSelector(state => state.auth.user);
   const profile    = useAppSelector(state => state.profile.data);
@@ -574,10 +540,10 @@ export default function ProfilePage() {
                   <div className="rounded-2xl p-5 bg-white border border-brand-border">
                     <h3 className="font-heading text-base font-bold text-brand-dark mb-3">Hiệu suất</h3>
                     {[
-                      { label: 'Lượt đặt sân',   value: profile.totalBookings,      icon: '📅' },
-                      { label: 'Trận đấu đã ghép',   value: profile.totalMatchesPlayed, icon: '🤝' },
-                      { label: 'Đánh giá cộng đồng', value: `${profile.rating} ⭐`,     icon: '🌟' },
-                      { label: 'Nhận xét đã nhận', value: profile.reviewCount,        icon: '💬' },
+                      { label: 'Court Bookings',   value: profile.totalBookings,      icon: '📅' },
+                      { label: 'Matches Played',   value: profile.totalMatchesPlayed, icon: '🤝' },
+                      { label: t('profile.playerRating'), value: `${profile.rating} ⭐`, icon: '🌟' },
+                      { label: 'Reviews Received', value: profile.reviewCount,        icon: '💬' },
                     ].map((item, i) => (
                       <div key={i} className={`flex items-center justify-between py-2.5 text-[13px] ${i > 0 ? 'border-t border-brand-surface-warm' : ''}`}>
                         <span className="text-brand-body">{item.icon} {item.label}</span>

@@ -13,6 +13,7 @@ router.patch("/requests/:requestId/cancel", authMiddleware, asyncHandler((req, r
 
 router.get("/matches/me", authMiddleware, asyncHandler((req, res) => matchingController.listMyMatches(req, res)));
 router.get("/matches/:matchId", authMiddleware, asyncHandler((req, res) => matchingController.getMatchById(req, res)));
+router.post("/matches/:matchId/rating", authMiddleware, asyncHandler((req, res) => matchingController.rateMatch(req, res)));
 
 router.post("/discover-posts", authMiddleware, asyncHandler((req, res) => matchingController.createDiscoverPost(req, res)));
 router.get("/discover-posts", authMiddleware, asyncHandler((req, res) => matchingController.listDiscoverPosts(req, res)));

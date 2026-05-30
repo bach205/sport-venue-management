@@ -4,8 +4,9 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 
 const app = require("../app");
 const { signToken } = require("../src/utils/jwt");
+const { SOCKET_EVENTS } = require("../src/constants");
 const { User, Profile, UserRole } = require("../src/modules/user/model");
-const { MatchRequest, Match, MatchParticipant, DiscoverPost } = require("../src/modules/matching/model");
+const { MatchRequest, Match, MatchParticipant, MatchRating, DiscoverPost } = require("../src/modules/matching/model");
 const { Conversation, ConversationParticipant } = require("../src/modules/chat/model");
 
 let mongoServer;
@@ -45,6 +46,23 @@ const validDiscoverPayload = (overrides = {}) => ({
   ...overrides,
 });
 
+const createIoRecorder = () => {
+  const events = [];
+
+  return {
+    events,
+    io: {
+      to(room) {
+        return {
+          emit(event, payload) {
+            events.push({ room, event, payload });
+          },
+        };
+      },
+    },
+  };
+};
+
 beforeAll(async () => {
   process.env.JWT_SECRET = "test_secret";
   mongoServer = await MongoMemoryServer.create();
@@ -52,12 +70,14 @@ beforeAll(async () => {
   await MatchRequest.syncIndexes();
   await Match.syncIndexes();
   await MatchParticipant.syncIndexes();
+  await MatchRating.syncIndexes();
   await DiscoverPost.syncIndexes();
   await Conversation.syncIndexes();
   await ConversationParticipant.syncIndexes();
 });
 
 afterEach(async () => {
+  app.set("io", undefined);
   const collections = mongoose.connection.collections;
   await Promise.all(Object.values(collections).map((collection) => collection.deleteMany({})));
 });
@@ -106,7 +126,137 @@ describe("Matching module", () => {
     expect(await MatchRequest.countDocuments({ status: "matched" })).toBe(2);
   });
 
-  test("rejects a second pending request from the same user", async () => {
+  test("matches compatible requests by coordinates within search radius", async () => {
+    const userA = await createUser("user", "match-a-map@example.com", "Alice");
+    const userB = await createUser("user", "match-b-map@example.com", "Bob");
+
+    await request(app)
+      .post("/api/v1/matching/requests")
+      .set(authHeader(userA.token))
+      .send(validRequestPayload({
+        location: "Nguyen Hue Walking Street",
+        location_lat: 10.7758,
+        location_lng: 106.7039,
+        search_radius_km: 5,
+      }));
+
+    const response = await request(app)
+      .post("/api/v1/matching/requests")
+      .set(authHeader(userB.token))
+      .send(validRequestPayload({
+        location: "Ben Thanh Market",
+        location_lat: 10.7721,
+        location_lng: 106.6983,
+        search_radius_km: 5,
+      }));
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.match).not.toBeNull();
+    expect(response.body.data.match.location).toBe("Nguyen Hue Walking Street");
+    expect(response.body.data.match.locationLat).toBe(10.7758);
+    expect(response.body.data.match.searchRadiusKm).toBe(5);
+    expect(await Match.countDocuments({})).toBe(1);
+    expect(await MatchRequest.countDocuments({ status: "matched" })).toBe(2);
+  });
+
+  test("uses the selected radius and emits authoritative realtime match events", async () => {
+    const userA = await createUser("user", "match-a-radius@example.com", "Alice");
+    const userB = await createUser("user", "match-b-radius@example.com", "Bob");
+    const recorder = createIoRecorder();
+    app.set("io", recorder.io);
+
+    const firstResponse = await request(app)
+      .post("/api/v1/matching/requests")
+      .set(authHeader(userA.token))
+      .send(validRequestPayload({
+        location: "Nguyen Hue Walking Street",
+        location_lat: 10.7758,
+        location_lng: 106.7039,
+        search_radius_km: 1,
+      }));
+
+    const secondResponse = await request(app)
+      .post("/api/v1/matching/requests")
+      .set(authHeader(userB.token))
+      .send(validRequestPayload({
+        location: "Nearby Sports Center",
+        location_lat: 10.7958,
+        location_lng: 106.7039,
+        search_radius_km: 5,
+      }));
+
+    expect(firstResponse.body.data.request.searchRadiusKm).toBe(1);
+    expect(secondResponse.body.data.match).toBeNull();
+    expect(await Match.countDocuments({})).toBe(0);
+
+    const matchedResponse = await request(app)
+      .post("/api/v1/matching/requests")
+      .set(authHeader(userA.token))
+      .send(validRequestPayload({
+        location: "Nguyen Hue Walking Street",
+        location_lat: 10.7758,
+        location_lng: 106.7039,
+        search_radius_km: 5,
+      }));
+
+    expect(matchedResponse.body.data.match).not.toBeNull();
+    expect(matchedResponse.body.data.match.location).toBe("Nearby Sports Center");
+    expect(matchedResponse.body.data.match.searchRadiusKm).toBe(5);
+
+    const matchedEvents = recorder.events.filter(
+      ({ event }) => event === SOCKET_EVENTS.MATCHING_REQUEST_MATCHED
+    );
+    expect(matchedEvents).toHaveLength(2);
+    expect(matchedEvents.map(({ room }) => room).sort()).toEqual(
+      [`user:${userA.user._id}`, `user:${userB.user._id}`].sort()
+    );
+
+    const eventForUserA = matchedEvents.find(({ room }) => room === `user:${userA.user._id}`);
+    const eventForUserB = matchedEvents.find(({ room }) => room === `user:${userB.user._id}`);
+    expect(eventForUserA.payload.match.location).toBe("Nearby Sports Center");
+    expect(eventForUserB.payload.match.location).toBe("Nguyen Hue Walking Street");
+
+    const matchId = matchedResponse.body.data.match.id;
+    const [matchForUserA, matchForUserB] = await Promise.all([
+      request(app)
+        .get(`/api/v1/matching/matches/${matchId}`)
+        .set(authHeader(userA.token)),
+      request(app)
+        .get(`/api/v1/matching/matches/${matchId}`)
+        .set(authHeader(userB.token)),
+    ]);
+
+    expect(matchForUserA.body.data.location).toBe("Nearby Sports Center");
+    expect(matchForUserB.body.data.location).toBe("Nguyen Hue Walking Street");
+  });
+
+  test("allows participants to rate their matched partner", async () => {
+    const userA = await createUser("user", "match-a-rating@example.com", "Alice");
+    const userB = await createUser("user", "match-b-rating@example.com", "Bob");
+
+    await request(app)
+      .post("/api/v1/matching/requests")
+      .set(authHeader(userA.token))
+      .send(validRequestPayload());
+
+    const matchResponse = await request(app)
+      .post("/api/v1/matching/requests")
+      .set(authHeader(userB.token))
+      .send(validRequestPayload({ time: "2026-05-12T13:30:00.000Z" }));
+
+    const response = await request(app)
+      .post(`/api/v1/matching/matches/${matchResponse.body.data.match.id}/rating`)
+      .set(authHeader(userB.token))
+      .send({ rating: 5 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.rating).toBe(5);
+    expect(response.body.data.ratedUserId).toBe(String(userA.user._id));
+    expect(response.body.data.ratedUserStats.averageRating).toBe(5);
+    expect(await MatchRating.countDocuments({})).toBe(1);
+  });
+
+  test("cancels previous pending requests when the same user creates a new request", async () => {
     const user = await createUser("user", "match-a3@example.com", "Alice");
 
     await request(app)
@@ -119,8 +269,10 @@ describe("Matching module", () => {
       .set(authHeader(user.token))
       .send(validRequestPayload({ time: "2026-05-12T14:00:00.000Z" }));
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toContain("pending");
+    expect(response.status).toBe(201);
+    expect(response.body.data.request.status).toBe("pending");
+    expect(await MatchRequest.countDocuments({ user_id: user.user._id, status: "pending" })).toBe(1);
+    expect(await MatchRequest.countDocuments({ user_id: user.user._id, status: "cancelled" })).toBe(1);
   });
 
   test("lists and contacts discover posts through a reusable direct conversation", async () => {

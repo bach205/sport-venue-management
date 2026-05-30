@@ -1,53 +1,34 @@
 import React, { useState } from 'react';
 import { Zap } from 'lucide-react';
 import { MatchingModal } from './MatchingModal';
+import { useTranslation } from 'react-i18next';
 
 export function MatchingFAB() {
+  const { t } = useTranslation('matching');
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* Floating Action Button */}
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-8 right-8 z-40 flex items-center gap-2.5 h-14 px-5 rounded-full transition-all hover:scale-105 active:scale-95"
+        className="flex h-9 shrink-0 items-center gap-2 rounded-lg px-2.5 transition-opacity hover:opacity-90 lg:px-3"
         style={{
           background: 'linear-gradient(90deg, #a04100 0%, #ff7e36 100%)',
-          boxShadow: '0 6px 24px rgba(160,65,0,0.45)',
+          boxShadow: '0 2px 8px rgba(160,65,0,0.24)',
           fontFamily: 'Lexend, sans-serif',
-          fontSize: '15px',
+          fontSize: '13px',
           fontWeight: 700,
           color: '#fff',
           border: 'none',
         }}
-        title="Tìm ghép cặp ngay"
+        title={t('fab.title')}
       >
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(255,255,255,0.25)' }}
-        >
-          <Zap size={15} fill="#fff" color="#fff" />
-        </div>
-        <span>Tìm ghép cặp</span>
-
-        {/* Pulse ring */}
-        <span
-          className="absolute inset-0 rounded-full"
-          style={{
-            border: '2px solid rgba(255,126,54,0.4)',
-            animation: 'fabPing 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-          }}
-        />
+        <Zap size={15} fill="#fff" color="#fff" />
+        <span className="hidden xl:inline">{t('fab.label')}</span>
       </button>
 
       {open && <MatchingModal onClose={() => setOpen(false)} />}
-
-      <style>{`
-        @keyframes fabPing {
-          0% { transform: scale(1); opacity: 0.8; }
-          100% { transform: scale(1.35); opacity: 0; }
-        }
-      `}</style>
     </>
   );
 }

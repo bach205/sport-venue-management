@@ -90,8 +90,8 @@ export function CreatePostModal({
             {initials}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-brand-dark font-heading">{user?.name ?? "Bạn"}</p>
-            <p className="text-xs text-brand-muted">Đăng lên cộng đồng</p>
+            <p className="text-sm font-bold text-brand-dark font-heading">{user?.name ?? 'Bạn'}</p>
+            <p className="text-xs text-brand-muted">Đăng lên bảng tin</p>
           </div>
         </div>
 

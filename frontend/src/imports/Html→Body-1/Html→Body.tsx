@@ -54,7 +54,7 @@ function Link3() {
       <div aria-hidden="true" className="absolute border-[#a04100] border-b-2 border-solid inset-0 pointer-events-none" />
       <div className="content-stretch flex flex-col items-start pb-[6px] relative size-full">
         <div className="flex flex-col font-['Lexend:Bold',sans-serif] font-bold justify-center leading-[0] relative shrink-0 text-[#a04100] text-[18px] whitespace-nowrap">
-          <p className="leading-[28px]">Community</p>
+          <p className="leading-[28px]">Messages</p>
         </div>
       </div>
     </div>

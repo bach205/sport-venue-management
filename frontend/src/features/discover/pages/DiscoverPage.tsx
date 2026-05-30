@@ -5,18 +5,11 @@ import { fetchPosts } from '../api/discoverApi';
 import { PostCard } from '../components/PostCard';
 import { CreatePostModal } from '../components/CreatePostModal';
 import type { DiscoverPost, DiscoverFilters, Sport, SkillLevel, PostType } from '../types/discover.types';
-
-const SPORT_OPTIONS = [
-  { value: 'all', label: 'Tất cả môn thể thao' },
-  { value: 'tennis', label: '🎾 Tennis' },
-  { value: 'basketball', label: '🏀 Bóng rổ' },
-  { value: 'badminton', label: '🏸 Cầu lông' },
-  { value: 'football', label: '⚽ Bóng đá' },
-  { value: 'pickleball', label: '🏓 Pickleball' },
-  { value: 'volleyball', label: '🏐 Bóng chuyền' },
-];
+import { SPORT_OPTIONS as BASE_SPORT_OPTIONS } from '@/shared/constants/matchOptions';
+import { useTranslation } from 'react-i18next';
 
 export default function DiscoverPage() {
+  const { t } = useTranslation('matching');
   const navigate = useNavigate();
   const [posts, setPosts] = useState<DiscoverPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +69,13 @@ export default function DiscoverPage() {
     outline: 'none',
     cursor: 'pointer',
   };
+  const sportOptions = [
+    { value: 'all', label: t('discover.filters.allSports') },
+    ...BASE_SPORT_OPTIONS.map(sport => ({
+      value: sport.value,
+      label: `${sport.emoji} ${t(`sports.${sport.value}`, sport.label)}`,
+    })),
+  ];
 
   return (
     <div className="flex flex-col min-h-full" style={{ background: '#fff8f6' }}>
@@ -85,10 +85,10 @@ export default function DiscoverPage() {
           <div className="flex items-start justify-between mb-5">
             <div>
               <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 700, color: '#241914' }}>
-                Khám Phá
+                {t('discover.title')}
               </h1>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 4 }}>
-                Tìm bạn chơi, đăng bài ghép trận, kết nối với cộng đồng
+                {t('discover.subtitle')}
               </p>
             </div>
             <button
@@ -104,7 +104,7 @@ export default function DiscoverPage() {
               }}
             >
               <Plus size={16} />
-              Tạo bài đăng
+              {t('discover.createPost')}
             </button>
           </div>
 
@@ -118,7 +118,7 @@ export default function DiscoverPage() {
               />
               <input
                 type="text"
-                placeholder="Tìm kiếm môn thể thao, địa điểm, người chơi..."
+                placeholder={t('discover.searchPlaceholder')}
                 value={filters.search}
                 onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                 style={{ ...selectStyle, paddingLeft: '34px', width: '100%', boxSizing: 'border-box' }}
@@ -132,7 +132,7 @@ export default function DiscoverPage() {
               onChange={e => setFilters(f => ({ ...f, sport: e.target.value as Sport | 'all' }))}
               style={selectStyle}
             >
-              {SPORT_OPTIONS.map(o => (
+              {sportOptions.map(o => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
@@ -141,19 +141,19 @@ export default function DiscoverPage() {
               onChange={e => setFilters(f => ({ ...f, skillLevel: e.target.value as SkillLevel | 'all' }))}
               style={selectStyle}
             >
-              <option value="all">Mọi trình độ</option>
-              <option value="casual">Giải trí / Phong trào</option>
-              <option value="intermediate">Bán chuyên</option>
-              <option value="competitive">Chuyên nghiệp</option>
+              <option value="all">{t('discover.filters.allLevels')}</option>
+              <option value="casual">{t('skillLevels.casual.label')}</option>
+              <option value="intermediate">{t('skillLevels.intermediate.label')}</option>
+              <option value="competitive">{t('skillLevels.competitive.label')}</option>
             </select>
             <select
               value={filters.type}
               onChange={e => setFilters(f => ({ ...f, type: e.target.value as PostType | 'all' }))}
               style={selectStyle}
             >
-              <option value="all">Đồng đội & Đối thủ</option>
-              <option value="teammate">Tìm đồng đội</option>
-              <option value="opponent">Tìm đối thủ</option>
+              <option value="all">{t('discover.filters.allTypes')}</option>
+              <option value="teammate">{t('discover.filters.teammate')}</option>
+              <option value="opponent">{t('discover.filters.opponent')}</option>
             </select>
           </div>
         </div>
@@ -169,10 +169,10 @@ export default function DiscoverPage() {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="text-5xl mb-4">🏃</span>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#241914' }}>
-              Không tìm thấy bài đăng nào
+              {t('discover.emptyTitle')}
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266', marginTop: 8 }}>
-              Hãy thử điều chỉnh bộ lọc hoặc là người đầu tiên đăng bài!
+              {t('discover.emptySubtitle')}
             </p>
             <button
               onClick={() => setShowModal(true)}
@@ -187,13 +187,13 @@ export default function DiscoverPage() {
               }}
             >
               <Plus size={16} />
-              Tạo bài đăng
+              {t('discover.createPost')}
             </button>
           </div>
         ) : (
           <>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginBottom: '20px' }}>
-              Tìm thấy {filtered.length} bài đăng
+              {t('discover.postsFound', { count: filtered.length })}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map(post => (

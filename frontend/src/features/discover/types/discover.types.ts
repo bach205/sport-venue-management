@@ -1,5 +1,7 @@
-export type Sport = 'tennis' | 'basketball' | 'badminton' | 'football' | 'pickleball' | 'volleyball';
-export type SkillLevel = 'casual' | 'intermediate' | 'competitive';
+import type { SportOptionValue, SkillLevelOptionValue } from '@/shared/constants/matchOptions';
+
+export type Sport = SportOptionValue;
+export type SkillLevel = SkillLevelOptionValue;
 export type PostType = 'teammate' | 'opponent';
 
 export interface PostAuthor {

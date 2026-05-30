@@ -2,15 +2,10 @@ import React, { useState } from 'react';
 import { X, MapPin, Clock, Users, Loader2 } from 'lucide-react';
 import { createPost } from '../api/discoverApi';
 import type { Sport, SkillLevel, PostType, CreatePostPayload } from '../types/discover.types';
+import { LOCATION_OPTIONS, SKILL_LEVEL_OPTIONS, SPORT_OPTIONS } from '@/shared/constants/matchOptions';
+import { useTranslation } from 'react-i18next';
 
-const SPORTS: { value: Sport; label: string; emoji: string }[] = [
-  { value: 'tennis', label: 'Tennis', emoji: '🎾' },
-  { value: 'basketball', label: 'Bóng rổ', emoji: '🏀' },
-  { value: 'badminton', label: 'Cầu lông', emoji: '🏸' },
-  { value: 'football', label: 'Bóng đá', emoji: '⚽' },
-  { value: 'pickleball', label: 'Pickleball', emoji: '🏓' },
-  { value: 'volleyball', label: 'Bóng chuyền', emoji: '🏐' },
-];
+const SPORTS = SPORT_OPTIONS;
 
 const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
   casual: 'Giải trí',
@@ -29,8 +24,9 @@ interface Props {
 }
 
 export function CreatePostModal({ onClose, onCreated }: Props) {
+  const { t } = useTranslation('matching');
   const [sport, setSport] = useState<Sport>('tennis');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState(LOCATION_OPTIONS[0]);
   const [time, setTime] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('casual');
   const [playersNeeded, setPlayersNeeded] = useState(1);
@@ -42,7 +38,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!location.trim() || !time || !description.trim()) {
-      setError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+      setError(t('createPost.validation.required'));
       return;
     }
     setError('');
@@ -53,7 +49,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
     if (res.success) {
       onCreated();
     } else {
-      setError(res.message || 'Đăng bài thất bại.');
+      setError(res.message || t('createPost.validation.failed'));
     }
   };
 
@@ -92,7 +88,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#dfc0b3]">
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 700, color: '#241914' }}>
-            Tạo bài đăng ghép trận
+            {t('createPost.title')}
           </h2>
           <button
             onClick={onClose}
@@ -106,7 +102,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
         <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-5">
           {/* Sport */}
           <div>
-            <label style={labelStyle}>Môn thể thao</label>
+            <label style={labelStyle}>{t('form.sport')}</label>
             <div className="grid grid-cols-3 gap-2">
               {SPORTS.map(s => (
                 <button
@@ -124,7 +120,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
                   }}
                 >
                   <span>{s.emoji}</span>
-                  {s.label}
+                  {t(`sports.${s.value}`, s.label)}
                 </button>
               ))}
             </div>
@@ -134,24 +130,26 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
           <div>
             <label style={labelStyle}>
               <MapPin size={13} style={{ display: 'inline', marginRight: 4 }} />
-              Địa điểm *
+              {t('form.location')}
             </label>
-            <input
-              type="text"
-              placeholder="Ví dụ: Nhà thi đấu Quận 1, TP.HCM"
+            <select
               value={location}
               onChange={e => setLocation(e.target.value)}
               style={inputStyle}
               onFocus={e => { e.target.style.borderColor = '#006a65'; }}
               onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
-            />
+            >
+              {LOCATION_OPTIONS.map(option => (
+                <option key={option} value={option}>{t(`locations.${option}`, option)}</option>
+              ))}
+            </select>
           </div>
 
           {/* Time */}
           <div>
             <label style={labelStyle}>
               <Clock size={13} style={{ display: 'inline', marginRight: 4 }} />
-              Ngày & Giờ *
+              {t('createPost.dateTime')}
             </label>
             <input
               type="datetime-local"
@@ -165,24 +163,30 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
 
           {/* Skill Level */}
           <div>
-            <label style={labelStyle}>Cấp độ / Trình độ</label>
-            <div className="flex gap-2">
-              {(['casual', 'intermediate', 'competitive'] as SkillLevel[]).map(level => (
+            <label style={labelStyle}>{t('form.skill')}</label>
+            <div className="grid grid-cols-1 gap-2">
+              {SKILL_LEVEL_OPTIONS.map(level => (
                 <button
-                  key={level}
+                  key={level.value}
                   type="button"
-                  onClick={() => setSkillLevel(level)}
-                  className="flex-1 py-2 rounded-xl border-2 transition-all"
+                  onClick={() => setSkillLevel(level.value)}
+                  className="w-full rounded-xl border-2 transition-all text-left"
                   style={{
-                    borderColor: skillLevel === level ? '#a04100' : '#dfc0b3',
-                    background: skillLevel === level ? '#fff1eb' : '#fff',
+                    borderColor: skillLevel === level.value ? '#a04100' : '#dfc0b3',
+                    background: skillLevel === level.value ? '#fff1eb' : '#fff',
                     fontFamily: 'Inter, sans-serif',
                     fontSize: '13px',
-                    fontWeight: skillLevel === level ? 600 : 400,
-                    color: skillLevel === level ? '#a04100' : '#584238',
+                    fontWeight: skillLevel === level.value ? 600 : 400,
+                    color: skillLevel === level.value ? '#a04100' : '#584238',
+                    padding: '10px 12px',
                   }}
                 >
-                  {SKILL_LEVEL_LABELS[level]}
+                  <span style={{ display: 'block', fontWeight: 700 }}>
+                    {t(`skillLevels.${level.value}.label`, level.label)}
+                  </span>
+                  <span style={{ display: 'block', fontSize: 12, marginTop: 2, color: '#8b7266' }}>
+                    {t(`skillLevels.${level.value}.description`, level.description)}
+                  </span>
                 </button>
               ))}
             </div>
@@ -190,24 +194,24 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
 
           {/* Type */}
           <div>
-            <label style={labelStyle}>Tìm kiếm</label>
+            <label style={labelStyle}>{t('form.lookingFor')}</label>
             <div className="flex gap-2">
-              {(['teammate', 'opponent'] as PostType[]).map(t => (
+              {(['teammate', 'opponent'] as PostType[]).map(matchType => (
                 <button
-                  key={t}
+                  key={matchType}
                   type="button"
-                  onClick={() => setType(t)}
-                  className="flex-1 py-2 rounded-xl border-2 transition-all"
+                  onClick={() => setType(matchType)}
+                  className="flex-1 py-2 rounded-xl border-2 transition-all capitalize"
                   style={{
-                    borderColor: type === t ? '#a04100' : '#dfc0b3',
-                    background: type === t ? '#fff1eb' : '#fff',
+                    borderColor: type === matchType ? '#a04100' : '#dfc0b3',
+                    background: type === matchType ? '#fff1eb' : '#fff',
                     fontFamily: 'Inter, sans-serif',
                     fontSize: '13px',
-                    fontWeight: type === t ? 600 : 400,
-                    color: type === t ? '#a04100' : '#584238',
+                    fontWeight: type === matchType ? 600 : 400,
+                    color: type === matchType ? '#a04100' : '#584238',
                   }}
                 >
-                  {POST_TYPE_LABELS[t]}
+                  {t(`matchTypes.${matchType}`)}
                 </button>
               ))}
             </div>
@@ -217,7 +221,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
           <div>
             <label style={labelStyle}>
               <Users size={13} style={{ display: 'inline', marginRight: 4 }} />
-              Số lượng người cần tìm
+              {t('createPost.playersNeeded')}
             </label>
             <div className="flex items-center gap-3">
               {[1, 2, 3, 4, 5].map(n => (
@@ -239,16 +243,16 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
                 </button>
               ))}
               <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266' }}>
-                người
+                {t('createPost.players')}
               </span>
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label style={labelStyle}>Mô tả *</label>
+            <label style={labelStyle}>{t('createPost.description')}</label>
             <textarea
-              placeholder="Chia sẻ về trận đấu của bạn, phong cách chơi, yêu cầu tìm bạn chơi..."
+              placeholder={t('createPost.descriptionPlaceholder')}
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
@@ -257,7 +261,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
               onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
             />
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginTop: 4 }}>
-              {description.length}/300 ký tự
+              {t('createPost.characters', { count: description.length, max: 300 })}
             </p>
           </div>
 
@@ -275,7 +279,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
               className="flex-1 h-11 rounded-xl border border-[#dfc0b3] transition-colors hover:bg-[#fff1eb]"
               style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}
             >
-              Hủy
+              {t('common:cancel')}
             </button>
             <button
               type="submit"
@@ -290,7 +294,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
                 border: 'none',
               }}
             >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : 'Đăng bài'}
+              {loading ? <Loader2 size={16} className="animate-spin" /> : t('createPost.submit')}
             </button>
           </div>
         </form>

@@ -1,0 +1,179 @@
+{
+  "nav": {
+    "home": "Khám phá",
+    "feed": "Bảng tin",
+    "venues": "Sân",
+    "bookings": "Lịch đặt của tôi",
+    "messages": "Tin nhắn"
+  },
+  "layout": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "logoutSuccess": "Đã đăng xuất",
+    "profile": "Hồ sơ của tôi",
+    "ownerDashboard": "Quản lý sân",
+    "adminPanel": "Quản trị"
+  },
+  "fab": {
+    "title": "Tìm trận ngay",
+    "label": "Tìm trận"
+  },
+  "sports": {
+    "tennis": "Tennis",
+    "basketball": "Bóng rổ",
+    "badminton": "Cầu lông",
+    "football": "Bóng đá",
+    "pickleball": "Pickleball",
+    "volleyball": "Bóng chuyền",
+    "table_tennis": "Bóng bàn",
+    "running": "Chạy bộ",
+    "swimming": "Bơi lội",
+    "cycling": "Đạp xe",
+    "gym": "Tập gym",
+    "yoga": "Yoga",
+    "golf": "Golf",
+    "boxing": "Boxing",
+    "martial_arts": "Võ thuật",
+    "other": "Khác"
+  },
+  "locations": {
+    "District 1, Ho Chi Minh City": "Quận 1, TP. Hồ Chí Minh",
+    "District 3, Ho Chi Minh City": "Quận 3, TP. Hồ Chí Minh",
+    "District 4, Ho Chi Minh City": "Quận 4, TP. Hồ Chí Minh",
+    "District 5, Ho Chi Minh City": "Quận 5, TP. Hồ Chí Minh",
+    "District 7, Ho Chi Minh City": "Quận 7, TP. Hồ Chí Minh",
+    "District 10, Ho Chi Minh City": "Quận 10, TP. Hồ Chí Minh",
+    "Binh Thanh, Ho Chi Minh City": "Bình Thạnh, TP. Hồ Chí Minh",
+    "Phu Nhuan, Ho Chi Minh City": "Phú Nhuận, TP. Hồ Chí Minh",
+    "Tan Binh, Ho Chi Minh City": "Tân Bình, TP. Hồ Chí Minh",
+    "Go Vap, Ho Chi Minh City": "Gò Vấp, TP. Hồ Chí Minh",
+    "Thu Duc, Ho Chi Minh City": "Thủ Đức, TP. Hồ Chí Minh",
+    "Binh Chanh, Ho Chi Minh City": "Bình Chánh, TP. Hồ Chí Minh",
+    "District 2, Ho Chi Minh City": "Quận 2, TP. Hồ Chí Minh",
+    "District 6, Ho Chi Minh City": "Quận 6, TP. Hồ Chí Minh",
+    "District 8, Ho Chi Minh City": "Quận 8, TP. Hồ Chí Minh",
+    "District 11, Ho Chi Minh City": "Quận 11, TP. Hồ Chí Minh",
+    "District 12, Ho Chi Minh City": "Quận 12, TP. Hồ Chí Minh"
+  },
+  "skillLevels": {
+    "casual": {
+      "label": "Thoải mái",
+      "description": "Người mới hoặc chơi nhẹ nhàng, ưu tiên vui vẻ và nhịp độ dễ chịu."
+    },
+    "intermediate": {
+      "label": "Trung cấp",
+      "description": "Chơi thường xuyên, nắm luật và giữ được nhịp trận ổn định."
+    },
+    "competitive": {
+      "label": "Thi đấu",
+      "description": "Tập luyện nghiêm túc, muốn trận nhanh, áp lực điểm số và đối thủ mạnh."
+    }
+  },
+  "matchTypes": {
+    "opponent": "Đối thủ",
+    "teammate": "Đồng đội"
+  },
+  "form": {
+    "title": "Tìm trận",
+    "subtitle": "Chúng tôi sẽ kết nối bạn với người chơi phù hợp nhất",
+    "sport": "Môn thể thao",
+    "location": "Khu vực *",
+    "time": "Thời gian mong muốn",
+    "skill": "Trình độ",
+    "lookingFor": "Bạn đang tìm",
+    "locationRequired": "Vui lòng chọn khu vực.",
+    "submit": "Tìm trận ngay",
+    "hint": "Ghép trận dựa trên môn · trình độ · khu vực · thời gian"
+  },
+  "map": {
+    "radius": "Bán kính tìm kiếm",
+    "radiusValue": "{{count}} km",
+    "geocodingLanguage": "vi",
+    "addressPlaceholder": "Nhập địa chỉ để tìm kiếm",
+    "searchAddress": "Tìm địa chỉ",
+    "addressQueryTooShort": "Nhập ít nhất 3 ký tự để tìm địa chỉ.",
+    "noAddressResults": "Không tìm thấy địa chỉ phù hợp.",
+    "addressSearchError": "Không tìm kiếm được địa chỉ. Hãy thử lại.",
+    "useCurrentLocation": "Dùng vị trí hiện tại của tôi",
+    "geolocationUnsupported": "Trình duyệt không hỗ trợ định vị.",
+    "geolocationError": "Không lấy được vị trí hiện tại. Hãy cấp quyền vị trí cho trình duyệt rồi thử lại."
+  },
+  "searching": {
+    "statusCourts": "Đang quét các sân gần bạn",
+    "statusSkills": "Đang kiểm tra trình độ",
+    "statusTimes": "Đang khớp khung giờ",
+    "statusRadius": "Đang mở rộng khu vực tìm kiếm",
+    "waiting": "Chưa có trận phù hợp. Đang chờ người chơi khác...",
+    "title": "Đang tìm trận{{dots}}",
+    "subtitle": "Đang tìm người chơi {{skill}} môn {{sport}} gần {{location}}",
+    "cancel": "Hủy tìm kiếm"
+  },
+  "matched": {
+    "imageAlt": "Đã tìm thấy trận",
+    "title": "Đã tìm thấy trận!",
+    "subtitleLine1": "Chuẩn bị vào trận thôi.",
+    "subtitleLine2": "Bạn đã được ghép trận.",
+    "confirmed": "Đã xác nhận",
+    "matches": "{{count}} trận",
+    "rateTitle": "Đánh giá người chơi này",
+    "starTitle": "{{count}} sao",
+    "submitRating": "Gửi",
+    "savingRating": "Đang lưu...",
+    "ratingSuccess": "Đã gửi đánh giá. Cảm ơn phản hồi của bạn.",
+    "goToChat": "Vào phòng chat",
+    "viewDetails": "Xem chi tiết trận",
+    "safeVerified": "Trận đấu an toàn đã xác minh"
+  },
+  "time": {
+    "today": "Hôm nay, {{time}}",
+    "scheduled": "Đã lên lịch"
+  },
+  "fallback": {
+    "opponent": "Đối thủ"
+  },
+  "discover": {
+    "title": "Khám phá",
+    "subtitle": "Tìm người chơi, đăng trận và kết nối với đồng đội",
+    "createPost": "Tạo bài đăng",
+    "searchPlaceholder": "Tìm môn, khu vực, người chơi...",
+    "emptyTitle": "Không tìm thấy bài đăng",
+    "emptySubtitle": "Thử đổi bộ lọc hoặc là người đầu tiên đăng trận!",
+    "postsFound": "Tìm thấy {{count}} bài đăng",
+    "filters": {
+      "allSports": "Tất cả môn",
+      "allLevels": "Tất cả trình độ",
+      "allTypes": "Đồng đội & đối thủ",
+      "teammate": "Tìm đồng đội",
+      "opponent": "Tìm đối thủ"
+    }
+  },
+  "createPost": {
+    "title": "Tạo bài tìm trận",
+    "dateTime": "Ngày & giờ *",
+    "playersNeeded": "Số người cần thêm",
+    "players": "người chơi",
+    "description": "Mô tả *",
+    "descriptionPlaceholder": "Chia sẻ về trận đấu, phong cách chơi và người bạn đang tìm...",
+    "characters": "{{count}}/{{max}} ký tự",
+    "submit": "Đăng trận",
+    "validation": {
+      "required": "Vui lòng điền đầy đủ các trường bắt buộc.",
+      "failed": "Không thể tạo bài đăng."
+    }
+  },
+  "postCard": {
+    "posts": "{{count}} bài",
+    "players": "người chơi",
+    "spotsLeft": "còn {{count}} chỗ",
+    "contactNow": "Liên hệ ngay"
+  },
+  "timeAgo": {
+    "now": "Vừa xong",
+    "minutes": "{{count}} phút trước",
+    "hours": "{{count}} giờ trước",
+    "days": "{{count}} ngày trước"
+  },
+  "profile": {
+    "playerRating": "Đánh giá người chơi"
+  }
+}

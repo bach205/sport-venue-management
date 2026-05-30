@@ -1,4 +1,5 @@
 import { io, type Socket } from "socket.io-client";
+import { getToken } from "@/features/auth/store/authStore";
 
 const normalizeSocketUrl = (apiBaseUrl?: string) => {
   if (!apiBaseUrl) {
@@ -18,7 +19,7 @@ const socket: Socket = io(socketUrl, {
 
 export const connectSocket = (): Socket => {
   if (!socket.connected) {
-    const token = localStorage.getItem("accessToken");
+    const token = getToken();
     socket.auth = token ? { token } : {};
     socket.connect();
   }
@@ -30,6 +31,16 @@ export const disconnectSocket = (): void => {
   if (socket.connected) {
     socket.disconnect();
   }
+};
+
+export const joinUserRoom = (userId: string): void => {
+  if (!userId) return;
+
+  connectSocket();
+  socket.emit("user:join", {
+    userId,
+    token: getToken(),
+  });
 };
 
 export { socket };

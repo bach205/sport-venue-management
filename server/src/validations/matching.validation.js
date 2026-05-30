@@ -8,6 +8,8 @@ const MATCH_TYPES = ["teammate", "opponent"];
 const TIME_TYPES = ["fixed", "flexible"];
 const DISCOVER_STATUSES = ["open", "closed", "cancelled"];
 const MAX_CONTENT_LENGTH = 2000;
+const MIN_RADIUS_KM = 1;
+const MAX_RADIUS_KM = 50;
 
 const validateObjectIdParam = (value, fieldLabel = "Resource") => {
   const errors = [];
@@ -88,6 +90,27 @@ const validateBaseMatchingPayload = (payload = {}, options = {}) => {
 
   if (!payload.location || String(payload.location).trim() === "") {
     errors.push("Location is required.");
+  }
+
+  const hasLat = payload.location_lat !== undefined && payload.location_lat !== null && payload.location_lat !== "";
+  const hasLng = payload.location_lng !== undefined && payload.location_lng !== null && payload.location_lng !== "";
+
+  if (hasLat || hasLng) {
+    const lat = Number(payload.location_lat);
+    const lng = Number(payload.location_lng);
+
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      errors.push("Location latitude must be a valid number between -90 and 90.");
+    }
+
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
+      errors.push("Location longitude must be a valid number between -180 and 180.");
+    }
+
+    const radiusKm = payload.search_radius_km === undefined ? 5 : Number(payload.search_radius_km);
+    if (!Number.isFinite(radiusKm) || radiusKm < MIN_RADIUS_KM || radiusKm > MAX_RADIUS_KM) {
+      errors.push(`Search radius must be between ${MIN_RADIUS_KM} and ${MAX_RADIUS_KM} kilometers.`);
+    }
   }
 
   // validateFutureDate(payload.time, "Time", errors);
@@ -210,6 +233,21 @@ const validateDiscoverListQuery = (query = {}) => {
   };
 };
 
+const validateCreateMatchRatingPayload = (payload = {}) => {
+  const errors = [];
+  const rating = Number(payload.rating);
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    errors.push("Rating must be an integer from 1 to 5.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    value: { rating },
+  };
+};
+
 module.exports = {
   validateObjectIdParam,
   validatePaginationQuery,
@@ -217,4 +255,5 @@ module.exports = {
   validateCreateDiscoverPostPayload,
   validateUpdateDiscoverPostPayload,
   validateDiscoverListQuery,
+  validateCreateMatchRatingPayload,
 };

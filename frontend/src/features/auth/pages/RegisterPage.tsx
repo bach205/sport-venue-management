@@ -50,9 +50,9 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       imageUrl={SPORT_IMAGE}
-      imageAlt="Hành động của người chơi thể thao"
-      quote="Tham gia cùng hàng ngàn người chơi tìm trận đấu mỗi ngày."
-      quoteAuthor="Cộng đồng Matchill"
+      imageAlt="Sport player action"
+      quote="Join thousands of players finding matches every day."
+      quoteAuthor="Matchill Players"
     >
       <MatchillLogo />
 

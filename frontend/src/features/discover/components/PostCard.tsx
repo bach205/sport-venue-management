@@ -1,26 +1,13 @@
 import React from "react";
 import { MapPin, Clock, Users, Star, MessageCircle } from "lucide-react";
-import type { DiscoverPost, Sport, SkillLevel, PostType } from "../types/discover.types";
+import type { DiscoverPost, SkillLevel, PostType } from "../types/discover.types";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
+import { SPORT_ICON_BY_VALUE, SPORT_LABEL_BY_VALUE } from "@/shared/constants/matchOptions";
+import { useTranslation } from "react-i18next";
 
-const SPORT_EMOJI: Record<Sport, string> = {
-  tennis: "🎾",
-  basketball: "🏀",
-  badminton: "🏸",
-  football: "⚽",
-  pickleball: "🏓",
-  volleyball: "🏐",
-};
-
-const SPORT_LABEL: Record<Sport, string> = {
-  tennis: "Tennis",
-  basketball: "Bóng rổ",
-  badminton: "Cầu lông",
-  football: "Bóng đá",
-  pickleball: "Pickleball",
-  volleyball: "Bóng chuyền",
-};
+const SPORT_EMOJI = SPORT_ICON_BY_VALUE;
+const SPORT_LABEL = SPORT_LABEL_BY_VALUE;
 
 const SKILL_CONFIG: Record<SkillLevel, { label: string; bg: string; color: string }> = {
   casual: { label: "Giải trí", bg: "#e6f9f5", color: "#006a65" },
@@ -41,12 +28,12 @@ function formatTime(iso: string) {
   return `${dayName}, ${time}`;
 }
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, t: (key: string, options?: any) => string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return "Vừa xong";
-  if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
-  return `${Math.floor(diff / 86400)} ngày trước`;
+  if (diff < 60) return t("timeAgo.now");
+  if (diff < 3600) return t("timeAgo.minutes", { count: Math.floor(diff / 60) });
+  if (diff < 86400) return t("timeAgo.hours", { count: Math.floor(diff / 3600) });
+  return t("timeAgo.days", { count: Math.floor(diff / 86400) });
 }
 
 interface PostCardProps {
@@ -55,6 +42,7 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onContactNow }: PostCardProps) {
+  const { t } = useTranslation("matching");
   const skill = SKILL_CONFIG[post.skillLevel];
   const type = TYPE_CONFIG[post.type];
   const spotsLeft = post.playersNeeded - (post.currentPlayers - 1);
@@ -110,13 +98,13 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
                 <span
                   style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}
                 >
-                  {post.author.rating} · {post.author.postsCount} bài đăng
+                  {post.author.rating} · {t("postCard.posts", { count: post.author.postsCount })}
                 </span>
               </div>
             </div>
           </div>
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>
-            {timeAgo(post.createdAt)}
+            {timeAgo(post.createdAt, t)}
           </span>
         </div>
 
@@ -133,7 +121,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
             }}
           >
             <span>{SPORT_EMOJI[post.sport]}</span>
-            {SPORT_LABEL[post.sport]}
+            {t(`sports.${post.sport}`, SPORT_LABEL[post.sport])}
           </span>
           <span
             className="px-2.5 py-1 rounded-full"
@@ -145,7 +133,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
               fontWeight: 600,
             }}
           >
-            {skill.label}
+            {t(`skillLevels.${post.skillLevel}.label`, skill.label)}
           </span>
           <span
             className="px-2.5 py-1 rounded-full"
@@ -157,7 +145,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
               fontWeight: 600,
             }}
           >
-            {type.label}
+            {t(`matchTypes.${post.type}`, type.label)}
           </span>
         </div>
 
@@ -192,9 +180,9 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
             <Users size={14} color="#8b7266" />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238" }}>
               {post.currentPlayers}/{post.currentPlayers + post.playersNeeded - 1 + spotsLeft}{" "}
-              người chơi ·{" "}
+              {t("postCard.players")} ·{" "}
               <span style={{ color: spotsLeft <= 1 ? "#ba1a1a" : "#006a65", fontWeight: 600 }}>
-                Còn {spotsLeft} chỗ trống
+                {t("postCard.spotsLeft", { count: spotsLeft })}
               </span>
             </span>
           </div>
@@ -216,7 +204,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
           }}
         >
           <MessageCircle size={16} />
-          Liên hệ ngay
+          {t("postCard.contactNow")}
         </button>
       </div>
     </div>

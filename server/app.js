@@ -11,7 +11,8 @@ const app = express();
 const allowedOrigins = [
     "https://matchill.io.vn",
     "https://www.matchill.io.vn",
-    "http://localhost:5173",
+    "http://localhost:9010",
+    "http://127.0.0.1:9010",
 ];
 
 const corsOptions = {

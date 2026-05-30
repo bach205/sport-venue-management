@@ -6,6 +6,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const i18nNamespaces = [
   "common",
   "auth",
+  "matching",
   "notifications",
   "feedback",
   "complaints",
@@ -18,6 +19,7 @@ type I18nNamespace = (typeof i18nNamespaces)[number];
 const namespacePaths: Record<I18nNamespace, string> = {
   common: "common",
   auth: "features/auth",
+  matching: "features/matching",
   notifications: "features/customer-care/notifications",
   feedback: "features/customer-care/feedback",
   complaints: "features/customer-care/complaints",

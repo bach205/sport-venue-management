@@ -1,4 +1,5 @@
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import React from 'react';
 
 interface AuthLayoutProps {
@@ -20,6 +21,7 @@ export function MatchillLogo() {
 export function AuthLayout({ children, imageUrl, quote, quoteAuthor }: AuthLayoutProps) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 gradient-auth-bg relative">
+      <LanguageSwitcher className="absolute right-4 top-4 z-10 rounded-xl bg-white/90 px-2 py-1 shadow" />
       <div className="absolute top-0 left-0 w-80 h-80 rounded-full opacity-30 pointer-events-none"
         style={{ background: 'radial-gradient(circle, #ffb693 0%, transparent 70%)', transform: 'translate(-30%, -30%)' }} />
 

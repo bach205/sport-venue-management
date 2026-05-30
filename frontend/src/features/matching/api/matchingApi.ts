@@ -2,15 +2,8 @@
  * Real-Time Matching API
  *
  * Routes:
- *   POST /api/matching/request
- *     Request:  { sport, location, date, time, skillLevel, type }
- *     Response: { success: true, data: { requestId: string } }
- *
- *   GET  /api/matching/request/:requestId/status
- *     Response: { success: true, data: { status: 'searching'|'matched'|'expired', result?: MatchResult } }
- *
- *   DELETE /api/matching/request/:requestId
- *     Response: { success: true, message: string }
+ *   POST  /api/v1/matching/requests
+ *   PATCH /api/v1/matching/requests/:requestId/cancel
  */
 
 import axios from 'axios';
@@ -67,7 +60,7 @@ const MOCK_VENUES: Record<string, string[]> = {
 
 export async function submitMatchRequest(
   req: MatchRequest
-): Promise<{ success: boolean; requestId: string }> {
+): Promise<any> {
   // if (isMockApi) {
   //   await delay(300);
   //   return { success: true, requestId: `req-${Date.now()}` };
@@ -77,6 +70,9 @@ export async function submitMatchRequest(
   const payload = {
     sport: req.sport,
     location: req.location,
+    location_lat: req.locationLat,
+    location_lng: req.locationLng,
+    search_radius_km: req.searchRadiusKm,
     time,
     time_type: 'fixed',
     skill_level: req.skillLevel,
@@ -87,6 +83,40 @@ export async function submitMatchRequest(
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
   return res.data;
+}
+
+export async function cancelMatchRequest(requestId: string): Promise<void> {
+  const token = getToken();
+  await axios.patch(
+    `${API_BASE_URL}/matching/requests/${requestId}/cancel`,
+    {},
+    { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+  );
+}
+
+export async function submitMatchRating(
+  matchId: string,
+  rating: number
+): Promise<{ success: boolean; message: string; data?: any }> {
+  if (isMockApi) {
+    await delay(250);
+    return { success: true, message: 'Thanks for rating this match.' };
+  }
+
+  try {
+    const token = getToken();
+    const res = await axios.post(
+      `${API_BASE_URL}/matching/matches/${matchId}/rating`,
+      { rating },
+      { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+    );
+    return { success: true, message: res.data.message, data: res.data.data };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.response?.data?.message || 'Failed to submit rating.',
+    };
+  }
 }
 
 export async function simulateMatchSearch(
@@ -112,6 +142,7 @@ export async function simulateMatchSearch(
     : `Hôm nay, ${today.getHours()}:${String(today.getMinutes()).padStart(2, '0')}`;
 
   return {
+    matchId: `match-${Date.now()}`,
     requestId: `req-${Date.now()}`,
     sport: req.sport,
     skillLevel: req.skillLevel,

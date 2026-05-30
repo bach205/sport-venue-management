@@ -1,0 +1,179 @@
+{
+  "nav": {
+    "home": "Discover",
+    "feed": "Feed",
+    "venues": "Venues",
+    "bookings": "My Bookings",
+    "messages": "Messages"
+  },
+  "layout": {
+    "login": "Log in",
+    "logout": "Log out",
+    "logoutSuccess": "Logged out",
+    "profile": "My Profile",
+    "ownerDashboard": "Owner Dashboard",
+    "adminPanel": "Admin Panel"
+  },
+  "fab": {
+    "title": "Find a Match Now",
+    "label": "Find Match"
+  },
+  "sports": {
+    "tennis": "Tennis",
+    "basketball": "Basketball",
+    "badminton": "Badminton",
+    "football": "Football",
+    "pickleball": "Pickleball",
+    "volleyball": "Volleyball",
+    "table_tennis": "Table Tennis",
+    "running": "Running",
+    "swimming": "Swimming",
+    "cycling": "Cycling",
+    "gym": "Gym",
+    "yoga": "Yoga",
+    "golf": "Golf",
+    "boxing": "Boxing",
+    "martial_arts": "Martial Arts",
+    "other": "Other"
+  },
+  "locations": {
+    "District 1, Ho Chi Minh City": "District 1, Ho Chi Minh City",
+    "District 3, Ho Chi Minh City": "District 3, Ho Chi Minh City",
+    "District 4, Ho Chi Minh City": "District 4, Ho Chi Minh City",
+    "District 5, Ho Chi Minh City": "District 5, Ho Chi Minh City",
+    "District 7, Ho Chi Minh City": "District 7, Ho Chi Minh City",
+    "District 10, Ho Chi Minh City": "District 10, Ho Chi Minh City",
+    "Binh Thanh, Ho Chi Minh City": "Binh Thanh, Ho Chi Minh City",
+    "Phu Nhuan, Ho Chi Minh City": "Phu Nhuan, Ho Chi Minh City",
+    "Tan Binh, Ho Chi Minh City": "Tan Binh, Ho Chi Minh City",
+    "Go Vap, Ho Chi Minh City": "Go Vap, Ho Chi Minh City",
+    "Thu Duc, Ho Chi Minh City": "Thu Duc, Ho Chi Minh City",
+    "Binh Chanh, Ho Chi Minh City": "Binh Chanh, Ho Chi Minh City",
+    "District 2, Ho Chi Minh City": "District 2, Ho Chi Minh City",
+    "District 6, Ho Chi Minh City": "District 6, Ho Chi Minh City",
+    "District 8, Ho Chi Minh City": "District 8, Ho Chi Minh City",
+    "District 11, Ho Chi Minh City": "District 11, Ho Chi Minh City",
+    "District 12, Ho Chi Minh City": "District 12, Ho Chi Minh City"
+  },
+  "skillLevels": {
+    "casual": {
+      "label": "Casual",
+      "description": "New or relaxed player, prioritizes fun and light pace."
+    },
+    "intermediate": {
+      "label": "Intermediate",
+      "description": "Plays regularly, knows the rules, and can keep a stable game rhythm."
+    },
+    "competitive": {
+      "label": "Competitive",
+      "description": "Trains seriously, wants high tempo, scoring pressure, and strong opponents."
+    }
+  },
+  "matchTypes": {
+    "opponent": "Opponent",
+    "teammate": "Teammate"
+  },
+  "form": {
+    "title": "Find a Match",
+    "subtitle": "We'll instantly connect you with the best player",
+    "sport": "Sport",
+    "location": "Location *",
+    "time": "Preferred Time",
+    "skill": "Skill Level",
+    "lookingFor": "Looking for",
+    "locationRequired": "Please select your location.",
+    "submit": "Find Match Now",
+    "hint": "Matches based on sport · skill · location · time"
+  },
+  "map": {
+    "radius": "Search radius",
+    "radiusValue": "{{count}} km",
+    "geocodingLanguage": "en",
+    "addressPlaceholder": "Enter an address to search",
+    "searchAddress": "Search address",
+    "addressQueryTooShort": "Enter at least 3 characters to search for an address.",
+    "noAddressResults": "No matching address found.",
+    "addressSearchError": "Could not search for that address. Try again.",
+    "useCurrentLocation": "Use my current location",
+    "geolocationUnsupported": "Your browser does not support geolocation.",
+    "geolocationError": "Could not get your current location. Allow browser location access and try again."
+  },
+  "searching": {
+    "statusCourts": "Scanning nearby courts",
+    "statusSkills": "Checking skill levels",
+    "statusTimes": "Matching time slots",
+    "statusRadius": "Expanding search radius",
+    "waiting": "No match yet. Waiting for another player...",
+    "title": "Finding your match{{dots}}",
+    "subtitle": "Scanning {{skill}} {{sport}} players near {{location}}",
+    "cancel": "Cancel Search"
+  },
+  "matched": {
+    "imageAlt": "Match Found",
+    "title": "Match Found!",
+    "subtitleLine1": "Get ready for some serious action.",
+    "subtitleLine2": "You've been matched.",
+    "confirmed": "Confirmed",
+    "matches": "{{count}} matches",
+    "rateTitle": "Rate this match partner",
+    "starTitle": "{{count}} star",
+    "submitRating": "Submit",
+    "savingRating": "Saving...",
+    "ratingSuccess": "Rating submitted. Thanks for the feedback.",
+    "goToChat": "Go to chat room",
+    "viewDetails": "View match details",
+    "safeVerified": "Safe Match Verified"
+  },
+  "time": {
+    "today": "Today, {{time}}",
+    "scheduled": "Scheduled"
+  },
+  "fallback": {
+    "opponent": "Opponent"
+  },
+  "discover": {
+    "title": "Discover",
+    "subtitle": "Find players, post your game, connect with teammates",
+    "createPost": "Create Post",
+    "searchPlaceholder": "Search sport, location, player...",
+    "emptyTitle": "No posts found",
+    "emptySubtitle": "Try adjusting your filters or be the first to post!",
+    "postsFound": "{{count}} posts found",
+    "filters": {
+      "allSports": "All Sports",
+      "allLevels": "All Levels",
+      "allTypes": "Teammate & Opponent",
+      "teammate": "Looking for Teammate",
+      "opponent": "Looking for Opponent"
+    }
+  },
+  "createPost": {
+    "title": "Create Match Post",
+    "dateTime": "Date & Time *",
+    "playersNeeded": "Players Needed",
+    "players": "players",
+    "description": "Description *",
+    "descriptionPlaceholder": "Tell others about your game, your play style, what you're looking for...",
+    "characters": "{{count}}/{{max}} characters",
+    "submit": "Post Match",
+    "validation": {
+      "required": "Please fill in all required fields.",
+      "failed": "Failed to create post."
+    }
+  },
+  "postCard": {
+    "posts": "{{count}} posts",
+    "players": "players",
+    "spotsLeft": "{{count}} spots left",
+    "contactNow": "Contact Now"
+  },
+  "timeAgo": {
+    "now": "Just now",
+    "minutes": "{{count}}m ago",
+    "hours": "{{count}}h ago",
+    "days": "{{count}}d ago"
+  },
+  "profile": {
+    "playerRating": "Player Rating"
+  }
+}
