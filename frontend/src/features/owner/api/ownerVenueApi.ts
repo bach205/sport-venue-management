@@ -157,12 +157,12 @@ export async function fetchOwnerVenueBookings(venueId: string, params?: { date?:
   return res.data.data;
 }
 
-export async function fetchOwnerRefundRequests(venueId: string, params?: { status?: string }) {
-  const res = await api.get<{ message: string; data: { items: OwnerRefundRequest[] } }>(
+export async function fetchOwnerRefundRequests(venueId: string, params?: { status?: string; page?: number; limit?: number }) {
+  const res = await api.get<{ message: string; data: { items: OwnerRefundRequest[]; pagination?: { page: number; limit: number; total: number; pages: number } } }>(
     `/my-venues/${venueId}/refund-requests`,
     { params }
   );
-  return res.data.data.items;
+  return res.data.data;
 }
 
 export async function resolveOwnerRefund(refundId: string, payload: { action: "approve" | "reject"; note?: string }) {

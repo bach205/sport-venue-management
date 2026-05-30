@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Settings2,
   ClipboardList,
+  BadgeDollarSign,
   ChevronLeft,
   ChevronRight,
   LockOpen,
@@ -15,11 +16,14 @@ import {
   Loader2,
   AlertTriangle,
   MapPin,
+  Mail,
+  MessageSquareText,
   Users,
   Save,
   Trash2,
   Sparkles,
   Wallet,
+  RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,13 +44,17 @@ import {
   type UpdateVenuePayload,
 } from "@/features/owner/api/ownerVenueApi";
 import { Button } from "@/shared/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { Textarea } from "@/shared/components/ui/textarea";
 import { uploadImage } from "@/shared/api/uploadApi";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 
-type Tab = "bookings" | "schedule" | "settings";
+type Tab = "bookings" | "refunds" | "schedule" | "settings";
 type SlotAction = "unavailable" | "open";
+type RefundFilter = "all" | "pending_manual" | "approved" | "rejected" | "completed";
+type RefundAction = "approve" | "reject";
 
 type SettingsForm = {
   name: string;
@@ -208,6 +216,187 @@ function BookingCard({
         </div>
       )}
     </div>
+  );
+}
+
+function RefundStatusChip({ status }: { status: string }) {
+  const { t } = useTranslation("matching");
+  const map: Record<string, { bg: string; color: string }> = {
+    pending_manual: { bg: "#fff3cd", color: "#856404" },
+    approved: { bg: "#e8f4ff", color: "#1a5fb4" },
+    rejected: { bg: "#fdecea", color: "#ba1a1a" },
+    completed: { bg: "#e7f8f7", color: "#006a65" },
+    pending_auto: { bg: "#fff3cd", color: "#856404" },
+  };
+  const item = map[status] ?? { bg: "#f4ded5", color: "#8b7266" };
+
+  return (
+    <span
+      className="rounded-full px-2.5 py-1"
+      style={{ background: item.bg, color: item.color, fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}
+    >
+      {t(`owner.manage.refundUi.statuses.${status}`, { defaultValue: status.replaceAll("_", " ") })}
+    </span>
+  );
+}
+
+interface RefundRequestCardProps {
+  refund: OwnerRefundRequest;
+  locale: string;
+  onProcess: (refund: OwnerRefundRequest, action: RefundAction) => void;
+}
+
+function RefundRequestCard({ refund, locale, onProcess }: RefundRequestCardProps) {
+  const { t } = useTranslation("matching");
+  const canProcess = refund.status === "pending_manual";
+
+  return (
+    <article className="overflow-hidden rounded-[24px] border bg-white" style={{ borderColor: "#dfc0b3", boxShadow: "0 14px 30px rgba(36,25,20,0.06)" }}>
+      <div className="border-b p-5" style={{ borderColor: "#f4ded5", background: "linear-gradient(135deg, #fffaf7 0%, #ffffff 100%)" }}>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "20px", fontWeight: 700, color: "#241914" }}>
+              #{refund.id.slice(-6).toUpperCase()}
+            </p>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266", marginTop: 4 }}>
+              {new Date(refund.createdAt).toLocaleString(locale)}
+            </p>
+          </div>
+          <RefundStatusChip status={refund.status} />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl p-3" style={{ background: "#fff1eb" }}>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {t("owner.manage.refundUi.requester")}
+            </p>
+            <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>
+              {refund.requester?.name || t("owner.manage.refundUi.unknown")}
+            </p>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238", marginTop: 4 }}>
+              {refund.requester?.email || t("owner.manage.refundUi.noEmail")}
+            </p>
+          </div>
+
+          <div className="rounded-2xl p-3" style={{ background: "#eefbf7" }}>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {t("owner.manage.refundUi.booking")}
+            </p>
+            <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>
+              #{refund.booking?.id.slice(-6).toUpperCase() || t("owner.manage.refundUi.notAvailable")}
+            </p>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238", marginTop: 4 }}>
+              {refund.booking?.status || t("owner.manage.refundUi.unknown")}
+            </p>
+          </div>
+
+          <div className="rounded-2xl p-3" style={{ background: "#f3f7ff" }}>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              {t("owner.manage.refundUi.payment")}
+            </p>
+            <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>
+              {refund.payment ? formatPrice(refund.payment.amount, locale) : t("owner.manage.refundUi.notAvailable")}
+            </p>
+            <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238", marginTop: 4 }}>
+              {refund.payment?.status || t("owner.manage.refundUi.unknown")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-5">
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-3">
+            <div className="rounded-2xl border p-4" style={{ borderColor: "#f4ded5", background: "#fff" }}>
+              <div className="mb-3 flex items-center gap-2">
+                <MessageSquareText size={14} style={{ color: "#a04100" }} />
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700, color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  {t("owner.manage.refundUi.ownerNote", { defaultValue: "Owner note" })}
+                </p>
+              </div>
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#241914", lineHeight: 1.7 }}>
+                {refund.note || t("owner.manage.refundUi.noNote", { defaultValue: "No note attached to this refund request." })}
+              </p>
+            </div>
+
+            {refund.booking && (
+              <div className="rounded-2xl border p-4" style={{ borderColor: "#f4ded5", background: "#fffaf7" }}>
+                <div className="mb-3 flex items-center gap-2">
+                  <CalendarDays size={14} style={{ color: "#006a65" }} />
+                  <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700, color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    {t("owner.manage.refundUi.bookingSlots", { defaultValue: "Booking slots" })}
+                  </p>
+                </div>
+                <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>
+                  {formatDate(refund.booking.slot.date, locale)}
+                </p>
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", marginTop: 4 }}>
+                  {refund.booking.slots?.length
+                    ? refund.booking.slots.map((slot) => `${slot.startTime}-${slot.endTime}`).join(", ")
+                    : `${refund.booking.slot.startTime}-${refund.booking.slot.endTime}`}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border p-4" style={{ borderColor: "#dfc0b3", background: "linear-gradient(180deg, #fff1eb 0%, #ffffff 100%)" }}>
+              <div className="mb-4 flex items-center gap-2">
+                <BadgeDollarSign size={16} style={{ color: "#a04100" }} />
+                <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "16px", fontWeight: 700, color: "#241914" }}>
+                  {t("owner.manage.refundUi.refundAction", { defaultValue: "Refund action" })}
+                </p>
+              </div>
+
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: canProcess ? "#fff3cd" : "#eefbf7", color: canProcess ? "#856404" : "#006a65" }}>
+                <RefreshCcw size={12} />
+                <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 700 }}>
+                  {canProcess
+                    ? t("owner.manage.refundUi.pendingDecision", { defaultValue: "Pending owner decision" })
+                    : t("owner.manage.refundUi.alreadyProcessed", { defaultValue: "Already processed" })}
+                </span>
+              </div>
+
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", lineHeight: 1.7 }}>
+                {canProcess
+                  ? t("owner.manage.refundUi.pendingHelp", { defaultValue: "Review the reason, then approve to complete the refund and reopen the slot automatically, or reject to keep the booking confirmed." })
+                  : t("owner.manage.refundUi.processedHelp", { defaultValue: "This request is no longer actionable. Its final state is shown above for audit purposes." })}
+              </p>
+
+              <div className="space-y-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => onProcess(refund, "approve")}
+                  disabled={!canProcess}
+                  className="h-11 w-full rounded-xl border-0"
+                  style={{ background: canProcess ? "linear-gradient(90deg,#a04100,#ff7e36)" : "#dfc0b3", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}
+                >
+                  <CheckCircle2 size={16} />
+                  {t("owner.manage.refundUi.approve", { defaultValue: "Approve refund" })}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onProcess(refund, "reject")}
+                  disabled={!canProcess}
+                  className="h-11 w-full rounded-xl border-[#f0c5c5] bg-white text-[#ba1a1a] hover:bg-[#fff3f3]"
+                  style={{ fontFamily: "Inter, sans-serif", fontWeight: 700 }}
+                >
+                  <XCircle size={16} />
+                  {t("owner.manage.refundUi.reject", { defaultValue: "Reject refund" })}
+                </Button>
+              </div>
+
+              {refund.processedAt && (
+                <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>
+                  {t("owner.manage.refundUi.processedAt", { defaultValue: "Processed at {{date}}", date: new Date(refund.processedAt).toLocaleString(locale) })}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -479,6 +668,11 @@ export default function VenueManagePage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [dayIdx, setDayIdx] = useState(0);
   const [bookingDateFilter, setBookingDateFilter] = useState("");
+  const [refundStatusFilter, setRefundStatusFilter] = useState<RefundFilter>("all");
+  const [activeRefund, setActiveRefund] = useState<OwnerRefundRequest | null>(null);
+  const [refundAction, setRefundAction] = useState<RefundAction>("approve");
+  const [refundDecisionNote, setRefundDecisionNote] = useState("");
+  const [processingRefund, setProcessingRefund] = useState(false);
   const dateTabs = Array.from({ length: 7 }, (_, i) => addDays(addDays(today, weekOffset * 7), i));
   const selectedDateStr = toISO(dateTabs[dayIdx]);
 
@@ -498,10 +692,10 @@ export default function VenueManagePage() {
     if (!venueId) return;
     const [bookingData, refundData] = await Promise.all([
       fetchOwnerVenueBookings(venueId, bookingDateFilter ? { date: bookingDateFilter } : undefined),
-      fetchOwnerRefundRequests(venueId, { status: "pending_manual" }),
+      fetchOwnerRefundRequests(venueId),
     ]);
     setBookings(bookingData.items);
-    setRefundRequests(refundData);
+    setRefundRequests(refundData.items);
   }, [venueId, bookingDateFilter]);
 
   const loadSlots = useCallback(async () => {
@@ -609,12 +803,20 @@ export default function VenueManagePage() {
 
   const handleResolveRefund = async (refund: OwnerRefundRequest, action: "approve" | "reject") => {
     try {
-      await resolveOwnerRefund(refund.id, { action });
+      setProcessingRefund(true);
+      await resolveOwnerRefund(refund.id, {
+        action,
+        note: refundDecisionNote.trim() || undefined,
+      });
       await loadBookingsAndRefunds();
       await loadSlots();
+      setActiveRefund(null);
+      setRefundDecisionNote("");
       toast.success(action === "approve" ? t("owner.manage.refundApproved") : t("owner.manage.refundRejected"));
     } catch (error: any) {
       toast.error(error?.response?.data?.message || t("owner.manage.refundError"));
+    } finally {
+      setProcessingRefund(false);
     }
   };
 
@@ -627,9 +829,14 @@ export default function VenueManagePage() {
   }, [bookings, refundRequests]);
 
   const refundMap = useMemo(() => new Map(refundRequests.map((refund) => [refund.bookingId, refund])), [refundRequests]);
+  const filteredRefundRequests = useMemo(
+    () => refundRequests.filter((refund) => refundStatusFilter === "all" || refund.status === refundStatusFilter),
+    [refundRequests, refundStatusFilter]
+  );
 
   const tabs = [
     { id: "bookings" as Tab, icon: <ClipboardList size={16} />, label: t("owner.manage.tabs.bookings", { defaultValue: "Bookings ({{count}})", count: bookings.length }) },
+    { id: "refunds" as Tab, icon: <RefreshCcw size={16} />, label: t("owner.manage.tabs.refunds", { defaultValue: "Refunds ({{count}})", count: refundRequests.length }) },
     { id: "schedule" as Tab, icon: <CalendarDays size={16} />, label: t("owner.manage.tabs.schedule") },
     { id: "settings" as Tab, icon: <Settings2 size={16} />, label: t("owner.manage.tabs.settings") },
   ];
@@ -815,6 +1022,82 @@ export default function VenueManagePage() {
               </div>
             )}
 
+            {tab === "refunds" && (
+              <div className="space-y-5">
+                <div className="rounded-[24px] border bg-white p-5" style={{ borderColor: "#dfc0b3", boxShadow: "0 14px 30px rgba(36,25,20,0.06)" }}>
+                  <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                      <div className="mb-2 inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "#dfc0b3", background: "#fff1eb" }}>
+                        <RefreshCcw size={14} className="text-[#a04100]" />
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 700, color: "#a04100", letterSpacing: "0.18em", textTransform: "uppercase" }}>
+                          {t("owner.manage.refundUi.badge", { defaultValue: "Refund Desk" })}
+                        </span>
+                      </div>
+                      <h3 style={{ fontFamily: "Lexend, sans-serif", fontSize: "22px", fontWeight: 700, color: "#241914" }}>
+                        {t("owner.manage.refundUi.title", { defaultValue: "Owner refund processing" })}
+                      </h3>
+                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#8b7266", marginTop: 6, lineHeight: 1.7 }}>
+                        {t("owner.manage.refundUi.subtitle", { defaultValue: "Review manual refund requests, inspect booking and payment state, then approve or reject directly from this venue detail page." })}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: "all" as RefundFilter, label: t("owner.manage.refundUi.filters.all", { defaultValue: "All ({{count}})", count: refundRequests.length }) },
+                        { id: "pending_manual" as RefundFilter, label: t("owner.manage.refundUi.filters.pending", { defaultValue: "Pending ({{count}})", count: refundRequests.filter((refund) => refund.status === "pending_manual").length }) },
+                        { id: "completed" as RefundFilter, label: t("owner.manage.refundUi.filters.completed", { defaultValue: "Completed ({{count}})", count: refundRequests.filter((refund) => refund.status === "completed").length }) },
+                        { id: "rejected" as RefundFilter, label: t("owner.manage.refundUi.filters.rejected", { defaultValue: "Rejected ({{count}})", count: refundRequests.filter((refund) => refund.status === "rejected").length }) },
+                      ].map((item) => {
+                        const active = refundStatusFilter === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setRefundStatusFilter(item.id)}
+                            className="rounded-full px-3 py-2"
+                            style={{
+                              background: active ? "#a04100" : "#fff",
+                              color: active ? "#fff" : "#584238",
+                              border: `1.5px solid ${active ? "#a04100" : "#dfc0b3"}`,
+                              fontFamily: "Inter, sans-serif",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {filteredRefundRequests.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-[24px] border border-dashed bg-white py-16" style={{ borderColor: "#dfc0b3" }}>
+                    <RefreshCcw size={44} style={{ color: "#dfc0b3", marginBottom: 12 }} />
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", color: "#584238" }}>
+                      {t("owner.manage.refundUi.empty", { defaultValue: "No refund requests match this filter." })}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-5">
+                    {filteredRefundRequests.map((refund) => (
+                      <RefundRequestCard
+                        key={refund.id}
+                        refund={refund}
+                        locale={locale}
+                        onProcess={(item, action) => {
+                          setActiveRefund(item);
+                          setRefundAction(action);
+                          setRefundDecisionNote(item.note || "");
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {tab === "settings" && (
               <SettingsTab
                 form={settingsForm}
@@ -838,6 +1121,99 @@ export default function VenueManagePage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={Boolean(activeRefund)} onOpenChange={(open) => {
+        if (!open) {
+          setActiveRefund(null);
+          setRefundDecisionNote("");
+        }
+      }}>
+        <DialogContent className="max-w-2xl rounded-[28px] border-0 bg-white p-0">
+          {activeRefund && (
+            <>
+              <DialogHeader className="border-b px-6 py-5" style={{ borderColor: "#f4ded5", background: "linear-gradient(135deg, #fffaf7 0%, #fff1eb 100%)" }}>
+                <DialogTitle style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700, color: "#241914" }}>
+                  {refundAction === "approve"
+                    ? t("owner.manage.refundUi.dialogApproveTitle", { defaultValue: "Approve refund request" })
+                    : t("owner.manage.refundUi.dialogRejectTitle", { defaultValue: "Reject refund request" })}
+                </DialogTitle>
+                <DialogDescription style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", lineHeight: 1.7 }}>
+                  {refundAction === "approve"
+                    ? t("owner.manage.refundUi.dialogApproveDescription", { defaultValue: "Approving completes the refund flow and reopens the booked slot automatically." })
+                    : t("owner.manage.refundUi.dialogRejectDescription", { defaultValue: "Rejecting keeps the booking confirmed and marks this request as rejected." })}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-5 px-6 py-5">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-2xl p-3" style={{ background: "#fff1eb" }}>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("owner.manage.refundUi.requester", { defaultValue: "Requester" })}</p>
+                    <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>{activeRefund.requester?.name || t("owner.manage.refundUi.unknown", { defaultValue: "Unknown" })}</p>
+                    <p className="mt-1 inline-flex items-center gap-1" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>
+                      <Mail size={12} /> {activeRefund.requester?.email || t("owner.manage.noEmail")}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl p-3" style={{ background: "#eefbf7" }}>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("owner.manage.refundUi.booking", { defaultValue: "Booking" })}</p>
+                    <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>#{activeRefund.booking?.id.slice(-6).toUpperCase() || "N/A"}</p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238", marginTop: 4 }}>{activeRefund.booking?.status || t("owner.manage.refundUi.unknown", { defaultValue: "Unknown" })}</p>
+                  </div>
+                  <div className="rounded-2xl p-3" style={{ background: "#f3f7ff" }}>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("owner.manage.refundUi.payment", { defaultValue: "Payment" })}</p>
+                    <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>
+                      {activeRefund.payment ? formatPrice(activeRefund.payment.amount, locale) : "N/A"}
+                    </p>
+                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238", marginTop: 4 }}>{activeRefund.payment?.status || t("owner.manage.refundUi.unknown", { defaultValue: "Unknown" })}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="refund-note">{t("owner.manage.refundUi.ownerNote", { defaultValue: "Owner note" })}</Label>
+                  <Textarea
+                    id="refund-note"
+                    value={refundDecisionNote}
+                    onChange={(event) => setRefundDecisionNote(event.target.value)}
+                    maxLength={500}
+                    placeholder={t("owner.manage.refundUi.notePlaceholder", { defaultValue: "Add an internal note or a short explanation for the decision." })}
+                    className="min-h-[120px] rounded-2xl border-[#dfc0b3] px-4 py-3 focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
+                    style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#241914" }}
+                  />
+                  <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>
+                    {refundDecisionNote.length}/500
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-3 border-t px-6 py-4 sm:justify-between" style={{ borderColor: "#f4ded5", background: "#fffaf7" }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setActiveRefund(null);
+                    setRefundDecisionNote("");
+                  }}
+                  className="h-11 rounded-xl border-[#dfc0b3] px-5 text-[#584238] hover:bg-white"
+                  style={{ fontFamily: "Inter, sans-serif", fontWeight: 700 }}
+                >
+                  {t("owner.manage.refundUi.cancel", { defaultValue: "Cancel" })}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={processingRefund}
+                  onClick={() => handleResolveRefund(activeRefund, refundAction)}
+                  className="h-11 rounded-xl border-0 px-5"
+                  style={{ background: refundAction === "approve" ? "linear-gradient(90deg,#a04100,#ff7e36)" : "#ba1a1a", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}
+                >
+                  {processingRefund ? <Loader2 size={16} className="animate-spin" /> : refundAction === "approve" ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                  {refundAction === "approve"
+                    ? t("owner.manage.refundUi.confirmApprove", { defaultValue: "Confirm approval" })
+                    : t("owner.manage.refundUi.confirmReject", { defaultValue: "Confirm rejection" })}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
