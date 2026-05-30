@@ -14,7 +14,7 @@ import {
   Share2,
   ExternalLink,
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import type { ApiPost, ApiComment } from "../types/feed.types";
 import {
   likePost,
@@ -299,6 +299,7 @@ export function PostCard({
   onDeleted: (postId: string) => void;
 }) {
   const { t } = useTranslation("matching");
+  const navigate = useNavigate();
   const user = getCurrentUser();
   const [post, setPost] = useState(initialPost);
   const [showComments, setShowComments] = useState(false);
@@ -357,33 +358,42 @@ export function PostCard({
     }
   };
 
+  const handleUserClick = () => {
+    if (user?._id === post.author.id) return;
+    
+    navigate(
+      `/messages?with=${post.author.id}&name=${encodeURIComponent(
+        post.author.name
+      )}&avatar=${encodeURIComponent(post.author.avatarUrl || "")}`
+    );
+  };
+
   return (
     <article className="flex flex-col rounded-2xl overflow-hidden bg-white border border-[#e8e0dc] shadow-[0_1px_4px_rgba(36,25,20,0.06)]">
       {/* Header */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
-        {post.author.avatarUrl ? (
-          <img
-            src={post.author.avatarUrl}
-            alt={post.author.name}
-            className="w-10 h-10 rounded-full shrink-0 object-cover bg-brand-surface-warm"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-orange-diag font-heading">
-            {post.author.avatarUrl ? (
-              <img
-                src={post.author.avatarUrl}
-                alt={post.author.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              initials(post.author.name)
-            )}
-          </div>
-        )}
+        <button onClick={handleUserClick} className="shrink-0 outline-none cursor-pointer">
+          {post.author.avatarUrl ? (
+            <img
+              src={post.author.avatarUrl}
+              alt={post.author.name}
+              className="w-10 h-10 rounded-full object-cover bg-brand-surface-warm hover:opacity-80 transition-opacity"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white gradient-orange-diag font-heading">
+              {initials(post.author.name)}
+            </div>
+          )}
+        </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-bold text-brand-dark font-heading">{post.author.name}</p>
+              <button 
+                onClick={handleUserClick}
+                className="text-sm font-bold text-brand-dark font-heading cursor-pointer hover:opacity-80 outline-none"
+              >
+                {post.author.name}
+              </button>
               <p className="text-xs text-brand-muted mt-0.5">
                 {timeAgo(post.createdAt, t)}
                 {post.updatedAt !== post.createdAt && ` · ${t("feed.edited")}`}
