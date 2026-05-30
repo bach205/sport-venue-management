@@ -12,6 +12,7 @@ import {
 } from '../store/adminStore';
 import type { UserRole } from '../../auth/store/authStore';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 function formatPrice(n: number) { return new Intl.NumberFormat('vi-VN').format(n) + '₫'; }
 function formatDate(d: string) { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
@@ -24,10 +25,10 @@ function timeAgo(d: string) {
   return formatDate(d);
 }
 
-const ROLE_STYLE: Record<UserRole, { bg: string; color: string; label: string }> = {
-  user:  { bg: '#d0f5ee', color: '#00785e', label: 'Người chơi' },
-  owner: { bg: '#ddeeff', color: '#1a5fb4', label: 'Chủ sân' },
-  admin: { bg: '#ffd6d6', color: '#c0392b', label: 'Admin' },
+const ROLE_STYLE: Record<UserRole, { bg: string; color: string; labelKey: string }> = {
+  user:  { bg: '#d0f5ee', color: '#00785e', labelKey: 'roles.user' },
+  owner: { bg: '#ddeeff', color: '#1a5fb4', labelKey: 'roles.owner' },
+  admin: { bg: '#ffd6d6', color: '#c0392b', labelKey: 'roles.admin' },
 };
 
 const STATUS_STYLE: Record<UserStatus, { bg: string; color: string; label: string; icon: React.ReactNode }> = {
@@ -66,6 +67,7 @@ function ActionMenu({ user, onClose, onAction }: {
   onClose: () => void;
   onAction: (action: string, user: AdminUser) => void;
 }) {
+  const { t } = useTranslation('matching');
   return (
     <>
       <div className="fixed inset-0 z-30" onClick={onClose} />
@@ -88,7 +90,7 @@ function ActionMenu({ user, onClose, onAction }: {
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#fff1eb] transition-colors text-left"
               style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: ROLE_STYLE[role].color }}
             >
-              <UserCog size={14} /> Set as {ROLE_STYLE[role].label}
+              <UserCog size={14} /> Set as {t(ROLE_STYLE[role].labelKey)}
             </button>
           ))}
         </div>
@@ -133,6 +135,7 @@ function ActionMenu({ user, onClose, onAction }: {
 
 // ─── User Row ─────────────────────────────────────────────────────────────────
 function UserRow({ user, onAction }: { user: AdminUser; onAction: (action: string, user: AdminUser) => void }) {
+  const { t } = useTranslation('matching');
   const [menuOpen, setMenuOpen] = useState(false);
   const rs = ROLE_STYLE[user.role];
   const ss = STATUS_STYLE[user.status];
@@ -167,7 +170,7 @@ function UserRow({ user, onAction }: { user: AdminUser; onAction: (action: strin
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
           style={{ background: rs.bg, color: rs.color, fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 700 }}
         >
-          {rs.label}
+          {t(rs.labelKey)}
         </span>
       </td>
       {/* Status */}
@@ -273,16 +276,16 @@ function DeleteConfirmModal({ user, onConfirm, onCancel }: {
 
 // ─── Main AdminDashboard ──────────────────────────────────────────────────────
 export default function AdminDashboard() {
+  const { t } = useTranslation('matching');
   const [users, setUsers] = useState<AdminUser[]>(() => getAdminUsers());
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
-  const [actLoading, setActLoading] = useState<string | null>(null);
   const stats = getAdminStats();
 
   const refresh = useCallback(() => setUsers(getAdminUsers()), []);
-  useEffect(() => { refresh(); return subscribeAdmin(refresh); }, []);
+  useEffect(() => { refresh(); return subscribeAdmin(refresh); }, [refresh]);
 
   const filtered = users.filter(u => {
     const q = search.toLowerCase();
@@ -297,19 +300,17 @@ export default function AdminDashboard() {
   const handleAction = async (action: string, user: AdminUser) => {
     if (action === 'delete') { setDeleteTarget(user); return; }
 
-    setActLoading(user.id);
     await new Promise(r => setTimeout(r, 500));
 
     if (action.startsWith('role:')) {
       const role = action.split(':')[1] as UserRole;
       updateUserRole(user.id, role);
-      toast.success(`${user.name} → ${ROLE_STYLE[role].label}`);
+      toast.success(`${user.name} → ${t(ROLE_STYLE[role].labelKey)}`);
     } else if (action.startsWith('status:')) {
       const status = action.split(':')[1] as UserStatus;
       updateUserStatus(user.id, status);
       toast.success(`${user.name} → ${STATUS_STYLE[status].label}`);
     }
-    setActLoading(null);
   };
 
   const handleDeleteConfirm = () => {
@@ -414,8 +415,8 @@ export default function AdminDashboard() {
             {/* Role filter */}
             <select value={roleFilter} onChange={e => setRoleFilter(e.target.value as any)} style={selectStyle}>
               <option value="all">All Roles</option>
-              <option value="user">Người chơi</option>
-              <option value="owner">Chủ sân</option>
+              <option value="user">{t('roles.user')}</option>
+              <option value="owner">{t('roles.owner')}</option>
               <option value="admin">Admin</option>
             </select>
 
@@ -490,7 +491,7 @@ export default function AdminDashboard() {
               {(['user', 'owner', 'admin'] as UserRole[]).map(role => (
                 <span key={role} className="flex items-center gap-1.5" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>
                   <span className="w-2 h-2 rounded-full inline-block" style={{ background: ROLE_STYLE[role].color }} />
-                  {ROLE_STYLE[role].label}: {users.filter(u => u.role === role).length}
+                  {t(ROLE_STYLE[role].labelKey)}: {users.filter(u => u.role === role).length}
                 </span>
               ))}
             </div>

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { uploadImage } from "@/shared/api/uploadApi";
 import { createPost } from "../api/socialApi";
 import { getCurrentUser } from "../../auth/store/authStore";
+import { useTranslation } from "react-i18next";
 
 const MAX_CHARS = 2000;
 
@@ -14,6 +15,7 @@ export function CreatePostModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const { t } = useTranslation("matching");
   const user = getCurrentUser();
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -28,7 +30,7 @@ export function CreatePostModal({
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Vui lòng chọn file ảnh.");
+      toast.error(t("feed.create.imageRequired"));
       return;
     }
     if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -59,7 +61,7 @@ export function CreatePostModal({
 
     const result = await createPost(content.trim(), imageUrl);
     if (result.success) {
-      toast.success("Đã đăng bài thành công!");
+      toast.success(t("feed.create.success"));
       onSuccess();
     } else {
       toast.error(result.message);
@@ -76,7 +78,7 @@ export function CreatePostModal({
         style={{ boxShadow: "0 32px 80px rgba(36,25,20,0.35)" }}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-brand-border">
-          <h2 className="font-heading text-lg font-bold text-brand-dark">Tạo bài đăng</h2>
+          <h2 className="font-heading text-lg font-bold text-brand-dark">{t("feed.create.title")}</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-brand-surface-warm transition-colors text-brand-body"
@@ -90,8 +92,8 @@ export function CreatePostModal({
             {initials}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-brand-dark font-heading">{user?.name ?? 'Bạn'}</p>
-            <p className="text-xs text-brand-muted">Đăng lên bảng tin</p>
+            <p className="text-sm font-bold text-brand-dark font-heading">{user?.name ?? t("feed.create.you")}</p>
+            <p className="text-xs text-brand-muted">{t("feed.create.destination")}</p>
           </div>
         </div>
 
@@ -99,7 +101,7 @@ export function CreatePostModal({
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Chia sẻ điều gì đó... tìm đội, kết quả trận, mẹo kỹ thuật..."
+            placeholder={t("feed.create.placeholder")}
             className="w-full resize-none outline-none text-[15px] text-brand-dark bg-transparent leading-relaxed border-none min-h-[120px]"
             autoFocus
           />
@@ -109,7 +111,7 @@ export function CreatePostModal({
                 isOverLimit ? "text-brand-red font-semibold" : "text-brand-muted"
               }`}
             >
-              {remaining} ký tự còn lại
+              {t("feed.create.charactersRemaining", { count: remaining })}
             </p>
           )}
           {imagePreview && (
@@ -129,7 +131,7 @@ export function CreatePostModal({
         <div className="px-5 py-4 border-t border-brand-border flex items-center justify-between gap-3">
           <label className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold text-brand-teal hover:opacity-80">
             <ImagePlus size={17} />
-            Thêm ảnh
+            {t("feed.create.addImage")}
             <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
           </label>
           <button
@@ -142,11 +144,11 @@ export function CreatePostModal({
           >
             {posting ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> Đang đăng...
+                <Loader2 size={16} className="animate-spin" /> {t("feed.create.posting")}
               </>
             ) : (
               <>
-                <Send size={16} /> Đăng bài
+                <Send size={16} /> {t("feed.create.submit")}
               </>
             )}
           </button>

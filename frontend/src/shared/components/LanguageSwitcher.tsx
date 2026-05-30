@@ -1,9 +1,10 @@
 import { useLanguage, type SupportedLanguage } from "@/shared/hooks/useLanguage";
 import { cn } from "@/shared/utils/cn";
+import { useTranslation } from "react-i18next";
 
-const LANGUAGES: { value: SupportedLanguage; label: string; flag: string }[] = [
-  { value: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
-  { value: "en", label: "English", flag: "🇺🇸" },
+const LANGUAGES: { value: SupportedLanguage; labelKey: string; flag: string }[] = [
+  { value: "vi", labelKey: "languages.vi", flag: "🇻🇳" },
+  { value: "en", labelKey: "languages.en", flag: "🇺🇸" },
 ];
 
 interface LanguageSwitcherProps {
@@ -11,6 +12,7 @@ interface LanguageSwitcherProps {
 }
 
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
+  const { t } = useTranslation("matching");
   const { currentLanguage, changeLanguage } = useLanguage();
 
   return (
@@ -19,7 +21,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
         <button
           key={lang.value}
           onClick={() => changeLanguage(lang.value)}
-          title={lang.label}
+          title={t(lang.labelKey)}
           className={cn(
             "rounded px-2 py-1 text-sm transition",
             currentLanguage === lang.value

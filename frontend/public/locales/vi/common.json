@@ -1,5 +1,6 @@
 {
   "loading": "Đang tải...",
+  "processing": "Đang xử lý...",
   "error": "Đã xảy ra lỗi",
   "retry": "Thử lại",
   "save": "Lưu",

@@ -149,7 +149,9 @@ function emit() { _listeners.forEach(fn => fn()); }
 
 export function subscribeAdmin(fn: () => void) {
   _listeners.add(fn);
-  return () => _listeners.delete(fn);
+  return () => {
+    _listeners.delete(fn);
+  };
 }
 
 export function getAdminUsers(): AdminUser[] {

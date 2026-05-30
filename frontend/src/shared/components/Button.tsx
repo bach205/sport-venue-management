@@ -1,5 +1,6 @@
 import { type ButtonHTMLAttributes } from "react";
 import { cn } from "@/shared/utils/cn";
+import { useTranslation } from "react-i18next";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "ghost";
@@ -16,6 +17,7 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
+  const { t } = useTranslation("common");
   const base = "inline-flex items-center justify-center rounded font-medium transition disabled:opacity-50";
 
   const variants = {
@@ -37,7 +39,7 @@ export function Button({
       disabled={disabled || isLoading}
       className={cn(base, variants[variant], sizes[size], className)}
     >
-      {isLoading ? "Đang xử lý..." : children}
+      {isLoading ? t("processing") : children}
     </button>
   );
 }

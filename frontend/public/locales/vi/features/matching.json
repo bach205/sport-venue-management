@@ -14,6 +14,145 @@
     "ownerDashboard": "Quản lý sân",
     "adminPanel": "Quản trị"
   },
+  "roles": {
+    "user": "Người chơi",
+    "owner": "Chủ sân",
+    "admin": "Admin"
+  },
+  "languages": {
+    "vi": "Tiếng Việt",
+    "en": "Tiếng Anh"
+  },
+  "matchingMock": {
+    "today": "Hôm nay",
+    "venues": {
+      "tennis": { "name": "Sân Riverside", "detail": "Sân số 3, Sân vận động chính" },
+      "basketball": { "name": "Trung tâm Thể thao Downtown", "detail": "Sân B, Tầng trên" },
+      "badminton": { "name": "CLB Trong nhà Bình Thạnh", "detail": "Nhà thi đấu 2, Sân số 1" },
+      "football": { "name": "Khu Phức hợp Gò Vấp", "detail": "Sân số 4, Khu Đông" },
+      "pickleball": { "name": "Trung tâm Giải trí Thủ Đức", "detail": "Sân số 6" },
+      "volleyball": { "name": "Sân Bãi biển Quận 1", "detail": "Khu A" },
+      "default": { "name": "Trung tâm Thể thao", "detail": "Sân số 1" }
+    }
+  },
+  "owner": {
+    "nav": {
+      "venues": "Sân của tôi",
+      "bookings": "Tất cả lịch đặt",
+      "analytics": "Phân tích",
+      "settings": "Cài đặt"
+    },
+    "playerView": "Giao diện người chơi",
+    "days": {
+      "0": "CN",
+      "1": "T2",
+      "2": "T3",
+      "3": "T4",
+      "4": "T5",
+      "5": "T6",
+      "6": "T7"
+    },
+    "dashboard": {
+      "loadError": "Không thể tải danh sách sân.",
+      "totalVenues": "Tổng sân",
+      "activeRanges": "Ca hoạt động",
+      "averagePrice": "Giá trung bình",
+      "requiredFields": "Vui lòng nhập tên sân và địa điểm.",
+      "createSuccess": "Đã tạo sân mới thành công.",
+      "createError": "Không thể tạo sân mới.",
+      "deleteConfirm": "Xóa sân {{name}}?",
+      "deleteSuccess": "Đã xóa {{name}}.",
+      "deleteError": "Không thể xóa sân này.",
+      "title": "Quản lý sân bằng dữ liệu thật từ backend.",
+      "subtitle": "Danh sách sân, tạo sân mới và xóa sân hiện đang gọi trực tiếp owner API thay vì dữ liệu mẫu.",
+      "closeCreateForm": "Đóng form tạo sân",
+      "createVenue": "Tạo sân mới",
+      "searchPlaceholder": "Tìm theo tên sân hoặc địa điểm",
+      "createTitle": "Tạo sân mới",
+      "fields": {
+        "name": "Tên sân",
+        "location": "Địa điểm",
+        "slotPrice": "Giá mỗi slot",
+        "slotDuration": "Thời lượng slot (phút)",
+        "activeDay": "Thứ hoạt động",
+        "timeRange": "Khung giờ",
+        "description": "Mô tả"
+      },
+      "creating": "Đang tạo...",
+      "saveVenue": "Lưu sân mới",
+      "cancel": "Hủy",
+      "libraryTitle": "Danh sách sân của bạn",
+      "visibleCount": "{{count}} sân hiển thị",
+      "loading": "Đang tải danh sách sân...",
+      "empty": "Không tìm thấy sân phù hợp.",
+      "perSlot": "mỗi slot",
+      "duration": "thời lượng",
+      "rangesPerWeek": "ca / tuần",
+      "sampleSchedule": "Lịch mẫu",
+      "noSchedule": "Chưa có lịch",
+      "manageVenue": "Quản lý sân"
+    },
+    "manage": {
+      "player": "Người chơi",
+      "noEmail": "Không có email",
+      "manualRefundRequest": "Yêu cầu hoàn tiền thủ công",
+      "reject": "Từ chối",
+      "approveRefund": "Duyệt hoàn tiền",
+      "editTitle": "Chỉnh sửa thông tin sân",
+      "fields": {
+        "name": "Tên sân",
+        "location": "Địa điểm",
+        "slotPrice": "Giá mỗi slot",
+        "slotDuration": "Thời lượng slot",
+        "activeDay": "Thứ hoạt động",
+        "timeRange": "Khung giờ",
+        "description": "Mô tả"
+      },
+      "save": "Lưu thay đổi",
+      "deleteVenue": "Xóa sân",
+      "previewDescription": "Mô tả sân sẽ hiển thị tại đây.",
+      "perSlot": "mỗi slot",
+      "minutes": "{{count}} phút",
+      "duration": "thời lượng",
+      "loadError": "Không thể tải dữ liệu sân.",
+      "slotOpened": "Đã mở lại slot {{time}}",
+      "slotBlocked": "Đã chặn slot {{time}}",
+      "slotUpdateError": "Không thể cập nhật trạng thái slot.",
+      "updateSuccess": "Cập nhật thông tin sân thành công.",
+      "updateError": "Không thể cập nhật thông tin sân.",
+      "deleteConfirm": "Xóa sân {{name}}?",
+      "deleteSuccess": "Đã xóa {{name}}.",
+      "deleteError": "Không thể xóa sân này.",
+      "refundApproved": "Đã duyệt hoàn tiền.",
+      "refundRejected": "Đã từ chối hoàn tiền.",
+      "refundError": "Không thể xử lý yêu cầu hoàn tiền.",
+      "tabs": {
+        "schedule": "Lịch & Slots",
+        "settings": "Cài đặt sân"
+      },
+      "rangesPerWeek": "{{count}} ca / tuần",
+      "noVenueBookings": "Chưa có booking nào cho sân này",
+      "bookingsForDate": "{{count}} booking trong ngày {{date}}",
+      "manualRequestCount": "{{count}} yêu cầu thủ công",
+      "noBookings": "Chưa có booking nào",
+      "scheduleTitle": "Quản lý lịch sân",
+      "scheduleSubtitle": "Dữ liệu slot được lấy trực tiếp từ API GET /venues/:venueId/slots.",
+      "today": "Hôm nay",
+      "blockAllSuccess": "Đã chặn tất cả slot trống",
+      "openAllSuccess": "Đã mở lại toàn bộ slot unavailable"
+    }
+  },
+  "admin": {
+    "nav": {
+      "overview": "Tổng quan",
+      "users": "Người dùng",
+      "reports": "Báo cáo",
+      "analytics": "Phân tích",
+      "system": "Hệ thống"
+    },
+    "playerView": "Giao diện người chơi",
+    "suspendedUsers": "{{count}} người dùng bị tạm khóa"
+  },
   "fab": {
     "title": "Tìm trận ngay",
     "label": "Tìm trận"
@@ -174,6 +313,397 @@
     "days": "{{count}} ngày trước"
   },
   "profile": {
-    "playerRating": "Đánh giá người chơi"
+    "playerRating": "Đánh giá người chơi",
+    "favoriteSports": "Môn thể thao yêu thích",
+    "skillLevel": "Trình độ",
+    "totalBookings": "Tổng lượt đặt",
+    "matchesPlayed": "Trận đã chơi",
+    "level": "Cấp độ",
+    "levelValue": "Cấp độ {{level}}",
+    "reputationPoints": "{{count}} điểm uy tín",
+    "achievementCount": "{{count}} thành tựu",
+    "achievements": "Thành tựu",
+    "details": "Thông tin chi tiết",
+    "performance": "Hiệu suất",
+    "noFavoriteSports": "Chưa chọn bộ môn nào.",
+    "account": "Tài khoản",
+    "status": "trạng thái",
+    "unlocked": "Đã mở khóa",
+    "fromAchievements": "Từ thành tựu",
+    "noActivity": "Chưa có hoạt động nào",
+    "edit": "Chỉnh sửa hồ sơ",
+    "joined": "Tham gia {{date}}",
+    "reviewCount": "{{count}} đánh giá",
+    "loginRequired": "Vui lòng đăng nhập để xem hồ sơ",
+    "loading": "Đang tải hồ sơ…",
+    "ageValue": "{{count}} tuổi",
+    "verified": "Đã xác minh",
+    "notVerified": "Chưa xác minh",
+    "tabs": {
+      "info": "Thông tin cá nhân",
+      "achievements": "Thành tựu ({{unlocked}}/{{total}})",
+      "activity": "Hoạt động"
+    },
+    "form": {
+      "displayName": "Tên hiển thị *",
+      "locationPlaceholder": "Nhập khu vực của bạn",
+      "age": "Tuổi",
+      "agePlaceholder": "Tuổi của bạn",
+      "gender": "Giới tính",
+      "saving": "Đang lưu…",
+      "save": "Lưu thay đổi"
+    },
+    "genders": {
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác",
+      "prefer_not_to_say": "Không muốn tiết lộ"
+    },
+    "statuses": {
+      "active": "Hoạt động",
+      "warning": "Cảnh báo",
+      "banned": "Đã khóa"
+    },
+    "categories": {
+      "booking": "Đặt sân",
+      "social": "Kết nối",
+      "skill": "Kỹ năng",
+      "loyalty": "Gắn bó"
+    },
+    "fields": {
+      "name": "Họ và tên",
+      "age": "Tuổi",
+      "gender": "Giới tính",
+      "location": "Khu vực",
+      "skillLevel": "Trình độ",
+      "reputation": "Điểm uy tín",
+      "verification": "Xác minh",
+      "joinedAt": "Ngày tham gia"
+    },
+    "filters": {
+      "all": "Tất cả",
+      "unlocked": "Đã mở khóa",
+      "locked": "Chưa mở khóa"
+    },
+    "toast": {
+      "updated": "Cập nhật hồ sơ thành công!",
+      "imageRequired": "Vui lòng chọn tệp ảnh.",
+      "avatarUpdated": "Đã cập nhật ảnh đại diện."
+    },
+    "activity": {
+      "types": {
+        "booking": "Đặt sân",
+        "match": "Ghép trận",
+        "message": "Tin nhắn",
+        "achievement": "Thành tựu"
+      },
+      "items": {
+        "a1": { "title": "Đã đặt Sân bóng rổ Bình Thạnh", "subtitle": "2 khung giờ · 150.000₫" },
+        "a2": { "title": "Mở khóa thành tựu: Chú chim sớm mai", "subtitle": "Nhận +80 XP" },
+        "a3": { "title": "Tìm thấy trận đấu qua Matchill", "subtitle": "Cầu lông · Trung bình · Gò Vấp" },
+        "a4": { "title": "Đã đặt Nhà thi đấu Cầu lông Gò Vấp", "subtitle": "3 khung giờ · 240.000₫" },
+        "a5": { "title": "Đã chấp nhận yêu cầu ghép cặp mới", "subtitle": "Từ: Tuấn Phạm" },
+        "a6": { "title": "Mở khóa thành tựu: Phong độ thăng hoa", "subtitle": "Nhận +150 XP" },
+        "a7": { "title": "Đã đặt CLB Pickleball Quận 7", "subtitle": "1 khung giờ · 100.000₫" },
+        "a8": { "title": "Đã đăng yêu cầu tìm đồng đội", "subtitle": "Cầu lông · Quận 3" }
+      }
+    },
+    "api": {
+      "unauthorized": "Không có quyền truy cập.",
+      "userNotFound": "Không tìm thấy người dùng.",
+      "loaded": "Tải thông tin hồ sơ người dùng thành công.",
+      "loadError": "Không thể tải thông tin hồ sơ.",
+      "updated": "Cập nhật hồ sơ người dùng thành công.",
+      "updateError": "Cập nhật hồ sơ thất bại."
+    }
+  },
+  "feed": {
+    "edited": "đã chỉnh sửa",
+    "like": "Thích",
+    "likeLoginRequired": "Đăng nhập để thích bài viết",
+    "updated": "Đã cập nhật bài viết",
+    "deleted": "Đã xóa bài viết",
+    "deletePost": "Xóa bài viết",
+    "deleteConfirm": "Xóa bài viết không thể hoàn tác. Tiếp tục?",
+    "share": "Chia sẻ",
+    "shareTitle": "Bài viết cộng đồng thể thao",
+    "shareCopied": "Đã copy link bài viết.",
+    "shareFailed": "Không thể chia sẻ bài viết lúc này.",
+    "viewDetail": "Xem chi tiết bài viết",
+    "comment": {
+      "action": "Bình luận",
+      "count": "{{count}} bình luận",
+      "deleted": "Đã xóa bình luận",
+      "loading": "Đang tải bình luận...",
+      "deleteQuestion": "Xóa?",
+      "placeholder": "Viết bình luận...",
+      "loginRequired": "Đăng nhập để bình luận"
+    },
+    "page": {
+      "title": "Cộng đồng",
+      "titleAccent": "thể thao",
+      "prompt": "Bạn muốn chia sẻ gì hôm nay?",
+      "post": "Đăng",
+      "searchPlaceholder": "Tìm kiếm bài viết trong feed...",
+      "resultsFor": "Kết quả cho:",
+      "emptyTitle": "Chưa có bài đăng nào",
+      "emptySubtitle": "Hãy là người đầu tiên chia sẻ!",
+      "createPost": "Tạo bài đăng",
+      "loadMore": "Tải thêm (còn {{count}} bài)",
+      "end": "Bạn đã xem hết {{count}} bài đăng."
+    },
+    "create": {
+      "imageRequired": "Vui lòng chọn file ảnh.",
+      "success": "Đã đăng bài thành công!",
+      "title": "Tạo bài đăng",
+      "you": "Bạn",
+      "destination": "Đăng lên bảng tin",
+      "placeholder": "Chia sẻ điều gì đó... tìm đội, kết quả trận, mẹo kỹ thuật...",
+      "charactersRemaining": "{{count}} ký tự còn lại",
+      "addImage": "Thêm ảnh",
+      "posting": "Đang đăng...",
+      "submit": "Đăng bài"
+    },
+    "detail": {
+      "back": "Quay lại feed",
+      "loading": "Đang tải bài viết...",
+      "notFound": "Không tìm thấy bài viết.",
+      "deleted": "Bài viết đã bị xóa."
+    },
+    "api": {
+      "feedLoaded": "Tải bảng tin thành công.",
+      "feedLoadError": "Không thể tải bảng tin.",
+      "feedSearched": "Tìm kiếm bảng tin thành công.",
+      "feedSearchError": "Không thể tìm kiếm bảng tin.",
+      "postNotFound": "Không tìm thấy bài viết.",
+      "postDetailLoaded": "Tải chi tiết bài viết thành công.",
+      "postDetailError": "Không thể tải chi tiết bài viết.",
+      "unauthorized": "Không có quyền truy cập.",
+      "contentOrImageRequired": "Vui lòng nhập nội dung hoặc đính kèm hình ảnh.",
+      "postCreated": "Tạo bài viết thành công.",
+      "postCreateError": "Không thể tạo bài viết.",
+      "postContentRequired": "Vui lòng nhập nội dung bài viết.",
+      "ownPostEditOnly": "Bạn chỉ có thể chỉnh sửa bài viết của chính mình.",
+      "postUpdated": "Cập nhật bài viết thành công.",
+      "postUpdateError": "Không thể cập nhật bài viết.",
+      "ownPostDeleteOnly": "Bạn chỉ có thể xóa bài viết của chính mình.",
+      "postDeleted": "Xóa bài viết thành công.",
+      "postDeleteError": "Không thể xóa bài viết.",
+      "alreadyLiked": "Bạn đã thích bài viết này rồi.",
+      "postLiked": "Thích bài viết thành công.",
+      "postLikeError": "Không thể thích bài viết.",
+      "postUnliked": "Bỏ thích bài viết thành công.",
+      "postUnlikeError": "Không thể bỏ thích bài viết.",
+      "commentsLoaded": "Tải danh sách bình luận thành công.",
+      "commentsLoadError": "Không thể tải bình luận.",
+      "commentRequired": "Vui lòng nhập nội dung bình luận.",
+      "commentCreated": "Bình luận thành công.",
+      "commentCreateError": "Không thể gửi bình luận.",
+      "ownCommentEditOnly": "Bạn chỉ có thể chỉnh sửa bình luận của chính mình.",
+      "commentUpdated": "Cập nhật bình luận thành công.",
+      "commentNotFound": "Không tìm thấy bình luận.",
+      "commentUpdateError": "Không thể cập nhật bình luận.",
+      "ownCommentDeleteOnly": "Bạn chỉ có thể xóa bình luận của chính mình.",
+      "commentDeleted": "Xóa bình luận thành công.",
+      "commentDeleteError": "Không thể xóa bình luận."
+    }
+  },
+  "messages": {
+    "title": "Tin nhắn",
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "group": "Nhóm",
+    "online": "Đang hoạt động",
+    "offline": "Ngoại tuyến",
+    "members": "{{count}} thành viên",
+    "voiceCall": "Cuộc gọi thoại",
+    "videoCall": "Cuộc gọi video",
+    "info": "Thông tin",
+    "startConversation": "Bắt đầu cuộc trò chuyện!",
+    "sayHello": "Gửi lời chào tới {{name}}",
+    "inputPlaceholder": "Nhập tin nhắn...",
+    "searchPlaceholder": "Tìm kiếm người, nhóm...",
+    "empty": "Chưa có cuộc trò chuyện nào",
+    "youMessage": "Bạn: {{content}}",
+    "sportFallback": "thể thao",
+    "contactIntro": "Bạn đã nhắn tin về bài đăng môn {{sport}} của {{name}}. Hãy gửi lời chào! 👋",
+    "tabs": {
+      "all": "Tất cả",
+      "group": "Nhóm"
+    },
+    "system": {
+      "matchFound": "Đã tìm thấy đối thủ!",
+      "venueBooked": "Đã đặt sân thành công"
+    },
+    "emptyPanel": {
+      "title": "Tin nhắn của bạn",
+      "subtitle": "Chọn một cuộc hội thoại hoặc liên hệ với ai đó từ trang Khám Phá",
+      "goToDiscover": "Đi tới Khám Phá"
+    }
+  },
+  "venues": {
+    "status": {
+      "available": "còn trống",
+      "held": "tạm giữ",
+      "booked": "đã đặt",
+      "unavailable": "không khả dụng",
+      "past": "đã qua",
+      "closed": "đóng cửa",
+      "selected": "đang chọn",
+      "unavailableClosed": "không bán / đóng cửa"
+    },
+    "bookingStatuses": {
+      "hold": "Tạm giữ",
+      "payment_pending": "Chờ thanh toán",
+      "confirmed": "Đã xác nhận",
+      "refund_processing": "Đang xử lý hoàn tiền",
+      "refunded": "Đã hoàn tiền",
+      "refund_rejected": "Từ chối hoàn tiền",
+      "expired": "Đã hết hạn"
+    },
+    "fields": {
+      "venue": "Sân",
+      "date": "Ngày",
+      "slots": "Khung giờ",
+      "bookingId": "Mã đặt sân",
+      "paid": "Đã thanh toán",
+      "total": "Tổng cộng"
+    },
+    "card": {
+      "priceFrom": "Từ {{price}}/giờ",
+      "courts": "{{count}} sân",
+      "availability": "Lịch trống · {{date}}",
+      "moreFacilities": "+{{count}} khác"
+    },
+    "slots": {
+      "empty": "Không có khung giờ nào khả dụng cho ngày này."
+    },
+    "districts": {
+      "all": "Tất cả quận/huyện",
+      "District 1": "Quận 1",
+      "Binh Thanh": "Bình Thạnh",
+      "Go Vap": "Gò Vấp",
+      "Thu Duc": "Thủ Đức",
+      "District 7": "Quận 7",
+      "Vung Tau": "Vũng Tàu"
+    },
+    "page": {
+      "title": "Địa điểm thể thao",
+      "subtitle": "Tìm kiếm và đặt sân thể thao gần bạn cho {{date}}",
+      "myBookings": "Lịch đặt của tôi",
+      "searchPlaceholder": "Tìm kiếm sân, địa điểm...",
+      "allSports": "Tất cả môn thể thao",
+      "availabilityNote": "Trạng thái sân trống trực tuyến được hiển thị cho {{date}}.",
+      "emptyTitle": "Không tìm thấy địa điểm nào",
+      "emptySubtitle": "Hãy thử thay đổi bộ lọc cho {{date}}",
+      "found": "Tìm thấy {{count}} địa điểm · Lịch trống cho {{date}}"
+    },
+    "detail": {
+      "notFound": "Không tìm thấy địa điểm",
+      "backToList": "Quay lại danh sách sân",
+      "back": "Sân đấu",
+      "reviews": "{{count}} đánh giá",
+      "statusSummary": "Tóm tắt trạng thái",
+      "onlineStatus": "Trạng thái trực tuyến cho {{date}}",
+      "totalSlots": "{{count}} tổng số khung giờ",
+      "about": "Về địa điểm này",
+      "selectDateSlots": "Chọn Ngày & Khung Giờ",
+      "bookingSummary": "Tóm tắt đặt sân",
+      "selectedSlots": "Khung giờ đã chọn",
+      "noneSelected": "Chưa chọn",
+      "slotCount": "{{count}} khung giờ",
+      "continuePayment": "Tiếp tục thanh toán",
+      "singleSlotOnly": "Hệ thống hiện chỉ hỗ trợ thanh toán một khung giờ tại một thời điểm. Vui lòng chọn một khung giờ duy nhất để tiếp tục.",
+      "latestBooking": "Lịch đặt gần nhất: #{{id}}"
+    },
+    "booking": {
+      "confirmTitle": "Xác nhận đặt sân",
+      "confirmSubtitle": "Kiểm tra lại khung giờ đã chọn",
+      "singleSlotOnly": "Hệ thống hiện chỉ hỗ trợ đặt một khung giờ tại một thời điểm. Vui lòng quay lại và chọn một khung giờ duy nhất.",
+      "selectedSlots": "Khung giờ đã chọn ({{count}})",
+      "notes": "Ghi chú (tùy chọn)",
+      "notesPlaceholder": "Ví dụ: Cần thuê vợt, 4 người chơi",
+      "creating": "Đang tạo lịch đặt...",
+      "payment": "Thanh toán",
+      "bankOnly": "Chỉ hỗ trợ chuyển khoản",
+      "paymentCreated": "Đã tạo yêu cầu thanh toán",
+      "paymentId": "Mã thanh toán",
+      "transferContent": "Nội dung chuyển khoản",
+      "currentStatus": "Trạng thái hiện tại",
+      "paymentMethod": "Phương thức thanh toán",
+      "transferTo": "Chuyển khoản tới",
+      "bank": "Ngân hàng",
+      "accountNumber": "Số tài khoản",
+      "accountName": "Tên tài khoản",
+      "transferHint": "Quét mã QR hoặc chuyển khoản thủ công với nội dung chính xác như trên, sau đó nhấn",
+      "amountDue": "Tổng số tiền cần trả",
+      "checking": "Đang kiểm tra...",
+      "checkPayment": "Kiểm tra thanh toán",
+      "successTitle": "Đã đặt sân thành công!",
+      "successSubtitle": "Khung giờ của bạn đã được giữ chỗ thành công",
+      "tip": "Mẹo",
+      "refundTip": "Bạn có thể yêu cầu hoàn tiền tại Lịch sử đặt sân. Việc hoàn tiền tự động tức thì phụ thuộc vào thời hạn hoàn tiền của hệ thống.",
+      "continueBrowsing": "Tiếp tục tìm sân",
+      "paymentOptions": {
+        "bank": "Chuyển khoản ngân hàng",
+        "bankDescription": "Vietcombank, Techcombank...",
+        "card": "Thẻ tín dụng / Ghi nợ",
+        "momo": "Ví MoMo",
+        "unavailable": "Tạm thời không khả dụng cho luồng này"
+      },
+      "errors": {
+        "selectOneSlot": "Vui lòng chọn chính xác một khung giờ cho quy trình thanh toán này.",
+        "createPayment": "Không thể tạo yêu cầu thanh toán.",
+        "notInitialized": "Yêu cầu thanh toán chưa được khởi tạo.",
+        "expired": "Thanh toán chưa hoàn tất hoặc thời gian tạm giữ sân đã hết hạn.",
+        "processing": "Thanh toán vẫn đang được xử lý. Vui lòng hoàn tất chuyển khoản và kiểm tra lại.",
+        "checkPayment": "Không thể kiểm tra trạng thái thanh toán."
+      }
+    },
+    "refund": {
+      "request": "Yêu cầu hoàn tiền",
+      "requested": "Đã yêu cầu hoàn tiền",
+      "unavailable": "Không thể hoàn tiền",
+      "success": "Hoàn tiền thành công",
+      "sent": "Đã gửi yêu cầu hoàn tiền",
+      "autoSuccess": "Đơn hoàn tiền trị giá {{price}} đã được thực hiện tự động thành công.",
+      "manualSent": "Yêu cầu hoàn tiền trị giá {{price}} đã được gửi tới chủ sân để xử lý thủ công.",
+      "systemStatus": "Trạng thái hệ thống",
+      "done": "Hoàn tất",
+      "windowExpired": "Thời hạn hoàn tiền tự động đã hết",
+      "manualApproval": "Bạn vẫn có thể gửi yêu cầu hoàn tiền, nhưng yêu cầu này cần được chủ sân phê duyệt thủ công.",
+      "contactIfRejected": "Nếu yêu cầu bị từ chối, vui lòng liên hệ trực tiếp chủ sân để được hỗ trợ.",
+      "close": "Đóng",
+      "sending": "Đang gửi…",
+      "send": "Gửi yêu cầu hoàn tiền",
+      "windowClosesIn": "Hạn hoàn tiền tự động sẽ đóng sau",
+      "autoDeadline": "Hạn hoàn tiền tự động",
+      "bookingInfo": "Thông tin đơn đặt sân",
+      "amount": "Số tiền hoàn lại",
+      "methodNotice": "Hệ thống sẽ tự động quyết định hình thức hoàn tiền là tự động hay cần chủ sân phê duyệt.",
+      "confirm": "Xác nhận hoàn tiền",
+      "errors": {
+        "request": "Không thể thực hiện yêu cầu hoàn tiền."
+      }
+    },
+    "bookings": {
+      "paymentPending": "Đang chờ xác nhận thanh toán. Thời gian giữ sân hết hạn lúc {{time}}.",
+      "refundProcessing": "Yêu cầu hoàn tiền đã được gửi và đang được xử lý.",
+      "refunded": "{{price}} đã được hoàn lại vào tài khoản của bạn.",
+      "refundRejected": "Yêu cầu hoàn tiền đã bị từ chối. Vui lòng liên hệ chủ sân để biết thêm chi tiết.",
+      "contactOwner": "Liên hệ chủ sân",
+      "subtitle": "Quản lý lịch đặt sân và hoàn tiền của bạn",
+      "emptyTitle": "Chưa có lịch đặt nào",
+      "emptySubtitle": "Đặt sân tại trang Địa điểm để bắt đầu",
+      "findVenue": "Tìm kiếm sân",
+      "tabs": {
+        "all": "Tất cả ({{count}})",
+        "confirmed": "Đã xác nhận ({{count}})",
+        "paymentPending": "Chờ thanh toán ({{count}})",
+        "refundProcessing": "Đang hoàn tiền ({{count}})",
+        "refunded": "Đã hoàn tiền ({{count}})",
+        "expired": "Đã hết hạn ({{count}})"
+      }
+    }
   }
 }

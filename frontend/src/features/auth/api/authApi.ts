@@ -35,6 +35,7 @@
 
 import axios from 'axios';
 import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
+import i18n from '../../../shared/i18n/i18n';
 import { getToken } from '../store/authStore';
 import type {
   LoginPayload,
@@ -46,20 +47,23 @@ import type {
   LoginResponseData,
   RegisterResponseData,
   VerifyEmailResponseData,
+  ApiUser,
+  ApiProfile,
 } from '../types/auth.types';
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+const authMessage = (key: string) => i18n.t(`api.${key}`, { ns: 'auth' });
 
 // ─── Mock data shaped exactly like API responses ──────────────────────────────
 
-const MOCK_USER_PLAYER = {
+const MOCK_USER_PLAYER: ApiUser = {
   _id: 'u-player',
   email: 'player@demo.com',
   status: 'active' as const,
   is_verified: true,
-  role: 'player',
+  role: 'user',
 };
-const MOCK_PROFILE_PLAYER = {
+const MOCK_PROFILE_PLAYER: ApiProfile = {
   _id: 'prof-player',
   user_id: 'u-player',
   name: 'Alex Nguyen',
@@ -71,14 +75,14 @@ const MOCK_PROFILE_PLAYER = {
   reputation_score: 755,
 };
 
-const MOCK_USER_OWNER = {
+const MOCK_USER_OWNER: ApiUser = {
   _id: 'u-owner',
   email: 'owner@demo.com',
   status: 'active' as const,
   is_verified: true,
   role: 'owner',
 };
-const MOCK_PROFILE_OWNER = {
+const MOCK_PROFILE_OWNER: ApiProfile = {
   _id: 'prof-owner',
   user_id: 'u-owner',
   name: 'Minh Tran',
@@ -90,14 +94,14 @@ const MOCK_PROFILE_OWNER = {
   reputation_score: 2100,
 };
 
-const MOCK_USER_ADMIN = {
+const MOCK_USER_ADMIN: ApiUser = {
   _id: 'u-admin',
   email: 'admin@demo.com',
   status: 'active' as const,
   is_verified: true,
   role: 'admin',
 };
-const MOCK_PROFILE_ADMIN = {
+const MOCK_PROFILE_ADMIN: ApiProfile = {
   _id: 'prof-admin',
   user_id: 'u-admin',
   name: 'Admin System',
@@ -109,7 +113,7 @@ const MOCK_PROFILE_ADMIN = {
   reputation_score: 9999,
 };
 
-const MOCK_ACCOUNTS: Record<string, { user: typeof MOCK_USER_PLAYER; profile: typeof MOCK_PROFILE_PLAYER }> = {
+const MOCK_ACCOUNTS: Record<string, { user: ApiUser; profile: ApiProfile }> = {
   'player@demo.com': { user: MOCK_USER_PLAYER, profile: MOCK_PROFILE_PLAYER },
   'owner@demo.com':  { user: MOCK_USER_OWNER,  profile: MOCK_PROFILE_OWNER },
   'admin@demo.com':  { user: MOCK_USER_ADMIN,  profile: MOCK_PROFILE_ADMIN },
@@ -124,7 +128,7 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
     if (account && payload.password.length >= 6) {
       return {
         success: true,
-        message: 'Đăng nhập thành công.',
+        message: authMessage('loginSuccess'),
         data: {
           token: `mock_jwt_${account.user._id}_${Date.now()}`,
           user: account.user,
@@ -132,7 +136,7 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
         },
       };
     }
-    return { success: false, message: 'Email hoặc mật khẩu không chính xác.' };
+    return { success: false, message: authMessage('invalidCredentials') };
   }
 
   try {
@@ -140,9 +144,9 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
       email: payload.email,
       password: payload.password,
     });
-    return { success: true, message: res.data.message || 'Đăng nhập thành công.', data: res.data.data };
+    return { success: true, message: res.data.message || authMessage('loginSuccess'), data: res.data.data };
   } catch (err: any) {
-    const msg = err.response?.data?.message || 'Đăng nhập thất bại.';
+    const msg = err.response?.data?.message || authMessage('loginFailed');
     return { success: false, message: msg };
   }
 }
@@ -150,7 +154,7 @@ export async function login(payload: LoginPayload): Promise<ApiResponse<LoginRes
 export async function logout(): Promise<ApiResponse> {
   if (isMockApi) {
     await delay(400);
-    return { success: true, message: 'Đăng xuất thành công.' };
+    return { success: true, message: authMessage('logoutSuccess') };
   }
 
   try {
@@ -160,9 +164,9 @@ export async function logout(): Promise<ApiResponse> {
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    return { success: true, message: 'Đăng xuất thành công.' };
+    return { success: true, message: authMessage('logoutSuccess') };
   } catch (err: any) {
-    const msg = err.response?.data?.message || 'Đăng xuất thất bại.';
+    const msg = err.response?.data?.message || authMessage('logoutFailed');
     return { success: false, message: msg };
   }
 }
@@ -171,11 +175,11 @@ export async function register(payload: RegisterPayload): Promise<ApiResponse<Re
   if (isMockApi) {
     await delay(800);
     if (Object.values(MOCK_ACCOUNTS).some(a => a.user.email === payload.email.toLowerCase())) {
-      return { success: false, message: 'Người dùng đã tồn tại.' };
+      return { success: false, message: authMessage('userExists') };
     }
     return {
       success: true,
-      message: 'Đăng ký thành công. Vui lòng xác thực email của bạn trước khi đăng nhập.',
+      message: authMessage('registerVerifyEmail'),
       data: {
         user: {
           _id: `u-new-${Date.now()}`,
@@ -194,11 +198,11 @@ export async function register(payload: RegisterPayload): Promise<ApiResponse<Re
       email: payload.email,
       password: payload.password,
     });
-    return { success: true, message: res.data.message || 'Đăng ký thành công.', data: res.data.data };
+    return { success: true, message: res.data.message || authMessage('registerSuccess'), data: res.data.data };
   } catch (err: any) {
     const errors: string[] = err.response?.data?.errors;
     if (errors?.length) return { success: false, message: errors.join(' ') };
-    const msg = err.response?.data?.message || 'Đăng ký thất bại.';
+    const msg = err.response?.data?.message || authMessage('registerFailed');
     return { success: false, message: msg };
   }
 }
@@ -210,7 +214,7 @@ export async function verifyEmail(payload: VerifyEmailPayload): Promise<ApiRespo
     if (payload.token && payload.token.length > 0) {
       return {
         success: true,
-        message: 'Xác thực email thành công.',
+        message: authMessage('verifySuccess'),
         data: {
           user: {
             _id: 'u-new',
@@ -221,18 +225,18 @@ export async function verifyEmail(payload: VerifyEmailPayload): Promise<ApiRespo
         },
       };
     }
-    return { success: false, message: 'Mã xác thực không hợp lệ.' };
+    return { success: false, message: authMessage('invalidVerificationCode') };
   }
 
   try {
     const res = await axios.post(`${API_BASE_URL}/auth/verify-email`, {
       token: payload.token,
     });
-    return { success: true, message: res.data.message || 'Xác thực email thành công.', data: res.data.data };
+    return { success: true, message: res.data.message || authMessage('verifySuccess'), data: res.data.data };
   } catch (err: any) {
     const errors: string[] = err.response?.data?.errors;
     if (errors?.length) return { success: false, message: errors.join(' ') };
-    const msg = err.response?.data?.message || 'Xác thực thất bại.';
+    const msg = err.response?.data?.message || authMessage('verifyFailed');
     return { success: false, message: msg };
   }
 }
@@ -241,14 +245,14 @@ export async function verifyEmail(payload: VerifyEmailPayload): Promise<ApiRespo
 export async function forgotPassword(payload: ForgotPasswordPayload): Promise<ApiResponse> {
   if (isMockApi) {
     await delay(800);
-    return { success: true, message: 'Link đặt lại mật khẩu đã được gửi đến email của bạn.' };
+    return { success: true, message: authMessage('resetLinkSent') };
   }
 
   try {
     const res = await axios.post(`${API_BASE_URL}/auth/forgot-password`, payload);
-    return { success: true, message: res.data.message || 'Yêu cầu gửi link đặt lại mật khẩu thành công.' };
+    return { success: true, message: res.data.message || authMessage('resetLinkRequestSuccess') };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || 'Yêu cầu thất bại.' };
+    return { success: false, message: err.response?.data?.message || authMessage('requestFailed') };
   }
 }
 
@@ -256,7 +260,7 @@ export async function forgotPassword(payload: ForgotPasswordPayload): Promise<Ap
 export async function resetPassword(payload: ResetPasswordPayload): Promise<ApiResponse> {
   if (isMockApi) {
     await delay(800);
-    return { success: true, message: 'Mật khẩu đã được đặt lại thành công!' };
+    return { success: true, message: authMessage('passwordResetSuccess') };
   }
 
   try {
@@ -264,8 +268,8 @@ export async function resetPassword(payload: ResetPasswordPayload): Promise<ApiR
       token: payload.token,
       newPassword: payload.newPassword,
     });
-    return { success: true, message: res.data.message || 'Mật khẩu đã được đặt lại thành công!' };
+    return { success: true, message: res.data.message || authMessage('passwordResetSuccess') };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || 'Đặt lại mật khẩu thất bại.' };
+    return { success: false, message: err.response?.data?.message || authMessage('passwordResetFailed') };
   }
 }

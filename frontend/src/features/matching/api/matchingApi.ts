@@ -8,6 +8,7 @@
 
 import axios from 'axios';
 import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
+import i18n from '../../../shared/i18n/i18n';
 import { getToken } from '@/features/auth/store/authStore';
 import type { MatchRequest, MatchResult } from '../types/matching.types';
 
@@ -49,14 +50,7 @@ const MOCK_OPPONENTS = [
   },
 ];
 
-const MOCK_VENUES: Record<string, string[]> = {
-  tennis: ['Sân Riverside', 'Sân số 3, Sân vận động chính'],
-  basketball: ['Trung tâm Thể thao Downtown', 'Sân B, Tầng trên'],
-  badminton: ['CLB Trong nhà Bình Thạnh', 'Nhà thi đấu 2, Sân số 1'],
-  football: ['Khu Phức hợp Gò Vấp', 'Sân số 4, Khu Đông'],
-  pickleball: ['Trung tâm Giải trí Thủ Đức', 'Sân số 6'],
-  volleyball: ['Sân Bãi biển Quận 1', 'Khu A'],
-};
+const MOCK_VENUE_SPORTS = new Set(['tennis', 'basketball', 'badminton', 'football', 'pickleball', 'volleyball']);
 
 export async function submitMatchRequest(
   req: MatchRequest
@@ -134,20 +128,21 @@ export async function simulateMatchSearch(
 
   // Pick random opponent
   const opponent = MOCK_OPPONENTS[Math.floor(Math.random() * MOCK_OPPONENTS.length)];
-  const venues = MOCK_VENUES[req.sport] ?? ['Trung tâm Thể thao', 'Sân số 1'];
+  const venueKey = MOCK_VENUE_SPORTS.has(req.sport) ? req.sport : 'default';
 
   const today = new Date();
+  const todayLabel = i18n.t('matchingMock.today', { ns: 'matching' });
   const timeDisplay = req.time
-    ? `Hôm nay, ${req.time}`
-    : `Hôm nay, ${today.getHours()}:${String(today.getMinutes()).padStart(2, '0')}`;
+    ? `${todayLabel}, ${req.time}`
+    : `${todayLabel}, ${today.getHours()}:${String(today.getMinutes()).padStart(2, '0')}`;
 
   return {
     matchId: `match-${Date.now()}`,
     requestId: `req-${Date.now()}`,
     sport: req.sport,
     skillLevel: req.skillLevel,
-    venue: venues[0],
-    venueDetail: venues[1],
+    venue: i18n.t(`matchingMock.venues.${venueKey}.name`, { ns: 'matching' }),
+    venueDetail: i18n.t(`matchingMock.venues.${venueKey}.detail`, { ns: 'matching' }),
     time: timeDisplay,
     opponent,
     conversationId: `conv-match-${Date.now()}`,

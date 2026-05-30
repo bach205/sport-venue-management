@@ -17,9 +17,9 @@ const NAV_LINKS = [
 ];
 
 const ROLE_BADGE = {
-  user:  { bg: 'bg-[#d0f5ee] text-[#00785e]', label: 'Người chơi' },
-  owner: { bg: 'bg-[#ddeeff] text-brand-navy',  label: 'Chủ sân' },
-  admin: { bg: 'bg-[#ffd6d6] text-brand-red',   label: 'Admin' },
+  user:  { bg: 'bg-[#d0f5ee] text-[#00785e]', key: 'roles.user' },
+  owner: { bg: 'bg-[#ddeeff] text-brand-navy',  key: 'roles.owner' },
+  admin: { bg: 'bg-[#ffd6d6] text-brand-red',   key: 'roles.admin' },
 };
 
 export default function AppLayout() {
@@ -100,7 +100,7 @@ export default function AppLayout() {
                           <div>
                             <p className="text-sm font-bold text-brand-dark font-heading">{user.name}</p>
                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${ROLE_BADGE[user.role].bg}`}>
-                              {ROLE_BADGE[user.role].label}
+                              {t(ROLE_BADGE[user.role].key)}
                             </span>
                           </div>
                         </div>

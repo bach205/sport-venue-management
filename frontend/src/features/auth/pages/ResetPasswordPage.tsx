@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,25 +10,12 @@ import { resetPassword } from "../api/authApi";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { useTranslation } from "react-i18next";
 
-const schema = z
-  .object({
-    newPassword: z
-      .string()
-      .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
-      .regex(/[A-Z]/, "Phải có ít nhất 1 chữ hoa")
-      .regex(/[0-9]/, "Phải có ít nhất 1 chữ số"),
-    confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Mật khẩu xác nhận không khớp",
-    path: ["confirmPassword"],
-  });
-
-type FormData = z.infer<typeof schema>;
+type FormData = { newPassword: string; confirmPassword: string };
 
 // Password strength checker
-function getPasswordStrength(password: string): { level: number; label: string; color: string } {
+function getPasswordStrength(password: string): { level: number; key: string; color: string } {
   let score = 0;
   if (password.length >= 8) score++;
   if (password.length >= 12) score++;
@@ -36,13 +23,27 @@ function getPasswordStrength(password: string): { level: number; label: string; 
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { level: 1, label: "Yếu", color: "#ba1a1a" };
-  if (score <= 2) return { level: 2, label: "Trung bình", color: "#ff7e36" };
-  if (score <= 3) return { level: 3, label: "Khá", color: "#f5a623" };
-  return { level: 4, label: "Mạnh", color: "#006a65" };
+  if (score <= 1) return { level: 1, key: "weak", color: "#ba1a1a" };
+  if (score <= 2) return { level: 2, key: "medium", color: "#ff7e36" };
+  if (score <= 3) return { level: 3, key: "good", color: "#f5a623" };
+  return { level: 4, key: "strong", color: "#006a65" };
 }
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation("auth");
+  const schema = useMemo(() => z
+    .object({
+      newPassword: z
+        .string()
+        .min(8, t("validation.passwordMin8"))
+        .regex(/[A-Z]/, t("validation.passwordUppercase"))
+        .regex(/[0-9]/, t("validation.passwordNumber")),
+      confirmPassword: z.string().min(1, t("validation.confirmPasswordRequired")),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: t("validation.confirmPasswordMismatch"),
+      path: ["confirmPassword"],
+    }), [t]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "mock_reset_token";
@@ -50,7 +51,6 @@ export default function ResetPasswordPage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [passwordValue, setPasswordValue] = useState("");
 
   const {
     register,
@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
 
   const onSubmit = async (data: FormData) => {
     if (!token) {
-      toast.error("Link đặt lại mật khẩu không hợp lệ.");
+      toast.error(t("reset.invalidLinkToast"));
       return;
     }
     const result = await resetPassword({
@@ -103,13 +103,13 @@ export default function ResetPasswordPage() {
             className="text-[#241914] mb-2"
             style={{ fontFamily: "Lexend, sans-serif", fontSize: "20px", fontWeight: 700 }}
           >
-            Link không hợp lệ
+            {t("reset.invalidLink")}
           </h2>
           <p
             className="text-[#584238] mb-6"
             style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}
           >
-            Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.
+            {t("reset.invalidLinkDescription")}
           </p>
           <Link
             to="/forgot-password"
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
               background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)",
             }}
           >
-            Yêu cầu link mới
+            {t("reset.requestNewLink")}
           </Link>
         </div>
       </div>
@@ -171,13 +171,13 @@ export default function ResetPasswordPage() {
                 className="text-[#241914] mb-2"
                 style={{ fontFamily: "Lexend, sans-serif", fontSize: "22px", fontWeight: 700 }}
               >
-                Đặt Lại Mật Khẩu
+                {t("reset.title")}
               </h2>
               <p
                 className="text-[#584238]"
                 style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", lineHeight: 1.6 }}
               >
-                Tạo mật khẩu mới mạnh cho tài khoản của bạn.
+                {t("reset.subtitle")}
               </p>
             </div>
 
@@ -189,7 +189,7 @@ export default function ResetPasswordPage() {
                   className="text-[#241914]"
                   style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", fontWeight: 600 }}
                 >
-                  Mật Khẩu Mới
+                  {t("reset.newPassword")}
                 </Label>
                 <div className="relative">
                   <Lock
@@ -199,7 +199,7 @@ export default function ResetPasswordPage() {
                   <Input
                     id="newPassword"
                     type={showNew ? "text" : "password"}
-                    placeholder="Tối thiểu 8 ký tự, 1 chữ hoa, 1 số"
+                    placeholder={t("reset.newPasswordPlaceholder")}
                     className="pl-9 pr-10 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20 h-11"
                     style={{ fontFamily: "Inter, sans-serif" }}
                     {...register("newPassword")}
@@ -240,7 +240,7 @@ export default function ResetPasswordPage() {
                         color: strength.color,
                       }}
                     >
-                      Độ mạnh: {strength.label}
+                      {t("reset.strength")}: {t(`reset.strengthLevels.${strength.key}`)}
                     </p>
                   </div>
                 )}
@@ -253,7 +253,7 @@ export default function ResetPasswordPage() {
                   className="text-[#241914]"
                   style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", fontWeight: 600 }}
                 >
-                  Xác Nhận Mật Khẩu
+                  {t("reset.confirmPassword")}
                 </Label>
                 <div className="relative">
                   <Lock
@@ -263,7 +263,7 @@ export default function ResetPasswordPage() {
                   <Input
                     id="confirmPassword"
                     type={showConfirm ? "text" : "password"}
-                    placeholder="Nhập lại mật khẩu mới"
+                    placeholder={t("reset.confirmPasswordPlaceholder")}
                     className="pl-9 pr-10 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20 h-11"
                     style={{ fontFamily: "Inter, sans-serif" }}
                     {...register("confirmPassword")}
@@ -302,7 +302,7 @@ export default function ResetPasswordPage() {
                   <Loader2 size={18} className="animate-spin" />
                 ) : (
                   <>
-                    Đặt Lại Mật Khẩu
+                    {t("reset.submit")}
                     <ArrowRight size={18} />
                   </>
                 )}
@@ -324,13 +324,13 @@ export default function ResetPasswordPage() {
                 className="text-[#241914] mb-2"
                 style={{ fontFamily: "Lexend, sans-serif", fontSize: "22px", fontWeight: 700 }}
               >
-                Đặt Lại Thành Công!
+                {t("reset.successTitle")}
               </h2>
               <p
                 className="text-[#584238]"
                 style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", lineHeight: 1.6 }}
               >
-                Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập bằng mật khẩu mới.
+                {t("reset.successDescription")}
               </p>
             </div>
             <Button
@@ -344,7 +344,7 @@ export default function ResetPasswordPage() {
                 color: "#fff",
               }}
             >
-              Đăng Nhập Ngay
+              {t("reset.loginNow")}
             </Button>
           </>
         )}
@@ -356,7 +356,7 @@ export default function ResetPasswordPage() {
               className="text-[#8b7266] hover:text-[#a04100] transition-colors"
               style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}
             >
-              ← Quay lại đăng nhập
+              ← {t("reset.backToLogin")}
             </Link>
           </div>
         )}

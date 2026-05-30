@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Rss, RefreshCw, Loader2, Search, X } from "lucide-react";
 import { getFeed, searchFeed } from "../api/socialApi";
 import type { ApiPost, Pagination } from "../types/feed.types";
@@ -7,8 +7,10 @@ import { CreatePostModal } from "../components/CreatePostModal";
 import { getCurrentUser } from "../../auth/store/authStore";
 import { toast } from "sonner";
 import { Skeleton } from "@/shared/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 export default function FeedPage() {
+  const { t } = useTranslation("matching");
   const user = getCurrentUser();
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -80,7 +82,7 @@ export default function FeedPage() {
           <div className="flex items-center gap-3">
             <div>
               <h1 className="font-heading text-[22px] font-extrabold text-brand-dark leading-tight">
-                Cộng đồng <span className="text-brand-teal">thể thao</span>
+                {t("feed.page.title")} <span className="text-brand-teal">{t("feed.page.titleAccent")}</span>
               </h1>
             </div>
           </div>
@@ -107,7 +109,7 @@ export default function FeedPage() {
               <Rss size={18} />
             </div>
           )}
-          <span className="flex-1 text-sm text-brand-muted">Bạn muốn chia sẻ gì hôm nay?</span>
+          <span className="flex-1 text-sm text-brand-muted">{t("feed.page.prompt")}</span>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -116,7 +118,7 @@ export default function FeedPage() {
             className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading hover:opacity-90 transition-opacity shrink-0"
             style={{ boxShadow: "0 2px 8px rgba(0,106,101,0.35)" }}
           >
-            <Plus size={15} /> Đăng
+            <Plus size={15} /> {t("feed.page.post")}
           </button>
         </div>
 
@@ -130,7 +132,7 @@ export default function FeedPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearch();
                 }}
-                placeholder="Tìm kiếm bài viết trong feed..."
+                placeholder={t("feed.page.searchPlaceholder")}
                 className="w-full bg-transparent outline-none text-sm text-brand-dark"
               />
               {searchText && (
@@ -143,12 +145,12 @@ export default function FeedPage() {
               onClick={handleSearch}
               className="h-10 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading hover:opacity-90"
             >
-              Tìm
+              {t("common:search")}
             </button>
           </div>
           {searchQuery && (
             <p className="text-xs text-brand-muted mt-2">
-              Kết quả cho: <span className="font-semibold">{searchQuery}</span>
+              {t("feed.page.resultsFor")} <span className="font-semibold">{searchQuery}</span>
             </p>
           )}
         </div>
@@ -193,13 +195,13 @@ export default function FeedPage() {
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 rounded-2xl bg-white border-2 border-dashed border-brand-border">
             <span className="text-4xl mb-3">🔥</span>
-            <p className="font-heading text-base text-brand-dark mb-1.5">Chưa có bài đăng nào</p>
-            <p className="text-[13px] text-brand-muted mb-4">Hãy là người đầu tiên chia sẻ!</p>
+            <p className="font-heading text-base text-brand-dark mb-1.5">{t("feed.page.emptyTitle")}</p>
+            <p className="text-[13px] text-brand-muted mb-4">{t("feed.page.emptySubtitle")}</p>
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 h-10 px-5 rounded-xl gradient-orange text-sm font-bold text-white font-heading"
             >
-              <Plus size={15} /> Tạo bài đăng
+              <Plus size={15} /> {t("feed.page.createPost")}
             </button>
           </div>
         ) : (
@@ -223,14 +225,14 @@ export default function FeedPage() {
               >
                 {loadingMore ? <Loader2 size={16} className="animate-spin" /> : null}
                 {loadingMore
-                  ? "Đang tải..."
-                  : `Tải thêm (còn ${pagination.total - posts.length} bài)`}
+                  ? t("common:loading")
+                  : t("feed.page.loadMore", { count: pagination.total - posts.length })}
               </button>
             )}
 
             {pagination && pagination.page >= pagination.pages && posts.length > 0 && (
               <p className="text-center py-4 text-[13px] text-brand-muted">
-                Bạn đã xem hết {pagination.total} bài đăng.
+                {t("feed.page.end", { count: pagination.total })}
               </p>
             )}
           </>

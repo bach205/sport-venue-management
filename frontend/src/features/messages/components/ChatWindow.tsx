@@ -3,24 +3,27 @@ import { Phone, Video, Info, Smile, Mic, Send, Plus, MapPin } from "lucide-react
 import type { Conversation, ChatMessage } from "../types/messages.types";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
-function formatMsgTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("vi-VN", {
+function formatMsgTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleTimeString(locale, {
     hour: "numeric",
     minute: "2-digit",
   });
 }
 
-function formatDaySeparator(iso: string) {
+function formatDaySeparator(iso: string, locale: string, t: TFunction<"matching">) {
   const d = new Date(iso);
   const today = new Date();
   const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
-  if (diffDays === 0) return "Hôm nay";
-  if (diffDays === 1) return "Hôm qua";
-  return d.toLocaleDateString("vi-VN", { month: "long", day: "numeric" });
+  if (diffDays === 0) return t("messages.today");
+  if (diffDays === 1) return t("messages.yesterday");
+  return d.toLocaleDateString(locale, { month: "long", day: "numeric" });
 }
 
 function SystemMessage({ msg }: { msg: ChatMessage }) {
+  const { t } = useTranslation("matching");
   if (msg.type === "match_found") {
     return (
       <div className="flex justify-center my-3">
@@ -46,10 +49,10 @@ function SystemMessage({ msg }: { msg: ChatMessage }) {
                 color: "#a04100",
               }}
             >
-              Đã tìm thấy đối thủ!
+              {t("messages.system.matchFound")}
             </p>
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>
-              {msg.content.replace("Match Found! ", "").replace("Đã tìm thấy đối thủ! ", "")}
+              {msg.content.replace("Match Found! ", "").replace(`${t("messages.system.matchFound")} `, "")}
             </p>
           </div>
         </div>
@@ -96,6 +99,8 @@ interface Props {
 }
 
 export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props) {
+  const { t, i18n } = useTranslation("matching");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -106,7 +111,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
       : null;
 
   const displayName =
-    conversation.type === "group" ? (conversation.name ?? "Nhóm") : (other?.name ?? "");
+    conversation.type === "group" ? (conversation.name ?? t("messages.group")) : (other?.name ?? "");
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -189,19 +194,19 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
           </p>
           <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#006a65" }}>
             {other?.isOnline
-              ? `Đang hoạt động${other.distance ? ` · ${other.distance}` : ""}`
+              ? `${t("messages.online")}${other.distance ? ` · ${other.distance}` : ""}`
               : conversation.type === "group"
-                ? `${conversation.participants.length} thành viên`
-                : "Ngoại tuyến"}
+                ? t("messages.members", { count: conversation.participants.length })
+                : t("messages.offline")}
           </p>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1">
           {[
-            { icon: <Phone size={18} />, title: "Cuộc gọi thoại" },
-            { icon: <Video size={18} />, title: "Cuộc gọi video" },
-            { icon: <Info size={18} />, title: "Thông tin" },
+            { icon: <Phone size={18} />, title: t("messages.voiceCall") },
+            { icon: <Video size={18} />, title: t("messages.videoCall") },
+            { icon: <Info size={18} />, title: t("messages.info") },
           ].map(({ icon, title }) => (
             <button
               key={title}
@@ -233,7 +238,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
                 color: "#241914",
               }}
             >
-              Bắt đầu cuộc trò chuyện!
+              {t("messages.startConversation")}
             </p>
             <p
               style={{
@@ -243,7 +248,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
                 marginTop: 6,
               }}
             >
-              Gửi lời chào tới {displayName}
+              {t("messages.sayHello", { name: displayName })}
             </p>
           </div>
         ) : (
@@ -255,7 +260,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
                 <span
                   style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}
                 >
-                  {formatDaySeparator(group.messages[0].timestamp)}
+                  {formatDaySeparator(group.messages[0].timestamp, locale, t)}
                 </span>
                 <div className="flex-1 h-px" style={{ background: "#dfc0b3" }} />
               </div>
@@ -267,8 +272,6 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
 
                 const isMe = msg.senderId === currentUserId;
                 const sender = conversation.participants.find((p) => p.id === msg.senderId);
-                const showAvatar =
-                  !isMe && (idx === 0 || group.messages[idx - 1]?.senderId !== msg.senderId);
                 const isLastInGroup =
                   idx === group.messages.length - 1 ||
                   group.messages[idx + 1]?.senderId !== msg.senderId ||
@@ -347,7 +350,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
                               color: "#8b7266",
                             }}
                           >
-                            {formatMsgTime(msg.timestamp)}
+                            {formatMsgTime(msg.timestamp, locale)}
                           </span>
                           {isMe && (
                             <span style={{ fontSize: 11, color: msg.read ? "#006a65" : "#8b7266" }}>
@@ -382,7 +385,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
           <textarea
             ref={inputRef}
             rows={1}
-            placeholder="Nhập tin nhắn..."
+            placeholder={t("messages.inputPlaceholder")}
             value={input}
             onChange={(e) => {
               setInput(e.target.value);

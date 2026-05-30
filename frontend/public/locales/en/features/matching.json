@@ -14,6 +14,145 @@
     "ownerDashboard": "Owner Dashboard",
     "adminPanel": "Admin Panel"
   },
+  "roles": {
+    "user": "Player",
+    "owner": "Venue Owner",
+    "admin": "Admin"
+  },
+  "languages": {
+    "vi": "Vietnamese",
+    "en": "English"
+  },
+  "matchingMock": {
+    "today": "Today",
+    "venues": {
+      "tennis": { "name": "Riverside Court", "detail": "Court 3, Main stadium" },
+      "basketball": { "name": "Downtown Sports Center", "detail": "Court B, Upper floor" },
+      "badminton": { "name": "Binh Thanh Indoor Club", "detail": "Arena 2, Court 1" },
+      "football": { "name": "Go Vap Sports Complex", "detail": "Court 4, East wing" },
+      "pickleball": { "name": "Thu Duc Recreation Center", "detail": "Court 6" },
+      "volleyball": { "name": "District 1 Beach Court", "detail": "Zone A" },
+      "default": { "name": "Sports Center", "detail": "Court 1" }
+    }
+  },
+  "owner": {
+    "nav": {
+      "venues": "My Venues",
+      "bookings": "All Bookings",
+      "analytics": "Analytics",
+      "settings": "Settings"
+    },
+    "playerView": "Player View",
+    "days": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "dashboard": {
+      "loadError": "Could not load venues.",
+      "totalVenues": "Total venues",
+      "activeRanges": "Active ranges",
+      "averagePrice": "Average price",
+      "requiredFields": "Enter a venue name and location.",
+      "createSuccess": "Venue created successfully.",
+      "createError": "Could not create the venue.",
+      "deleteConfirm": "Delete {{name}}?",
+      "deleteSuccess": "Deleted {{name}}.",
+      "deleteError": "Could not delete this venue.",
+      "title": "Manage venues with live backend data.",
+      "subtitle": "The venue list, create action, and delete action now call the owner API directly instead of using mock data.",
+      "closeCreateForm": "Close create form",
+      "createVenue": "Create venue",
+      "searchPlaceholder": "Search by venue name or location",
+      "createTitle": "Create venue",
+      "fields": {
+        "name": "Venue name",
+        "location": "Location",
+        "slotPrice": "Price per slot",
+        "slotDuration": "Slot duration (minutes)",
+        "activeDay": "Active day",
+        "timeRange": "Time range",
+        "description": "Description"
+      },
+      "creating": "Creating...",
+      "saveVenue": "Save venue",
+      "cancel": "Cancel",
+      "libraryTitle": "Your venues",
+      "visibleCount": "{{count}} venues shown",
+      "loading": "Loading venues...",
+      "empty": "No matching venues found.",
+      "perSlot": "per slot",
+      "duration": "duration",
+      "rangesPerWeek": "ranges / week",
+      "sampleSchedule": "Sample schedule",
+      "noSchedule": "No schedule",
+      "manageVenue": "Manage venue"
+    },
+    "manage": {
+      "player": "Player",
+      "noEmail": "No email",
+      "manualRefundRequest": "Manual refund request",
+      "reject": "Reject",
+      "approveRefund": "Approve refund",
+      "editTitle": "Edit venue information",
+      "fields": {
+        "name": "Venue name",
+        "location": "Location",
+        "slotPrice": "Price per slot",
+        "slotDuration": "Slot duration",
+        "activeDay": "Active day",
+        "timeRange": "Time range",
+        "description": "Description"
+      },
+      "save": "Save changes",
+      "deleteVenue": "Delete venue",
+      "previewDescription": "The venue description will appear here.",
+      "perSlot": "per slot",
+      "minutes": "{{count}} minutes",
+      "duration": "duration",
+      "loadError": "Could not load venue data.",
+      "slotOpened": "Reopened slot {{time}}",
+      "slotBlocked": "Blocked slot {{time}}",
+      "slotUpdateError": "Could not update the slot status.",
+      "updateSuccess": "Venue information updated.",
+      "updateError": "Could not update venue information.",
+      "deleteConfirm": "Delete {{name}}?",
+      "deleteSuccess": "Deleted {{name}}.",
+      "deleteError": "Could not delete this venue.",
+      "refundApproved": "Refund approved.",
+      "refundRejected": "Refund rejected.",
+      "refundError": "Could not process the refund request.",
+      "tabs": {
+        "schedule": "Schedule & Slots",
+        "settings": "Venue settings"
+      },
+      "rangesPerWeek": "{{count}} ranges / week",
+      "noVenueBookings": "No bookings for this venue",
+      "bookingsForDate": "{{count}} bookings on {{date}}",
+      "manualRequestCount": "{{count}} manual requests",
+      "noBookings": "No bookings",
+      "scheduleTitle": "Manage venue schedule",
+      "scheduleSubtitle": "Slot data is loaded directly from API GET /venues/:venueId/slots.",
+      "today": "Today",
+      "blockAllSuccess": "Blocked all available slots",
+      "openAllSuccess": "Reopened all unavailable slots"
+    }
+  },
+  "admin": {
+    "nav": {
+      "overview": "Overview",
+      "users": "Users",
+      "reports": "Reports",
+      "analytics": "Analytics",
+      "system": "System"
+    },
+    "playerView": "Player View",
+    "suspendedUsers": "{{count}} suspended"
+  },
   "fab": {
     "title": "Find a Match Now",
     "label": "Find Match"
@@ -174,6 +313,397 @@
     "days": "{{count}}d ago"
   },
   "profile": {
-    "playerRating": "Player Rating"
+    "playerRating": "Player Rating",
+    "favoriteSports": "Favorite sports",
+    "skillLevel": "Skill level",
+    "totalBookings": "Total bookings",
+    "matchesPlayed": "Matches played",
+    "level": "Level",
+    "levelValue": "Level {{level}}",
+    "reputationPoints": "{{count}} reputation points",
+    "achievementCount": "{{count}} achievements",
+    "achievements": "Achievements",
+    "details": "Profile details",
+    "performance": "Performance",
+    "noFavoriteSports": "No sports selected.",
+    "account": "Account",
+    "status": "status",
+    "unlocked": "Unlocked",
+    "fromAchievements": "From achievements",
+    "noActivity": "No activity yet",
+    "edit": "Edit profile",
+    "joined": "Joined {{date}}",
+    "reviewCount": "{{count}} reviews",
+    "loginRequired": "Please log in to view your profile",
+    "loading": "Loading profile…",
+    "ageValue": "{{count}} years old",
+    "verified": "Verified",
+    "notVerified": "Not verified",
+    "tabs": {
+      "info": "Personal information",
+      "achievements": "Achievements ({{unlocked}}/{{total}})",
+      "activity": "Activity"
+    },
+    "form": {
+      "displayName": "Display name *",
+      "locationPlaceholder": "Enter your location",
+      "age": "Age",
+      "agePlaceholder": "Your age",
+      "gender": "Gender",
+      "saving": "Saving…",
+      "save": "Save changes"
+    },
+    "genders": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "prefer_not_to_say": "Prefer not to say"
+    },
+    "statuses": {
+      "active": "Active",
+      "warning": "Warning",
+      "banned": "Banned"
+    },
+    "categories": {
+      "booking": "Booking",
+      "social": "Social",
+      "skill": "Skill",
+      "loyalty": "Loyalty"
+    },
+    "fields": {
+      "name": "Full name",
+      "age": "Age",
+      "gender": "Gender",
+      "location": "Location",
+      "skillLevel": "Skill level",
+      "reputation": "Reputation",
+      "verification": "Verification",
+      "joinedAt": "Joined date"
+    },
+    "filters": {
+      "all": "All",
+      "unlocked": "Unlocked",
+      "locked": "Locked"
+    },
+    "toast": {
+      "updated": "Profile updated successfully!",
+      "imageRequired": "Please select an image file.",
+      "avatarUpdated": "Profile picture updated."
+    },
+    "activity": {
+      "types": {
+        "booking": "Booking",
+        "match": "Match",
+        "message": "Message",
+        "achievement": "Achievement"
+      },
+      "items": {
+        "a1": { "title": "Booked Binh Thanh Basketball Court", "subtitle": "2 time slots · 150,000₫" },
+        "a2": { "title": "Unlocked achievement: Early Bird", "subtitle": "Earned +80 XP" },
+        "a3": { "title": "Found a match through Matchill", "subtitle": "Badminton · Intermediate · Go Vap" },
+        "a4": { "title": "Booked Go Vap Badminton Arena", "subtitle": "3 time slots · 240,000₫" },
+        "a5": { "title": "Accepted a new matching request", "subtitle": "From: Tuan Pham" },
+        "a6": { "title": "Unlocked achievement: On Fire", "subtitle": "Earned +150 XP" },
+        "a7": { "title": "Booked District 7 Pickleball Club", "subtitle": "1 time slot · 100,000₫" },
+        "a8": { "title": "Posted a teammate request", "subtitle": "Badminton · District 3" }
+      }
+    },
+    "api": {
+      "unauthorized": "You do not have access.",
+      "userNotFound": "User not found.",
+      "loaded": "Profile loaded successfully.",
+      "loadError": "Could not load profile information.",
+      "updated": "Profile updated successfully.",
+      "updateError": "Could not update the profile."
+    }
+  },
+  "feed": {
+    "edited": "edited",
+    "like": "Like",
+    "likeLoginRequired": "Log in to like posts",
+    "updated": "Post updated",
+    "deleted": "Post deleted",
+    "deletePost": "Delete post",
+    "deleteConfirm": "Deleting a post cannot be undone. Continue?",
+    "share": "Share",
+    "shareTitle": "Sports community post",
+    "shareCopied": "Post link copied.",
+    "shareFailed": "Unable to share this post right now.",
+    "viewDetail": "View post details",
+    "comment": {
+      "action": "Comment",
+      "count": "{{count}} comments",
+      "deleted": "Comment deleted",
+      "loading": "Loading comments...",
+      "deleteQuestion": "Delete?",
+      "placeholder": "Write a comment...",
+      "loginRequired": "Log in to comment"
+    },
+    "page": {
+      "title": "Sports",
+      "titleAccent": "community",
+      "prompt": "What would you like to share today?",
+      "post": "Post",
+      "searchPlaceholder": "Search posts in the feed...",
+      "resultsFor": "Results for:",
+      "emptyTitle": "No posts yet",
+      "emptySubtitle": "Be the first to share!",
+      "createPost": "Create post",
+      "loadMore": "Load more ({{count}} remaining)",
+      "end": "You have viewed all {{count}} posts."
+    },
+    "create": {
+      "imageRequired": "Please select an image file.",
+      "success": "Post published successfully!",
+      "title": "Create post",
+      "you": "You",
+      "destination": "Post to feed",
+      "placeholder": "Share something... find a team, post a result, or offer a technique tip...",
+      "charactersRemaining": "{{count}} characters remaining",
+      "addImage": "Add image",
+      "posting": "Posting...",
+      "submit": "Post"
+    },
+    "detail": {
+      "back": "Back to feed",
+      "loading": "Loading post...",
+      "notFound": "Post not found.",
+      "deleted": "Post deleted."
+    },
+    "api": {
+      "feedLoaded": "Feed loaded successfully.",
+      "feedLoadError": "Could not load the feed.",
+      "feedSearched": "Feed search completed.",
+      "feedSearchError": "Could not search the feed.",
+      "postNotFound": "Post not found.",
+      "postDetailLoaded": "Post loaded successfully.",
+      "postDetailError": "Could not load the post.",
+      "unauthorized": "You do not have access.",
+      "contentOrImageRequired": "Enter content or attach an image.",
+      "postCreated": "Post created successfully.",
+      "postCreateError": "Could not create the post.",
+      "postContentRequired": "Enter post content.",
+      "ownPostEditOnly": "You can only edit your own posts.",
+      "postUpdated": "Post updated successfully.",
+      "postUpdateError": "Could not update the post.",
+      "ownPostDeleteOnly": "You can only delete your own posts.",
+      "postDeleted": "Post deleted successfully.",
+      "postDeleteError": "Could not delete the post.",
+      "alreadyLiked": "You already liked this post.",
+      "postLiked": "Post liked.",
+      "postLikeError": "Could not like the post.",
+      "postUnliked": "Post unliked.",
+      "postUnlikeError": "Could not unlike the post.",
+      "commentsLoaded": "Comments loaded successfully.",
+      "commentsLoadError": "Could not load comments.",
+      "commentRequired": "Enter a comment.",
+      "commentCreated": "Comment posted.",
+      "commentCreateError": "Could not post the comment.",
+      "ownCommentEditOnly": "You can only edit your own comments.",
+      "commentUpdated": "Comment updated.",
+      "commentNotFound": "Comment not found.",
+      "commentUpdateError": "Could not update the comment.",
+      "ownCommentDeleteOnly": "You can only delete your own comments.",
+      "commentDeleted": "Comment deleted.",
+      "commentDeleteError": "Could not delete the comment."
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "group": "Group",
+    "online": "Online",
+    "offline": "Offline",
+    "members": "{{count}} members",
+    "voiceCall": "Voice call",
+    "videoCall": "Video call",
+    "info": "Information",
+    "startConversation": "Start the conversation!",
+    "sayHello": "Say hello to {{name}}",
+    "inputPlaceholder": "Enter a message...",
+    "searchPlaceholder": "Search people or groups...",
+    "empty": "No conversations yet",
+    "youMessage": "You: {{content}}",
+    "sportFallback": "sports",
+    "contactIntro": "You messaged {{name}} about their {{sport}} post. Say hello! 👋",
+    "tabs": {
+      "all": "All",
+      "group": "Groups"
+    },
+    "system": {
+      "matchFound": "Opponent found!",
+      "venueBooked": "Venue booked successfully"
+    },
+    "emptyPanel": {
+      "title": "Your messages",
+      "subtitle": "Select a conversation or contact someone from the Discover page",
+      "goToDiscover": "Go to Discover"
+    }
+  },
+  "venues": {
+    "status": {
+      "available": "available",
+      "held": "held",
+      "booked": "booked",
+      "unavailable": "unavailable",
+      "past": "past",
+      "closed": "closed",
+      "selected": "selected",
+      "unavailableClosed": "unavailable / closed"
+    },
+    "bookingStatuses": {
+      "hold": "Held",
+      "payment_pending": "Payment pending",
+      "confirmed": "Confirmed",
+      "refund_processing": "Refund processing",
+      "refunded": "Refunded",
+      "refund_rejected": "Refund rejected",
+      "expired": "Expired"
+    },
+    "fields": {
+      "venue": "Venue",
+      "date": "Date",
+      "slots": "Time slots",
+      "bookingId": "Booking ID",
+      "paid": "Paid",
+      "total": "Total"
+    },
+    "card": {
+      "priceFrom": "From {{price}}/hour",
+      "courts": "{{count}} courts",
+      "availability": "Availability · {{date}}",
+      "moreFacilities": "+{{count}} more"
+    },
+    "slots": {
+      "empty": "No time slots are available for this date."
+    },
+    "districts": {
+      "all": "All districts",
+      "District 1": "District 1",
+      "Binh Thanh": "Binh Thanh",
+      "Go Vap": "Go Vap",
+      "Thu Duc": "Thu Duc",
+      "District 7": "District 7",
+      "Vung Tau": "Vung Tau"
+    },
+    "page": {
+      "title": "Sports venues",
+      "subtitle": "Find and book a sports venue near you for {{date}}",
+      "myBookings": "My bookings",
+      "searchPlaceholder": "Search venues or locations...",
+      "allSports": "All sports",
+      "availabilityNote": "Live venue availability is shown for {{date}}.",
+      "emptyTitle": "No venues found",
+      "emptySubtitle": "Try changing the filters for {{date}}",
+      "found": "{{count}} venues found · Availability for {{date}}"
+    },
+    "detail": {
+      "notFound": "Venue not found",
+      "backToList": "Back to venue list",
+      "back": "Venues",
+      "reviews": "{{count}} reviews",
+      "statusSummary": "Availability summary",
+      "onlineStatus": "Live status for {{date}}",
+      "totalSlots": "{{count}} total slots",
+      "about": "About this venue",
+      "selectDateSlots": "Select date & time slots",
+      "bookingSummary": "Booking summary",
+      "selectedSlots": "Selected slots",
+      "noneSelected": "None selected",
+      "slotCount": "{{count}} slots",
+      "continuePayment": "Continue to payment",
+      "singleSlotOnly": "Only one time slot can be paid for at a time. Select a single slot to continue.",
+      "latestBooking": "Latest booking: #{{id}}"
+    },
+    "booking": {
+      "confirmTitle": "Confirm booking",
+      "confirmSubtitle": "Review your selected time slot",
+      "singleSlotOnly": "Only one time slot can be booked at a time. Go back and select a single slot.",
+      "selectedSlots": "Selected slots ({{count}})",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "Example: Need racket rental, 4 players",
+      "creating": "Creating booking...",
+      "payment": "Payment",
+      "bankOnly": "Bank transfer only",
+      "paymentCreated": "Payment request created",
+      "paymentId": "Payment ID",
+      "transferContent": "Transfer reference",
+      "currentStatus": "Current status",
+      "paymentMethod": "Payment method",
+      "transferTo": "Transfer to",
+      "bank": "Bank",
+      "accountNumber": "Account number",
+      "accountName": "Account name",
+      "transferHint": "Scan the QR code or transfer manually using the exact reference above, then select",
+      "amountDue": "Total amount due",
+      "checking": "Checking...",
+      "checkPayment": "Check payment",
+      "successTitle": "Venue booked successfully!",
+      "successSubtitle": "Your time slot has been reserved",
+      "tip": "Tip",
+      "refundTip": "You can request a refund from your bookings. Instant automatic refunds depend on the system refund window.",
+      "continueBrowsing": "Continue browsing venues",
+      "paymentOptions": {
+        "bank": "Bank transfer",
+        "bankDescription": "Vietcombank, Techcombank...",
+        "card": "Credit / debit card",
+        "momo": "MoMo wallet",
+        "unavailable": "Temporarily unavailable for this flow"
+      },
+      "errors": {
+        "selectOneSlot": "Select exactly one time slot for this payment flow.",
+        "createPayment": "Unable to create a payment request.",
+        "notInitialized": "The payment request has not been initialized.",
+        "expired": "Payment is incomplete or the venue hold has expired.",
+        "processing": "Payment is still processing. Complete the transfer and check again.",
+        "checkPayment": "Unable to check payment status."
+      }
+    },
+    "refund": {
+      "request": "Request refund",
+      "requested": "Refund requested",
+      "unavailable": "Refund unavailable",
+      "success": "Refund successful",
+      "sent": "Refund request sent",
+      "autoSuccess": "The {{price}} refund was processed automatically.",
+      "manualSent": "The {{price}} refund request was sent to the venue owner for manual processing.",
+      "systemStatus": "System status",
+      "done": "Done",
+      "windowExpired": "The automatic refund window has expired",
+      "manualApproval": "You can still request a refund, but it requires manual approval from the venue owner.",
+      "contactIfRejected": "If the request is rejected, contact the venue owner directly for assistance.",
+      "close": "Close",
+      "sending": "Sending…",
+      "send": "Send refund request",
+      "windowClosesIn": "Automatic refund window closes in",
+      "autoDeadline": "Automatic refund deadline",
+      "bookingInfo": "Booking information",
+      "amount": "Refund amount",
+      "methodNotice": "The system will determine whether the refund is automatic or requires venue owner approval.",
+      "confirm": "Confirm refund",
+      "errors": {
+        "request": "Unable to request a refund."
+      }
+    },
+    "bookings": {
+      "paymentPending": "Waiting for payment confirmation. The venue hold expires at {{time}}.",
+      "refundProcessing": "Your refund request has been sent and is processing.",
+      "refunded": "{{price}} was refunded to your account.",
+      "refundRejected": "The refund request was rejected. Contact the venue owner for details.",
+      "contactOwner": "Contact venue owner",
+      "subtitle": "Manage your venue bookings and refunds",
+      "emptyTitle": "No bookings yet",
+      "emptySubtitle": "Book a venue from the Venues page to get started",
+      "findVenue": "Find venues",
+      "tabs": {
+        "all": "All ({{count}})",
+        "confirmed": "Confirmed ({{count}})",
+        "paymentPending": "Payment pending ({{count}})",
+        "refundProcessing": "Refund processing ({{count}})",
+        "refunded": "Refunded ({{count}})",
+        "expired": "Expired ({{count}})"
+      }
+    }
   }
 }

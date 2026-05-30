@@ -26,12 +26,14 @@
 
 import axios from 'axios';
 import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
+import i18n from '../../../shared/i18n/i18n';
 import { store } from '../../../app/store';
 import type { ApiResponse, GetMeResponseData, ApiProfile, UpdateProfilePayload } from '../../auth/types/auth.types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+const profileMessage = (key: string) => i18n.t(`profile.api.${key}`, { ns: 'matching' });
 
 /** Đọc JWT từ Redux state — không phụ thuộc vào bridge authStore. */
 function authHeader(): Record<string, string> {
@@ -91,12 +93,12 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
   if (isMockApi) {
     await delay(500);
     const user = getAuthUser();
-    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
+    if (!user) return { success: false, message: profileMessage('unauthorized') };
     const profile = _mockProfiles[user._id];
-    if (!profile) return { success: false, message: 'Không tìm thấy người dùng.' };
+    if (!profile) return { success: false, message: profileMessage('userNotFound') };
     return {
       success: true,
-      message: 'Tải thông tin hồ sơ người dùng thành công.',
+      message: profileMessage('loaded'),
       data: {
         user: {
           _id: user._id,
@@ -111,9 +113,9 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
 
   try {
     const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: authHeader() });
-    return { success: true, message: res.data.message || 'Tải thông tin hồ sơ người dùng thành công.', data: res.data.data };
+    return { success: true, message: res.data.message || profileMessage('loaded'), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? 'Không thể tải thông tin hồ sơ.' };
+    return { success: false, message: err.response?.data?.message ?? profileMessage('loadError') };
   }
 }
 
@@ -121,7 +123,7 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
   if (isMockApi) {
     await delay(600);
     const user = getAuthUser();
-    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
+    if (!user) return { success: false, message: profileMessage('unauthorized') };
     const existing = _mockProfiles[user._id] ?? {
       _id: `prof-${user._id}`,
       user_id: user._id,
@@ -131,15 +133,15 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
     };
     const updated: ApiProfile = { ...existing, ...payload };
     _mockProfiles[user._id] = updated;
-    return { success: true, message: 'Cập nhật hồ sơ người dùng thành công.', data: updated };
+    return { success: true, message: profileMessage('updated'), data: updated };
   }
 
   try {
     const res = await axios.put(`${API_BASE_URL}/users/profile`, payload, {
       headers: { ...authHeader(), 'Content-Type': 'application/json' },
     });
-    return { success: true, message: res.data.message || 'Cập nhật hồ sơ người dùng thành công.', data: res.data.data };
+    return { success: true, message: res.data.message || profileMessage('updated'), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? 'Cập nhật hồ sơ thất bại.' };
+    return { success: false, message: err.response?.data?.message ?? profileMessage('updateError') };
   }
 }

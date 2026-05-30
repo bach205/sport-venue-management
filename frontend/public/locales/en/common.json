@@ -1,5 +1,6 @@
 {
   "loading": "Loading...",
+  "processing": "Processing...",
   "error": "An error occurred",
   "retry": "Retry",
   "save": "Save",

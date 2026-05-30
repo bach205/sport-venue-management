@@ -1,12 +1,13 @@
 import type { VenueSlot } from '../types/venues.types';
+import { useTranslation } from 'react-i18next';
 
 function isPastSlot(slot: VenueSlot) {
   const slotStart = new Date(`${slot.date}T${slot.startTime}:00`);
   return !Number.isNaN(slotStart.getTime()) && slotStart.getTime() < Date.now();
 }
 
-function formatPrice(n: number) {
-  return new Intl.NumberFormat('vi-VN').format(n) + '₫';
+function formatPrice(n: number, locale: string) {
+  return new Intl.NumberFormat(locale).format(n) + '₫';
 }
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
+  const { t, i18n } = useTranslation('matching');
+  const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   if (loading) {
     return (
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -34,7 +37,7 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
   if (slots.length === 0) {
     return (
       <div className="text-center py-8" style={{ color: '#8b7266', fontFamily: 'Inter, sans-serif', fontSize: '14px' }}>
-        Không có khung giờ nào khả dụng cho ngày này.
+        {t('venues.slots.empty')}
       </div>
     );
   }
@@ -94,16 +97,16 @@ export function SlotGrid({ slots, selectedIds, onToggle, loading }: Props) {
         }
 
         const statusLabel = isBooked
-          ? 'Đã đặt'
+          ? t('venues.status.booked')
           : isHeld
-            ? 'Tạm giữ'
+            ? t('venues.status.held')
             : isUnavailable
-              ? 'Không khả dụng'
+              ? t('venues.status.unavailable')
               : isPast
-                ? 'Đã qua'
+                ? t('venues.status.past')
               : isClosed
-                ? 'Đóng cửa'
-                : formatPrice(slot.price);
+                ? t('venues.status.closed')
+                : formatPrice(slot.price, locale);
 
         return (
           <button

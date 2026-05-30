@@ -19,6 +19,7 @@
 
 import axios from 'axios';
 import { isMockApi, API_BASE_URL } from '../../../shared/constants/api';
+import i18n from '../../../shared/i18n/i18n';
 import { getToken, getCurrentUser } from '../store/authStore';
 import type {
   ApiResponse,
@@ -28,6 +29,7 @@ import type {
 } from '../types/auth.types';
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+const profileMessage = (key: string) => i18n.t(`profile.api.${key}`, { ns: 'matching' });
 
 function authHeader() {
   const token = getToken();
@@ -76,12 +78,12 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
   if (isMockApi) {
     await delay(500);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
+    if (!user) return { success: false, message: profileMessage('unauthorized') };
     const profile = _mockProfiles[user._id];
-    if (!profile) return { success: false, message: 'Không tìm thấy người dùng.' };
+    if (!profile) return { success: false, message: profileMessage('userNotFound') };
     return {
       success: true,
-      message: 'Tải thông tin hồ sơ người dùng thành công.',
+      message: profileMessage('loaded'),
       data: {
         user: {
           _id: user._id,
@@ -98,9 +100,9 @@ export async function getMe(): Promise<ApiResponse<GetMeResponseData>> {
     const res = await axios.get(`${API_BASE_URL}/users/me`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message || 'Tải thông tin hồ sơ người dùng thành công.', data: res.data.data };
+    return { success: true, message: res.data.message || profileMessage('loaded'), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || 'Không thể tải thông tin hồ sơ.' };
+    return { success: false, message: err.response?.data?.message || profileMessage('loadError') };
   }
 }
 
@@ -108,7 +110,7 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
   if (isMockApi) {
     await delay(600);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: 'Không có quyền truy cập.' };
+    if (!user) return { success: false, message: profileMessage('unauthorized') };
 
     const existing = _mockProfiles[user._id] ?? {
       _id: `prof-${user._id}`,
@@ -122,7 +124,7 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
 
     return {
       success: true,
-      message: 'Cập nhật hồ sơ người dùng thành công.',
+      message: profileMessage('updated'),
       data: updated,
     };
   }
@@ -131,8 +133,8 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<ApiR
     const res = await axios.put(`${API_BASE_URL}/users/profile`, payload, {
       headers: { ...authHeader(), 'Content-Type': 'application/json' },
     });
-    return { success: true, message: res.data.message || 'Cập nhật hồ sơ người dùng thành công.', data: res.data.data };
+    return { success: true, message: res.data.message || profileMessage('updated'), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message || 'Cập nhật hồ sơ thất bại.' };
+    return { success: false, message: err.response?.data?.message || profileMessage('updateError') };
   }
 }

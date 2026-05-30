@@ -1,5 +1,5 @@
 import { createAxiosInstance } from "@/shared/api/axiosBase";
-import { isMockApi, API_BASE_URL } from "../../../shared/constants/api";
+import { API_BASE_URL } from "../../../shared/constants/api";
 
 const api = createAxiosInstance(API_BASE_URL);
 

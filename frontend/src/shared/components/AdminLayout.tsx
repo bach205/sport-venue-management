@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
@@ -16,16 +16,18 @@ import { logout } from "../../features/auth/store/authSlice";
 import { getAdminStats } from "../../features/admin/store/adminStore";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
+import { useTranslation } from "react-i18next";
 
 const NAV = [
-  { to: "/admin", exact: true, icon: <LayoutDashboard size={18} />, label: "Overview" },
-  { to: "/admin/users", exact: false, icon: <Users size={18} />, label: "Users" },
-  { to: "/admin/reports", exact: false, icon: <Flag size={18} />, label: "Reports" },
-  { to: "/admin/analytics", exact: false, icon: <BarChart3 size={18} />, label: "Analytics" },
-  { to: "/admin/settings", exact: false, icon: <Settings size={18} />, label: "System" },
+  { to: "/admin", exact: true, icon: <LayoutDashboard size={18} />, key: "admin.nav.overview" },
+  { to: "/admin/users", exact: false, icon: <Users size={18} />, key: "admin.nav.users" },
+  { to: "/admin/reports", exact: false, icon: <Flag size={18} />, key: "admin.nav.reports" },
+  { to: "/admin/analytics", exact: false, icon: <BarChart3 size={18} />, key: "admin.nav.analytics" },
+  { to: "/admin/settings", exact: false, icon: <Settings size={18} />, key: "admin.nav.system" },
 ];
 
 export default function AdminLayout() {
+  const { t } = useTranslation("matching");
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -39,7 +41,7 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     dispatch(logout());
-    toast.success("Đã đăng xuất");
+    toast.success(t("layout.logoutSuccess"));
     navigate("/login");
   };
   const isActive = (to: string, exact?: boolean) =>
@@ -81,8 +83,8 @@ export default function AdminLayout() {
                 ${active ? "bg-brand-red text-white font-semibold" : "text-brand-body font-normal hover:bg-brand-surface-orange"}`}
             >
               <span className={active ? "opacity-100" : "opacity-70"}>{item.icon}</span>
-              {item.label}
-              {item.label === "Reports" && stats.pendingVerification > 0 && (
+              {t(item.key)}
+              {item.key === "admin.nav.reports" && stats.pendingVerification > 0 && (
                 <span
                   className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold
                   ${active ? "bg-white/30 text-white" : "bg-[#ffd6d6] text-brand-red"}`}
@@ -90,7 +92,7 @@ export default function AdminLayout() {
                   {stats.pendingVerification}
                 </span>
               )}
-              {active && !item.label.includes("Reports") && (
+              {active && item.key !== "admin.nav.reports" && (
                 <ChevronRight size={14} className="ml-auto" />
               )}
             </Link>
@@ -103,13 +105,13 @@ export default function AdminLayout() {
           to="/discover"
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-brand-muted no-underline text-sm"
         >
-          <LayoutDashboard size={18} /> Player View
+          <LayoutDashboard size={18} /> {t("admin.playerView")}
         </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#ffeeee] w-full transition-colors text-[#ba1a1a] text-sm font-medium"
         >
-          <LogOut size={18} /> Đăng xuất
+          <LogOut size={18} /> {t("layout.logout")}
         </button>
       </div>
     </div>
@@ -146,7 +148,7 @@ export default function AdminLayout() {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ffd6d6]">
               <ShieldAlert size={14} className="text-brand-red" />
               <span className="text-xs font-semibold text-brand-red">
-                {stats.suspendedUsers} suspended
+                {t("admin.suspendedUsers", { count: stats.suspendedUsers })}
               </span>
             </div>
           )}

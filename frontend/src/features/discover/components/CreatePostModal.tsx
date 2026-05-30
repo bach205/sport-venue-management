@@ -7,17 +7,6 @@ import { useTranslation } from 'react-i18next';
 
 const SPORTS = SPORT_OPTIONS;
 
-const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
-  casual: 'Giải trí',
-  intermediate: 'Bán chuyên',
-  competitive: 'Chuyên nghiệp',
-};
-
-const POST_TYPE_LABELS: Record<PostType, string> = {
-  teammate: 'Tìm đồng đội',
-  opponent: 'Tìm đối thủ',
-};
-
 interface Props {
   onClose: () => void;
   onCreated: () => void;
@@ -26,7 +15,7 @@ interface Props {
 export function CreatePostModal({ onClose, onCreated }: Props) {
   const { t } = useTranslation('matching');
   const [sport, setSport] = useState<Sport>('tennis');
-  const [location, setLocation] = useState(LOCATION_OPTIONS[0]);
+  const [location, setLocation] = useState<string>(LOCATION_OPTIONS[0]);
   const [time, setTime] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('casual');
   const [playersNeeded, setPlayersNeeded] = useState(1);

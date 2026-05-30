@@ -64,6 +64,7 @@
 
 import axios from "axios";
 import { isMockApi, API_BASE_URL } from "../../../shared/constants/api";
+import i18n from "../../../shared/i18n/i18n";
 import { getCurrentUser, getToken } from "../../auth/store/authStore";
 import type { ApiPost, ApiComment, ApiAuthor, FeedData, CommentsData } from "../types/feed.types";
 import type { ApiResponse } from "../../auth/types/auth.types";
@@ -71,6 +72,7 @@ import type { ApiResponse } from "../../auth/types/auth.types";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const feedMessage = (key: string) => i18n.t(`feed.api.${key}`, { ns: "matching" });
 
 function authHeader(): Record<string, string> {
   const t = getToken();
@@ -314,7 +316,7 @@ export async function getFeed(
     const pages = Math.ceil(total / limit);
     return {
       success: true,
-      message: "Tải bảng tin thành công.",
+      message: feedMessage("feedLoaded"),
       data: { items, pagination: { page, limit, total, pages }, meta: { scope: "global" } },
     };
   }
@@ -323,9 +325,9 @@ export async function getFeed(
       headers: authHeader(),
       params: { page, limit },
     });
-    return { success: true, message: res.data.message || "Tải bảng tin thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("feedLoaded"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể tải bảng tin." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("feedLoadError") };
   }
 }
 
@@ -349,7 +351,7 @@ export async function searchFeed(
     const pages = Math.ceil(total / limit) || 1;
     return {
       success: true,
-      message: "Tìm kiếm bảng tin thành công.",
+      message: feedMessage("feedSearched"),
       data: { items, pagination: { page, limit, total, pages }, meta: { scope: "search", query: q } },
     };
   }
@@ -358,9 +360,9 @@ export async function searchFeed(
       headers: authHeader(),
       params: { q, page, limit },
     });
-    return { success: true, message: res.data.message || "Tìm kiếm bảng tin thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("feedSearched"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể tìm kiếm bảng tin." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("feedSearchError") };
   }
 }
 
@@ -370,16 +372,16 @@ export async function getPostDetail(postId: string): Promise<ApiResponse<ApiPost
     const user = getCurrentUser();
     const userId = user ? user._id : null;
     const post = _posts.find((p) => p.id === postId);
-    if (!post) return { success: false, message: "Không tìm thấy bài viết." };
-    return { success: true, message: "Tải chi tiết bài viết thành công.", data: resolvePost(post, userId) };
+    if (!post) return { success: false, message: feedMessage("postNotFound") };
+    return { success: true, message: feedMessage("postDetailLoaded"), data: resolvePost(post, userId) };
   }
   try {
     const res = await axios.get(`${API_BASE_URL}/social/posts/${postId}`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message || "Tải chi tiết bài viết thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("postDetailLoaded"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể tải chi tiết bài viết." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("postDetailError") };
   }
 }
 
@@ -390,8 +392,8 @@ export async function createPost(
   if (isMockApi) {
     await delay(500);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
-    if (!content.trim() && !imageUrl) return { success: false, message: "Vui lòng nhập nội dung hoặc đính kèm hình ảnh." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
+    if (!content.trim() && !imageUrl) return { success: false, message: feedMessage("contentOrImageRequired") };
     const now = new Date().toISOString();
     const newPost: PostBase = {
       id: `post-${++_postIdCounter}`,
@@ -406,7 +408,7 @@ export async function createPost(
     _posts.push(newPost);
     return {
       success: true,
-      message: "Tạo bài viết thành công.",
+      message: feedMessage("postCreated"),
       data: resolvePost(newPost, user._id),
     };
   }
@@ -418,11 +420,11 @@ export async function createPost(
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message || "Tạo bài viết thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("postCreated"), data: res.data.data };
   } catch (err: any) {
     const msg =
-      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? "Không thể tạo bài viết.";
-    if (msg === "Content is required.") return { success: false, message: "Vui lòng nhập nội dung bài viết." };
+      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? feedMessage("postCreateError");
+    if (msg === "Content is required.") return { success: false, message: feedMessage("postContentRequired") };
     return { success: false, message: msg };
   }
 }
@@ -431,16 +433,16 @@ export async function updatePost(postId: string, content: string): Promise<ApiRe
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
     const idx = _posts.findIndex((p) => p.id === postId);
-    if (idx === -1) return { success: false, message: "Không tìm thấy bài viết." };
+    if (idx === -1) return { success: false, message: feedMessage("postNotFound") };
     if (_posts[idx].author.id !== user._id)
-      return { success: false, message: "Bạn chỉ có thể chỉnh sửa bài viết của chính mình." };
+      return { success: false, message: feedMessage("ownPostEditOnly") };
     _posts[idx].content = content.trim();
     _posts[idx].updatedAt = new Date().toISOString();
     return {
       success: true,
-      message: "Cập nhật bài viết thành công.",
+      message: feedMessage("postUpdated"),
       data: resolvePost(_posts[idx], user._id),
     };
   }
@@ -452,9 +454,9 @@ export async function updatePost(postId: string, content: string): Promise<ApiRe
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message || "Cập nhật bài viết thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("postUpdated"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể cập nhật bài viết." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("postUpdateError") };
   }
 }
 
@@ -462,21 +464,21 @@ export async function deletePost(postId: string): Promise<ApiResponse<void>> {
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
     const idx = _posts.findIndex((p) => p.id === postId);
-    if (idx === -1) return { success: false, message: "Không tìm thấy bài viết." };
+    if (idx === -1) return { success: false, message: feedMessage("postNotFound") };
     if (_posts[idx].author.id !== user._id)
-      return { success: false, message: "Bạn chỉ có thể xóa bài viết của chính mình." };
+      return { success: false, message: feedMessage("ownPostDeleteOnly") };
     _posts.splice(idx, 1);
-    return { success: true, message: "Xóa bài viết thành công." };
+    return { success: true, message: feedMessage("postDeleted") };
   }
   try {
     const res = await axios.delete(`${API_BASE_URL}/social/posts/${postId}`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message || "Xóa bài viết thành công." };
+    return { success: true, message: res.data.message || feedMessage("postDeleted") };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể xóa bài viết." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("postDeleteError") };
   }
 }
 
@@ -484,15 +486,15 @@ export async function likePost(postId: string): Promise<ApiResponse<ApiPost>> {
   if (isMockApi) {
     await delay(200);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
     const userId = user._id;
     if (!_likedByUser[userId]) _likedByUser[userId] = new Set();
-    if (_likedByUser[userId].has(postId)) return { success: false, message: "Bạn đã thích bài viết này rồi." };
+    if (_likedByUser[userId].has(postId)) return { success: false, message: feedMessage("alreadyLiked") };
     _likedByUser[userId].add(postId);
     const post = _posts.find((p) => p.id === postId);
-    if (!post) return { success: false, message: "Không tìm thấy bài viết." };
+    if (!post) return { success: false, message: feedMessage("postNotFound") };
     post.likeCount += 1;
-    return { success: true, message: "Thích bài viết thành công.", data: resolvePost(post, userId) };
+    return { success: true, message: feedMessage("postLiked"), data: resolvePost(post, userId) };
   }
   try {
     const res = await axios.post(
@@ -500,9 +502,9 @@ export async function likePost(postId: string): Promise<ApiResponse<ApiPost>> {
       {},
       { headers: authHeader() }
     );
-    return { success: true, message: res.data.message || "Thích bài viết thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("postLiked"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể thích bài viết." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("postLikeError") };
   }
 }
 
@@ -510,15 +512,15 @@ export async function unlikePost(postId: string): Promise<ApiResponse<ApiPost>> 
   if (isMockApi) {
     await delay(200);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
     const userId = user._id;
     if (_likedByUser[userId]) _likedByUser[userId].delete(postId);
     const post = _posts.find((p) => p.id === postId);
-    if (!post) return { success: false, message: "Không tìm thấy bài viết." };
+    if (!post) return { success: false, message: feedMessage("postNotFound") };
     post.likeCount = Math.max(0, post.likeCount - 1);
     return {
       success: true,
-      message: "Bỏ thích bài viết thành công.",
+      message: feedMessage("postUnliked"),
       data: resolvePost(post, userId),
     };
   }
@@ -526,9 +528,9 @@ export async function unlikePost(postId: string): Promise<ApiResponse<ApiPost>> 
     const res = await axios.delete(`${API_BASE_URL}/social/posts/${postId}/like`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message || "Bỏ thích bài viết thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("postUnliked"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể bỏ thích bài viết." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("postUnlikeError") };
   }
 }
 
@@ -548,7 +550,7 @@ export async function getComments(
     const pages = Math.ceil(total / limit) || 1;
     return {
       success: true,
-      message: "Tải danh sách bình luận thành công.",
+      message: feedMessage("commentsLoaded"),
       data: { items, pagination: { page, limit, total, pages } },
     };
   }
@@ -557,9 +559,9 @@ export async function getComments(
       headers: authHeader(),
       params: { page, limit },
     });
-    return { success: true, message: res.data.message || "Tải danh sách bình luận thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("commentsLoaded"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể tải bình luận." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("commentsLoadError") };
   }
 }
 
@@ -570,8 +572,8 @@ export async function createComment(
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
-    if (!content.trim()) return { success: false, message: "Vui lòng nhập nội dung bình luận." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
+    if (!content.trim()) return { success: false, message: feedMessage("commentRequired") };
     const now = new Date().toISOString();
     const newComment: CommentBase = {
       id: `c-${++_commentIdCounter}`,
@@ -587,7 +589,7 @@ export async function createComment(
     if (post) post.commentCount += 1;
     return {
       success: true,
-      message: "Bình luận thành công.",
+      message: feedMessage("commentCreated"),
       data: resolveComment(newComment, user._id),
     };
   }
@@ -599,11 +601,11 @@ export async function createComment(
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message || "Bình luận thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("commentCreated"), data: res.data.data };
   } catch (err: any) {
     const msg =
-      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? "Không thể gửi bình luận.";
-    if (msg === "Content is required.") return { success: false, message: "Vui lòng nhập nội dung bình luận." };
+      err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? feedMessage("commentCreateError");
+    if (msg === "Content is required.") return { success: false, message: feedMessage("commentRequired") };
     return { success: false, message: msg };
   }
 }
@@ -615,22 +617,22 @@ export async function updateComment(
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
     for (const postId of Object.keys(_comments)) {
       const idx = _comments[postId].findIndex((c) => c.id === commentId);
       if (idx !== -1) {
         if (_comments[postId][idx].author.id !== user._id)
-          return { success: false, message: "Bạn chỉ có thể chỉnh sửa bình luận của chính mình." };
+          return { success: false, message: feedMessage("ownCommentEditOnly") };
         _comments[postId][idx].content = content.trim();
         _comments[postId][idx].updatedAt = new Date().toISOString();
         return {
           success: true,
-          message: "Cập nhật bình luận thành công.",
+          message: feedMessage("commentUpdated"),
           data: resolveComment(_comments[postId][idx], user._id),
         };
       }
     }
-    return { success: false, message: "Không tìm thấy bình luận." };
+    return { success: false, message: feedMessage("commentNotFound") };
   }
   try {
     const res = await axios.patch(
@@ -640,9 +642,9 @@ export async function updateComment(
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
     );
-    return { success: true, message: res.data.message || "Cập nhật bình luận thành công.", data: res.data.data };
+    return { success: true, message: res.data.message || feedMessage("commentUpdated"), data: res.data.data };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể cập nhật bình luận." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("commentUpdateError") };
   }
 }
 
@@ -650,26 +652,26 @@ export async function deleteComment(commentId: string): Promise<ApiResponse<void
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!user) return { success: false, message: feedMessage("unauthorized") };
     for (const postId of Object.keys(_comments)) {
       const idx = _comments[postId].findIndex((c) => c.id === commentId);
       if (idx !== -1) {
         if (_comments[postId][idx].author.id !== user._id)
-          return { success: false, message: "You can only delete your own comments." };
+          return { success: false, message: feedMessage("ownCommentDeleteOnly") };
         _comments[postId].splice(idx, 1);
         const post = _posts.find((p) => p.id === postId);
         if (post) post.commentCount = Math.max(0, post.commentCount - 1);
-        return { success: true, message: "Xóa bình luận thành công." };
+        return { success: true, message: feedMessage("commentDeleted") };
       }
     }
-    return { success: false, message: "Không tìm thấy bình luận." };
+    return { success: false, message: feedMessage("commentNotFound") };
   }
   try {
     const res = await axios.delete(`${API_BASE_URL}/social/comments/${commentId}`, {
       headers: authHeader(),
     });
-    return { success: true, message: res.data.message || "Xóa bình luận thành công." };
+    return { success: true, message: res.data.message || feedMessage("commentDeleted") };
   } catch (err: any) {
-    return { success: false, message: err.response?.data?.message ?? "Không thể xóa bình luận." };
+    return { success: false, message: err.response?.data?.message ?? feedMessage("commentDeleteError") };
   }
 }

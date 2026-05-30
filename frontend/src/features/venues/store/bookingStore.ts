@@ -12,7 +12,7 @@
  *   POST /api/bookings/:id/refund                      → { data: Booking }
  */
 
-import type { Booking, VenueSlot, BookedSlotRef, Sport, PaymentMethod } from '../types/venues.types';
+import type { Booking, BookedSlotRef, Sport, PaymentMethod } from '../types/venues.types';
 
 // ─── booked slot set: "venueId|date|startTime" → bookingId ───────────────────
 const bookedSlots = new Map<string, string>();
@@ -63,6 +63,7 @@ export function createBooking(params: {
     paymentMethod: params.paymentMethod,
     paidAt: now,
     createdAt: now,
+    updatedAt: now,
     playerName: params.playerName,
     notes: params.notes,
   };
@@ -88,6 +89,7 @@ export function getBookingById(id: string): Booking | undefined {
 
 /** Returns ms remaining in refund window (0 if expired) */
 export function getRefundWindowRemaining(booking: Booking): number {
+  if (!booking.paidAt) return 0;
   const elapsed = Date.now() - new Date(booking.paidAt).getTime();
   return Math.max(0, REFUND_WINDOW_MS - elapsed);
 }
@@ -106,7 +108,7 @@ export function requestRefund(bookingId: string): Booking | null {
     bookedSlots.delete(makeSlotKey(booking.venueId, booking.date, slot.startTime));
   }
 
-  const updated: Booking = { ...booking, status: 'processing_refund' };
+  const updated: Booking = { ...booking, status: 'refund_processing' };
   bookings = [...bookings];
   bookings[idx] = updated;
   return updated;
@@ -124,7 +126,7 @@ export function ownerApproveRefund(bookingId: string): Booking | null {
     bookedSlots.delete(makeSlotKey(booking.venueId, booking.date, slot.startTime));
   }
 
-  const updated: Booking = { ...booking, status: 'processing_refund' };
+  const updated: Booking = { ...booking, status: 'refund_processing' };
   bookings = [...bookings];
   bookings[idx] = updated;
   return updated;

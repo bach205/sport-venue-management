@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Plus,
   MapPin,
@@ -45,26 +47,28 @@ const EMPTY_FORM: CreateVenuePayload = {
 };
 
 const DAY_OPTIONS = [
-  { value: 0, label: "CN" },
-  { value: 1, label: "T2" },
-  { value: 2, label: "T3" },
-  { value: 3, label: "T4" },
-  { value: 4, label: "T5" },
-  { value: 5, label: "T6" },
-  { value: 6, label: "T7" },
+  { value: 0 },
+  { value: 1 },
+  { value: 2 },
+  { value: 3 },
+  { value: 4 },
+  { value: 5 },
+  { value: 6 },
 ];
 
-function formatPrice(value: number) {
-  return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
+function formatPrice(value: number, locale: string) {
+  return `${new Intl.NumberFormat(locale).format(value)}₫`;
 }
 
-function summarizeSchedule(venue: OwnerVenue) {
-  if (!venue.weeklySchedule.length) return "Chưa có lịch";
+function summarizeSchedule(venue: OwnerVenue, t: TFunction) {
+  if (!venue.weeklySchedule.length) return t("owner.dashboard.noSchedule");
   const first = venue.weeklySchedule[0];
-  return `${DAY_OPTIONS.find((day) => day.value === first.dayOfWeek)?.label ?? "T2"} · ${first.startTime} - ${first.endTime}`;
+  return `${t(`owner.days.${first.dayOfWeek}`)} · ${first.startTime} - ${first.endTime}`;
 }
 
 export default function VenueOwnerDashboard() {
+  const { t, i18n } = useTranslation("matching");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
   const [venues, setVenues] = useState<OwnerVenue[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -80,7 +84,7 @@ export default function VenueOwnerDashboard() {
       const items = await fetchOwnerVenues();
       setVenues(items);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Không thể tải danh sách venue.");
+      toast.error(error?.response?.data?.message || t("owner.dashboard.loadError"));
     } finally {
       setLoading(false);
     }
@@ -108,15 +112,15 @@ export default function VenueOwnerDashboard() {
       : 0;
 
     return [
-      { label: "Tổng sân", value: String(venues.length).padStart(2, "0"), icon: "🏟️" },
-      { label: "Ca hoạt động", value: String(totalRanges).padStart(2, "0"), icon: "📅" },
-      { label: "Giá trung bình", value: avgPrice ? formatPrice(avgPrice) : "0đ", icon: "💰" },
+      { label: t("owner.dashboard.totalVenues"), value: String(venues.length).padStart(2, "0"), icon: "🏟️" },
+      { label: t("owner.dashboard.activeRanges"), value: String(totalRanges).padStart(2, "0"), icon: "📅" },
+      { label: t("owner.dashboard.averagePrice"), value: formatPrice(avgPrice, locale), icon: "💰" },
     ];
-  }, [venues]);
+  }, [locale, t, venues]);
 
   const handleCreateVenue = async () => {
     if (!form.name.trim() || !form.location.trim()) {
-      toast.error("Vui lòng nhập tên sân và địa điểm.");
+      toast.error(t("owner.dashboard.requiredFields"));
       return;
     }
 
@@ -127,25 +131,25 @@ export default function VenueOwnerDashboard() {
       setForm(EMPTY_FORM);
       setScheduleDraft(createScheduleRange());
       setShowCreateForm(false);
-      toast.success("Đã tạo sân mới thành công.");
+      toast.success(t("owner.dashboard.createSuccess"));
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Không thể tạo sân mới.");
+      toast.error(error?.response?.data?.message || t("owner.dashboard.createError"));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteVenue = async (venue: OwnerVenue) => {
-    const confirmed = window.confirm(`Xóa sân ${venue.name}?`);
+    const confirmed = window.confirm(t("owner.dashboard.deleteConfirm", { name: venue.name }));
     if (!confirmed) return;
 
     setDeletingId(venue.id);
     try {
       await deleteOwnerVenue(venue.id);
       setVenues((current) => current.filter((item) => item.id !== venue.id));
-      toast.success(`Đã xóa ${venue.name}.`);
+      toast.success(t("owner.dashboard.deleteSuccess", { name: venue.name }));
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Không thể xóa sân này.");
+      toast.error(error?.response?.data?.message || t("owner.dashboard.deleteError"));
     } finally {
       setDeletingId(null);
     }
@@ -199,11 +203,11 @@ export default function VenueOwnerDashboard() {
               </div>
 
               <h1 className="text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "34px", fontWeight: 700, lineHeight: 1.15 }}>
-                Quản lý venue bằng dữ liệu thật từ backend.
+                {t("owner.dashboard.title")}
               </h1>
 
               <p className="mt-3 max-w-2xl text-[#584238]" style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", lineHeight: 1.7 }}>
-                Danh sách sân, tạo sân mới và xóa sân hiện đang gọi trực tiếp owner API thay vì mock data.
+                {t("owner.dashboard.subtitle")}
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -213,7 +217,7 @@ export default function VenueOwnerDashboard() {
                   style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}
                 >
                   {showCreateForm ? <X size={18} /> : <Plus size={18} />}
-                  {showCreateForm ? "Đóng form tạo sân" : "Tạo sân mới"}
+                  {showCreateForm ? t("owner.dashboard.closeCreateForm") : t("owner.dashboard.createVenue")}
                 </Button>
 
                 <div className="relative min-w-[280px] flex-1 max-w-md">
@@ -221,7 +225,7 @@ export default function VenueOwnerDashboard() {
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Tìm theo tên sân hoặc địa điểm"
+                    placeholder={t("owner.dashboard.searchPlaceholder")}
                     className="h-12 border-[#dfc0b3] pl-9 focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20"
                     style={{ fontFamily: "Inter, sans-serif" }}
                   />
@@ -255,29 +259,29 @@ export default function VenueOwnerDashboard() {
                 Create Venue
               </p>
               <h2 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 700 }}>
-                Tạo venue mới
+                {t("owner.dashboard.createTitle")}
               </h2>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Tên sân</Label>
+                <Label>{t("owner.dashboard.fields.name")}</Label>
                 <Input value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
               </div>
               <div className="space-y-1.5">
-                <Label>Địa điểm</Label>
+                <Label>{t("owner.dashboard.fields.location")}</Label>
                 <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
               </div>
               <div className="space-y-1.5">
-                <Label>Giá mỗi slot</Label>
+                <Label>{t("owner.dashboard.fields.slotPrice")}</Label>
                 <Input type="number" value={form.slot_price} onChange={(e) => setForm((prev) => ({ ...prev, slot_price: Number(e.target.value) || 0 }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
               </div>
               <div className="space-y-1.5">
-                <Label>Thời lượng slot (phút)</Label>
+                <Label>{t("owner.dashboard.fields.slotDuration")}</Label>
                 <Input type="number" value={form.slot_duration_minutes} onChange={(e) => setForm((prev) => ({ ...prev, slot_duration_minutes: Number(e.target.value) || 60 }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
               </div>
               <div className="space-y-1.5">
-                <Label>Thứ hoạt động</Label>
+                <Label>{t("owner.dashboard.fields.activeDay")}</Label>
                 <select
                   value={scheduleDraft.day_of_week}
                   onChange={(e) => setScheduleDraft((prev) => ({ ...prev, day_of_week: Number(e.target.value) }))}
@@ -285,19 +289,19 @@ export default function VenueOwnerDashboard() {
                   style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}
                 >
                   {DAY_OPTIONS.map((day) => (
-                    <option key={day.value} value={day.value}>{day.label}</option>
+                    <option key={day.value} value={day.value}>{t(`owner.days.${day.value}`)}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label>Khung giờ</Label>
+                <Label>{t("owner.dashboard.fields.timeRange")}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <Input type="time" value={scheduleDraft.start_time} onChange={(e) => setScheduleDraft((prev) => ({ ...prev, start_time: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
                   <Input type="time" value={scheduleDraft.end_time} onChange={(e) => setScheduleDraft((prev) => ({ ...prev, end_time: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
                 </div>
               </div>
               <div className="space-y-1.5 lg:col-span-2">
-                <Label>Mô tả</Label>
+                <Label>{t("owner.dashboard.fields.description")}</Label>
                 <div className="mb-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">
                     <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>
@@ -344,7 +348,7 @@ export default function VenueOwnerDashboard() {
                             style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif" }}
                           >
                             {DAY_OPTIONS.map((day) => (
-                              <option key={day.value} value={day.value}>{day.label}</option>
+                              <option key={day.value} value={day.value}>{t(`owner.days.${day.value}`)}</option>
                             ))}
                           </select>
                           <div className="grid grid-cols-2 gap-2">
@@ -376,10 +380,10 @@ export default function VenueOwnerDashboard() {
 
             <div className="mt-5 flex flex-wrap gap-3">
               <Button onClick={handleCreateVenue} disabled={submitting} className="h-11 rounded-xl px-5 border-0" style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}>
-                {submitting ? "Đang tạo..." : "Lưu venue mới"}
+                {submitting ? t("owner.dashboard.creating") : t("owner.dashboard.saveVenue")}
               </Button>
               <Button type="button" variant="outline" onClick={() => { setForm(EMPTY_FORM); setScheduleDraft(createScheduleRange()); setShowCreateForm(false); }} className="h-11 rounded-xl border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]" style={{ fontFamily: "Inter, sans-serif", fontWeight: 600 }}>
-                Hủy
+                {t("owner.dashboard.cancel")}
               </Button>
             </div>
           </section>
@@ -392,23 +396,23 @@ export default function VenueOwnerDashboard() {
                 Venue Library
               </p>
               <h2 className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "28px", fontWeight: 700 }}>
-                Danh sách venue của bạn
+                {t("owner.dashboard.libraryTitle")}
               </h2>
             </div>
             <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}>
-              {filteredVenues.length} venue hiển thị
+              {t("owner.dashboard.visibleCount", { count: filteredVenues.length })}
             </p>
           </div>
 
           {loading ? (
             <div className="rounded-[28px] border bg-white p-10 text-center" style={{ borderColor: "#dfc0b3" }}>
-              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#8b7266" }}>Đang tải venues...</p>
+              <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#8b7266" }}>{t("owner.dashboard.loading")}</p>
             </div>
           ) : filteredVenues.length === 0 ? (
             <div className="rounded-[28px] border bg-white p-10 text-center" style={{ borderColor: "#dfc0b3" }}>
               <Building2 size={40} className="mx-auto mb-3 text-[#dfc0b3]" />
               <p style={{ fontFamily: "Inter, sans-serif", fontSize: "15px", color: "#584238" }}>
-                Không tìm thấy venue phù hợp.
+                {t("owner.dashboard.empty")}
               </p>
             </div>
           ) : (
@@ -440,24 +444,24 @@ export default function VenueOwnerDashboard() {
                     <div className="mb-5 grid grid-cols-3 gap-3">
                       <div className="rounded-2xl p-3" style={{ background: "#fef4ef" }}>
                         <Wallet size={16} className="mb-2 text-[#a04100]" />
-                        <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>{formatPrice(venue.slotPrice)}</p>
-                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>mỗi slot</span>
+                        <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>{formatPrice(venue.slotPrice, locale)}</p>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>{t("owner.dashboard.perSlot")}</span>
                       </div>
                       <div className="rounded-2xl p-3" style={{ background: "#eefbf7" }}>
                         <Clock3 size={16} className="mb-2 text-[#006a65]" />
                         <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>{venue.slotDurationMinutes}m</p>
-                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>thời lượng</span>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>{t("owner.dashboard.duration")}</span>
                       </div>
                       <div className="rounded-2xl p-3" style={{ background: "#f3f7ff" }}>
                         <CalendarDays size={16} className="mb-2 text-[#1a5fb4]" />
                         <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914" }}>{venue.weeklySchedule.length}</p>
-                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>ca / tuần</span>
+                        <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>{t("owner.dashboard.rangesPerWeek")}</span>
                       </div>
                     </div>
 
                     <div className="mb-4 rounded-2xl px-3 py-2" style={{ background: "#fff8f3" }}>
-                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>Lịch mẫu</p>
-                      <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>{summarizeSchedule(venue)}</p>
+                      <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>{t("owner.dashboard.sampleSchedule")}</p>
+                      <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 700, color: "#241914" }}>{summarizeSchedule(venue, t)}</p>
                     </div>
 
                     <p style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238", lineHeight: 1.6 }}>{venue.description}</p>
@@ -465,7 +469,7 @@ export default function VenueOwnerDashboard() {
                     <div className="mt-5 flex items-center gap-3">
                       <Link to={`/owner/venues/${venue.id}`} className="flex-1">
                         <Button className="h-11 w-full rounded-xl gap-2 border-0" style={{ background: "linear-gradient(90deg, #a04100 0%, #ff7e36 100%)", color: "#fff", fontFamily: "Lexend, sans-serif", fontWeight: 700 }}>
-                          Quản lý sân
+                          {t("owner.dashboard.manageVenue")}
                           <ArrowRight size={16} />
                         </Button>
                       </Link>

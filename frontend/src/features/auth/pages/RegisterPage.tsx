@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,23 +10,25 @@ import { register as registerApi } from "../api/authApi";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 const SPORT_IMAGE =
   "https://images.unsplash.com/photo-1729564621788-f5658ad291b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWRtaW50b24lMjBiYXNrZXRiYWxsJTIwc3BvcnQlMjBwbGF5ZXIlMjBhY3Rpb258ZW58MXx8fHwxNzc4MjYyNzE4fDA&ixlib=rb-4.1.0&q=80&w=1080";
 
-const schema = z
-  .object({
-    email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
-    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
-    confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu"),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Mật khẩu xác nhận không khớp",
-    path: ["confirmPassword"],
-  });
-type FormData = z.infer<typeof schema>;
+type FormData = { email: string; password: string; confirmPassword: string };
 
 export default function RegisterPage() {
+  const { t } = useTranslation("auth");
+  const schema = useMemo(() => z
+    .object({
+      email: z.string().min(1, t("validation.emailRequired")).email(t("validation.emailInvalid")),
+      password: z.string().min(6, t("validation.passwordMin")),
+      confirmPassword: z.string().min(1, t("validation.confirmPasswordRequired")),
+    })
+    .refine((d) => d.password === d.confirmPassword, {
+      message: t("validation.confirmPasswordMismatch"),
+      path: ["confirmPassword"],
+    }), [t]);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -58,18 +60,17 @@ export default function RegisterPage() {
 
       <div className="mb-6 text-center">
         <h1 className="font-heading text-2xl font-bold text-brand-dark mb-2 leading-tight">
-          Tạo Tài Khoản
+          {t("register.title")}
         </h1>
         <p className="text-sm text-brand-body leading-relaxed">
-          Đăng ký để bắt đầu tìm trận và đặt sân ngay hôm nay.
+          {t("register.subtitle")}
         </p>
       </div>
 
       <div className="flex items-start gap-2 p-3 rounded-xl mb-5 bg-brand-surface-teal border border-brand-teal/20">
         <Info size={15} className="text-brand-teal shrink-0 mt-0.5" />
         <p className="text-[13px] text-brand-teal leading-relaxed">
-          Sau khi đăng ký, bạn sẽ nhận email xác thực. Vui lòng kiểm tra hộp thư để kích hoạt tài
-          khoản trước khi đăng nhập.
+          {t("register.verificationNotice")}
         </p>
       </div>
 
@@ -83,7 +84,7 @@ export default function RegisterPage() {
             <Input
               id="email"
               type="email"
-              placeholder="Nhập email của bạn"
+              placeholder={t("register.emailPlaceholder")}
               className="pl-9 border-brand-border focus-visible:border-brand-teal focus-visible:ring-brand-teal/20 h-11"
               {...register("email")}
             />
@@ -93,14 +94,14 @@ export default function RegisterPage() {
 
         <div className="space-y-1.5">
           <Label htmlFor="password" className="text-brand-dark text-[13px] font-semibold">
-            Mật Khẩu
+            {t("register.password")}
           </Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" size={16} />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Tối thiểu 6 ký tự"
+              placeholder={t("register.passwordPlaceholder")}
               className="pl-9 pr-10 border-brand-border focus-visible:border-brand-teal focus-visible:ring-brand-teal/20 h-11"
               {...register("password")}
             />
@@ -117,14 +118,14 @@ export default function RegisterPage() {
 
         <div className="space-y-1.5">
           <Label htmlFor="confirmPassword" className="text-brand-dark text-[13px] font-semibold">
-            Xác Nhận Mật Khẩu
+            {t("register.confirmPassword")}
           </Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" size={16} />
             <Input
               id="confirmPassword"
               type={showConfirm ? "text" : "password"}
-              placeholder="Nhập lại mật khẩu"
+              placeholder={t("register.confirmPasswordPlaceholder")}
               className="pl-9 pr-10 border-brand-border focus-visible:border-brand-teal focus-visible:ring-brand-teal/20 h-11"
               {...register("confirmPassword")}
             />
@@ -150,7 +151,7 @@ export default function RegisterPage() {
             <Loader2 size={18} className="animate-spin" />
           ) : (
             <>
-              <span>Đăng Ký</span>
+              <span>{t("register.submit")}</span>
               <ArrowRight size={18} />
             </>
           )}
@@ -158,12 +159,12 @@ export default function RegisterPage() {
       </form>
 
       <p className="text-center mt-5 text-brand-body text-sm">
-        Đã có tài khoản?{" "}
+        {t("register.hasAccount")}{" "}
         <Link
           to="/login"
           className="text-brand-orange hover:text-brand-orange-light transition-colors font-semibold"
         >
-          Đăng Nhập
+          {t("register.loginLink")}
         </Link>
       </p>
     </AuthLayout>

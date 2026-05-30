@@ -2,21 +2,12 @@ import { useState, useEffect } from 'react';
 import { X, AlertTriangle, CheckCircle2, Loader2, RotateCcw, Phone } from 'lucide-react';
 import type { Booking } from '../types/venues.types';
 import { requestBookingRefund } from '../api/venuesApi';
+import { useTranslation } from 'react-i18next';
 
 const REFUND_WINDOW_MS = 5 * 60 * 1000;
 
-const STATUS_LABEL: Record<string, string> = {
-  hold: 'Tạm giữ',
-  payment_pending: 'Chờ thanh toán',
-  confirmed: 'Đã xác nhận',
-  refund_processing: 'Đang xử lý hoàn tiền',
-  refunded: 'Đã hoàn tiền',
-  refund_rejected: 'Từ chối hoàn tiền',
-  expired: 'Đã hết hạn',
-};
-
-function formatPrice(n: number) {
-  return new Intl.NumberFormat('vi-VN').format(n) + '₫';
+function formatPrice(n: number, locale: string) {
+  return new Intl.NumberFormat(locale).format(n) + '₫';
 }
 
 function formatCountdown(ms: number): string {
@@ -39,6 +30,8 @@ interface Props {
 }
 
 export function RefundModal({ booking, onClose, onRefunded }: Props) {
+  const { t, i18n } = useTranslation('matching');
+  const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const [remaining, setRemaining] = useState(() => getRefundWindowRemaining(booking));
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -69,7 +62,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
       setDone(true);
       await onRefunded(result.booking);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể thực hiện yêu cầu hoàn tiền.');
+      setError(err instanceof Error ? err.message : t('venues.refund.errors.request'));
     } finally {
       setLoading(false);
     }
@@ -92,7 +85,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-[#dfc0b3]">
           <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
-            {done ? 'Đã yêu cầu hoàn tiền' : windowExpired ? 'Không thể hoàn tiền' : 'Yêu cầu hoàn tiền'}
+            {done ? t('venues.refund.requested') : windowExpired ? t('venues.refund.unavailable') : t('venues.refund.request')}
           </h2>
           <button
             onClick={onClose}
@@ -119,17 +112,17 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                 </div>
                 <div>
                   <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 700, color: '#241914' }}>
-                    {mode === 'auto' ? 'Hoàn tiền thành công' : 'Đã gửi yêu cầu hoàn tiền'}
+                    {mode === 'auto' ? t('venues.refund.success') : t('venues.refund.sent')}
                   </p>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 6 }}>
                     {mode === 'auto'
-                      ? `Đơn hoàn tiền trị giá ${formatPrice(displayBooking.totalPrice)} đã được thực hiện tự động thành công.`
-                      : `Yêu cầu hoàn tiền trị giá ${formatPrice(displayBooking.totalPrice)} đã được gửi tới chủ sân để xử lý thủ công.`}
+                      ? t('venues.refund.autoSuccess', { price: formatPrice(displayBooking.totalPrice, locale) })
+                      : t('venues.refund.manualSent', { price: formatPrice(displayBooking.totalPrice, locale) })}
                   </p>
                 </div>
                 <div className="w-full rounded-xl px-4 py-3" style={{ background: '#e7f8f7', border: '1px solid rgba(0,106,101,0.2)' }}>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}>
-                    Trạng thái hệ thống: <strong>{STATUS_LABEL[displayBooking.status] || displayBooking.status}</strong>
+                    {t('venues.refund.systemStatus')}: <strong>{t(`venues.bookingStatuses.${displayBooking.status}`, displayBooking.status)}</strong>
                   </p>
                 </div>
               </div>
@@ -145,7 +138,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   border: 'none',
                 }}
               >
-                Hoàn tất
+                {t('venues.refund.done')}
               </button>
             </>
           )}
@@ -158,10 +151,10 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                 </div>
                 <div>
                   <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914' }}>
-                    Thời hạn hoàn tiền tự động đã hết
+                    {t('venues.refund.windowExpired')}
                   </p>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 6 }}>
-                    Bạn vẫn có thể gửi yêu cầu hoàn tiền, nhưng yêu cầu này cần được chủ sân phê duyệt thủ công.
+                    {t('venues.refund.manualApproval')}
                   </p>
                 </div>
                 <div className="w-full rounded-xl p-4 flex items-start gap-3" style={{ background: '#fff1eb', border: '1.5px solid #dfc0b3' }}>
@@ -171,7 +164,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                       {booking.venueName}
                     </p>
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238', marginTop: 2 }}>
-                      Nếu yêu cầu bị từ chối, vui lòng liên hệ trực tiếp chủ sân để được hỗ trợ.
+                      {t('venues.refund.contactIfRejected')}
                     </p>
                   </div>
                 </div>
@@ -182,7 +175,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   className="flex-1 h-12 rounded-xl hover:bg-[#fff1eb] transition-colors"
                   style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', border: '1.5px solid #dfc0b3' }}
                 >
-                  Đóng
+                  {t('venues.refund.close')}
                 </button>
                 <button
                   onClick={handleConfirm}
@@ -198,7 +191,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
-                  {loading ? 'Đang gửi…' : 'Gửi yêu cầu hoàn tiền'}
+                  {loading ? t('venues.refund.sending') : t('venues.refund.send')}
                 </button>
               </div>
             </>
@@ -209,7 +202,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
-                    Hạn hoàn tiền tự động sẽ đóng sau
+                    {t('venues.refund.windowClosesIn')}
                   </span>
                   <span
                     style={{
@@ -238,18 +231,18 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
 
               <div className="rounded-xl p-4 flex flex-col gap-2" style={{ background: '#fff1eb', border: '1px solid rgba(223,192,179,0.4)' }}>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 4 }}>
-                  Thông tin đơn đặt sân
+                  {t('venues.refund.bookingInfo')}
                 </p>
-                <Row label="Sân" value={booking.venueName} />
-                <Row label="Ngày" value={new Date(booking.date).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })} />
-                <Row label="Khung giờ" value={booking.slots.map(s => s.startTime).join(', ')} />
-                <Row label="Số tiền hoàn lại" value={formatPrice(booking.totalPrice)} highlight />
+                <Row label={t('venues.fields.venue')} value={booking.venueName} />
+                <Row label={t('venues.fields.date')} value={new Date(booking.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })} />
+                <Row label={t('venues.fields.slots')} value={booking.slots.map(s => s.startTime).join(', ')} />
+                <Row label={t('venues.refund.amount')} value={formatPrice(booking.totalPrice, locale)} highlight />
               </div>
 
               <div className="rounded-xl px-4 py-3 flex items-start gap-2" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
                 <AlertTriangle size={16} style={{ color: '#996600', marginTop: 2, flexShrink: 0 }} />
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#664400' }}>
-                  Hệ thống sẽ tự động quyết định hình thức hoàn tiền là tự động hay cần chủ sân phê duyệt.
+                  {t('venues.refund.methodNotice')}
                 </p>
               </div>
 
@@ -260,7 +253,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   className="flex-1 h-12 rounded-xl hover:bg-[#fff1eb] transition-colors"
                   style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', border: '1.5px solid #dfc0b3' }}
                 >
-                  Hủy
+                  {t('common:cancel')}
                 </button>
                 <button
                   onClick={handleConfirm}
@@ -276,7 +269,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                   }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
-                  {loading ? 'Đang xử lý…' : 'Xác nhận hoàn tiền'}
+                  {loading ? t('common:processing') : t('venues.refund.confirm')}
                 </button>
               </div>
             </>

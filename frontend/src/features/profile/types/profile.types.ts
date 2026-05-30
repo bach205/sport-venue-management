@@ -26,8 +26,6 @@ export interface Achievement {
 export interface ActivityItem {
   id: string;
   type: 'booking' | 'match' | 'message' | 'achievement';
-  title: string;
-  subtitle: string;
   date: string;
   icon: string;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
 import { MessageSquare } from 'lucide-react';
 import type { Conversation, ChatMessage } from '../types/messages.types';
@@ -22,8 +22,10 @@ import {
   markConversationSeen,
   sendChatMessage,
 } from '../api/chatApi';
+import { useTranslation } from 'react-i18next';
 
 export default function MessagesPage() {
+  const { t } = useTranslation('matching');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -70,16 +72,8 @@ export default function MessagesPage() {
         const knownUser = MOCK_USERS[withUserId];
         const user = knownUser ?? { id: withUserId, name, avatar, isOnline: false };
 
-        const SPORT_LABEL: Record<string, string> = {
-          tennis: 'tennis',
-          basketball: 'bóng rổ',
-          badminton: 'cầu lông',
-          football: 'bóng đá',
-          pickleball: 'pickleball',
-          volleyball: 'bóng chuyền',
-        };
-        const sportLabel = sport ? (SPORT_LABEL[sport.toLowerCase()] || sport) : 'thể thao';
-        const intro = `Bạn đã nhắn tin về bài đăng môn ${sportLabel} của ${name}. Hãy gửi lời chào! 👋`;
+        const sportLabel = sport ? t(`sports.${sport.toLowerCase()}`, sport) : t('messages.sportFallback');
+        const intro = t('messages.contactIntro', { sport: sportLabel, name });
 
         const conv = createOrOpenConversation(user, intro);
         setConversations(getConversations());
@@ -104,7 +98,7 @@ export default function MessagesPage() {
     };
 
     run();
-  }, [searchParams, setSearchParams, currentUserId]);
+  }, [searchParams, setSearchParams, currentUserId, t]);
 
   // Auto-open first conversation if none active
   useEffect(() => {
@@ -313,10 +307,10 @@ export default function MessagesPage() {
               <MessageSquare size={36} style={{ color: '#a04100' }} />
             </div>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', fontWeight: 700, color: '#241914' }}>
-              Tin nhắn của bạn
+              {t('messages.emptyPanel.title')}
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266', marginTop: 8, maxWidth: 300 }}>
-              Chọn một cuộc hội thoại hoặc liên hệ với ai đó từ trang Khám Phá
+              {t('messages.emptyPanel.subtitle')}
             </p>
             <button
               onClick={() => navigate('/discover')}
@@ -330,7 +324,7 @@ export default function MessagesPage() {
                 border: 'none',
               }}
             >
-              Đi tới Khám Phá
+              {t('messages.emptyPanel.goToDiscover')}
             </button>
           </div>
         )}

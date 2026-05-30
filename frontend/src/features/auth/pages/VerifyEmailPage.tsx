@@ -5,15 +5,15 @@ import { toast } from "sonner";
 import { MatchillLogo } from "../components/AuthLayout";
 import { verifyEmail } from "../api/authApi";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 type State = "idle" | "loading" | "success" | "error";
 
 const ERROR_HINTS: Record<string, string> = {
-  "Verification token is invalid.":
-    "Link xác thực không hợp lệ. Vui lòng đăng ký lại hoặc liên hệ hỗ trợ.",
-  "Verification token has already been used.": "Link này đã được sử dụng rồi. Vui lòng đăng nhập.",
-  "Verification token has expired.": "Link đã hết hạn. Vui lòng đăng ký lại để nhận link mới.",
-  "User not found.": "Tài khoản không tồn tại. Vui lòng đăng ký.",
+  "Verification token is invalid.": "verify.errors.invalid",
+  "Verification token has already been used.": "verify.errors.used",
+  "Verification token has expired.": "verify.errors.expired",
+  "User not found.": "verify.errors.userNotFound",
 };
 
 const Card = ({ children }: { children: React.ReactNode }) => (
@@ -43,6 +43,7 @@ const Card = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function VerifyEmailPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -73,21 +74,20 @@ export default function VerifyEmailPage() {
             <Mail size={30} className="text-brand-orange-light" />
           </div>
         </div>
-        <h2 className="font-heading text-[22px] font-bold text-brand-dark mb-3">Xác Thực Email</h2>
+        <h2 className="font-heading text-[22px] font-bold text-brand-dark mb-3">{t("verify.title")}</h2>
         <p className="text-sm text-brand-body leading-relaxed mb-6">
-          Chúng tôi đã gửi link xác thực đến email của bạn. Vui lòng mở email và nhấp vào link để
-          kích hoạt tài khoản.
+          {t("verify.sentDescription")}
         </p>
         <div className="p-4 rounded-xl mb-6 text-left bg-brand-surface-teal border border-brand-teal/20">
           <p className="text-[13px] text-brand-teal leading-relaxed">
-            💡 <strong>Lưu ý:</strong> Link xác thực chỉ có hiệu lực trong một thời gian giới hạn.
+            💡 <strong>{t("verify.note")}:</strong> {t("verify.expiryNotice")}
           </p>
         </div>
         <Link
           to="/login"
           className="text-brand-muted hover:text-brand-orange transition-colors text-[13px]"
         >
-          ← Quay lại đăng nhập
+          ← {t("verify.backToLogin")}
         </Link>
       </Card>
     );
@@ -101,9 +101,9 @@ export default function VerifyEmailPage() {
           </div>
         </div>
         <h2 className="font-heading text-[22px] font-bold text-brand-dark mb-2">
-          Đang xác thực...
+          {t("verify.loading")}
         </h2>
-        <p className="text-sm text-brand-body">Vui lòng đợi trong giây lát.</p>
+        <p className="text-sm text-brand-body">{t("verify.wait")}</p>
       </Card>
     );
 
@@ -116,22 +116,22 @@ export default function VerifyEmailPage() {
           </div>
         </div>
         <h2 className="font-heading text-[22px] font-bold text-brand-dark mb-3">
-          Xác thực thành công!
+          {t("verify.successTitle")}
         </h2>
         <p className="text-sm text-brand-body leading-relaxed mb-7">
-          Email của bạn đã được xác thực. Bây giờ bạn có thể đăng nhập và bắt đầu tìm trận.
+          {t("verify.successDescription")}
         </p>
         <Button
           onClick={() => navigate("/login")}
           className="w-full h-12 rounded-lg border-0 gap-2 gradient-orange font-heading text-sm font-bold text-white"
         >
-          Đăng Nhập Ngay <ArrowRight size={16} />
+          {t("verify.loginNow")} <ArrowRight size={16} />
         </Button>
       </Card>
     );
 
   // Error
-  const hint = ERROR_HINTS[errorMsg] ?? "Đã xảy ra lỗi. Vui lòng thử lại hoặc liên hệ hỗ trợ.";
+  const hint = t(ERROR_HINTS[errorMsg] ?? "verify.errors.default");
   const isExpired = errorMsg.includes("expired");
   const isUsed = errorMsg.includes("already been used");
   return (
@@ -141,7 +141,7 @@ export default function VerifyEmailPage() {
           <XCircle size={32} className="text-brand-red" />
         </div>
       </div>
-      <h2 className="font-heading text-[22px] font-bold text-brand-dark mb-3">Xác thực thất bại</h2>
+      <h2 className="font-heading text-[22px] font-bold text-brand-dark mb-3">{t("verify.failedTitle")}</h2>
       <p className="text-sm text-brand-body font-semibold mb-2">{errorMsg}</p>
       <p className="text-[13px] text-brand-muted leading-relaxed mb-7">{hint}</p>
       <div className="flex flex-col gap-3">
@@ -150,7 +150,7 @@ export default function VerifyEmailPage() {
             onClick={() => navigate("/login")}
             className="w-full h-11 rounded-lg border-0 gap-2 gradient-orange font-heading text-sm font-bold text-white"
           >
-            Đăng Nhập Ngay <ArrowRight size={15} />
+            {t("verify.loginNow")} <ArrowRight size={15} />
           </Button>
         )}
         {(isExpired || !isUsed) && (
@@ -158,14 +158,14 @@ export default function VerifyEmailPage() {
             onClick={() => navigate("/register")}
             className="w-full h-11 rounded-lg border-0 gap-2 gradient-orange font-heading text-sm font-bold text-white"
           >
-            <RefreshCw size={15} /> Đăng Ký Lại
+            <RefreshCw size={15} /> {t("verify.registerAgain")}
           </Button>
         )}
         <Link
           to="/login"
           className="text-brand-muted hover:text-brand-orange transition-colors text-[13px]"
         >
-          ← Quay lại đăng nhập
+          ← {t("verify.backToLogin")}
         </Link>
       </div>
     </Card>

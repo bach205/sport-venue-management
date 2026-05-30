@@ -4,35 +4,26 @@ import { Search, SlidersHorizontal, Loader2, CalendarDays } from 'lucide-react';
 import { fetchVenues } from '../api/venuesApi';
 import { VenueCard } from '../components/VenueCard';
 import type { Venue, Sport } from '../types/venues.types';
+import { useTranslation } from 'react-i18next';
 
 const SPORT_OPTIONS = [
-  { value: 'all', label: 'Tất cả môn thể thao' },
-  { value: 'tennis', label: '🎾 Tennis' },
-  { value: 'basketball', label: '🏀 Bóng rổ' },
-  { value: 'badminton', label: '🏸 Cầu lông' },
-  { value: 'football', label: '⚽ Bóng đá' },
-  { value: 'pickleball', label: '🏓 Pickleball' },
-  { value: 'volleyball', label: '🏐 Bóng chuyền' },
+  { value: 'all', emoji: '' },
+  { value: 'tennis', emoji: '🎾' },
+  { value: 'basketball', emoji: '🏀' },
+  { value: 'badminton', emoji: '🏸' },
+  { value: 'football', emoji: '⚽' },
+  { value: 'pickleball', emoji: '🏓' },
+  { value: 'volleyball', emoji: '🏐' },
 ];
 
 const DISTRICTS = ['all', 'District 1', 'Binh Thanh', 'Go Vap', 'Thu Duc', 'District 7', 'Vung Tau'];
-
-const DISTRICT_LABELS: Record<string, string> = {
-  all: 'Tất cả quận/huyện',
-  'District 1': 'Quận 1',
-  'Binh Thanh': 'Bình Thạnh',
-  'Go Vap': 'Gò Vấp',
-  'Thu Duc': 'Thủ Đức',
-  'District 7': 'Quận 7',
-  'Vung Tau': 'Vũng Tàu',
-};
 
 function toISODate(date: Date) {
   return date.toISOString().split('T')[0];
 }
 
-function formatBrowseDate(date: string) {
-  return new Date(date).toLocaleDateString('vi-VN', {
+function formatBrowseDate(date: string, locale: string) {
+  return new Date(date).toLocaleDateString(locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -43,6 +34,8 @@ const TODAY = toISODate(new Date());
 const MAX_DATE = toISODate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
 
 export default function VenuesPage() {
+  const { t, i18n } = useTranslation('matching');
+  const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const navigate = useNavigate();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,10 +79,10 @@ export default function VenuesPage() {
               <h1
                 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 700, color: '#241914' }}
               >
-                Địa điểm thể thao
+                {t('venues.page.title')}
               </h1>
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 4 }}>
-                Tìm kiếm và đặt sân thể thao gần bạn cho {formatBrowseDate(selectedDate)}
+                {t('venues.page.subtitle', { date: formatBrowseDate(selectedDate, locale) })}
               </p>
             </div>
             <button
@@ -104,7 +97,7 @@ export default function VenuesPage() {
               }}
             >
               <CalendarDays size={16} />
-              Lịch đặt của tôi
+              {t('venues.page.myBookings')}
             </button>
           </div>
 
@@ -113,7 +106,7 @@ export default function VenuesPage() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#8b7266' }} />
               <input
                 type="text"
-                placeholder="Tìm kiếm sân, địa điểm..."
+                placeholder={t('venues.page.searchPlaceholder')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ ...selectStyle, paddingLeft: '34px', width: '100%', boxSizing: 'border-box' }}
@@ -129,14 +122,14 @@ export default function VenuesPage() {
             <select value={sport} onChange={e => setSport(e.target.value as Sport | 'all')} style={selectStyle}>
               {SPORT_OPTIONS.map(o => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {o.value === 'all' ? t('venues.page.allSports') : `${o.emoji} ${t(`sports.${o.value}`, o.value)}`}
                 </option>
               ))}
             </select>
             <select value={district} onChange={e => setDistrict(e.target.value)} style={selectStyle}>
               {DISTRICTS.map(d => (
                 <option key={d} value={d}>
-                  {DISTRICT_LABELS[d] || d}
+                  {t(`venues.districts.${d}`, d)}
                 </option>
               ))}
             </select>
@@ -151,7 +144,7 @@ export default function VenuesPage() {
           </div>
 
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266', marginTop: 10 }}>
-            Trạng thái sân trống trực tuyến được hiển thị cho {formatBrowseDate(selectedDate)}.
+            {t('venues.page.availabilityNote', { date: formatBrowseDate(selectedDate, locale) })}
           </p>
         </div>
       </div>
@@ -165,16 +158,16 @@ export default function VenuesPage() {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="text-5xl mb-4">🏟️</span>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 600, color: '#241914' }}>
-              Không tìm thấy địa điểm nào
+              {t('venues.page.emptyTitle')}
             </p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266', marginTop: 8 }}>
-              Hãy thử thay đổi bộ lọc cho {formatBrowseDate(selectedDate)}
+              {t('venues.page.emptySubtitle', { date: formatBrowseDate(selectedDate, locale) })}
             </p>
           </div>
         ) : (
           <>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginBottom: '20px' }}>
-              Tìm thấy {venues.length} địa điểm · Lịch trống cho {formatBrowseDate(selectedDate)}
+              {t('venues.page.found', { count: venues.length, date: formatBrowseDate(selectedDate, locale) })}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {venues.map(venue => (

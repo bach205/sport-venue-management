@@ -1,4 +1,3 @@
-import React from "react";
 import { MapPin, Clock, Users, Star, MessageCircle } from "lucide-react";
 import type { DiscoverPost, SkillLevel, PostType } from "../types/discover.types";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
@@ -9,23 +8,20 @@ import { useTranslation } from "react-i18next";
 const SPORT_EMOJI = SPORT_ICON_BY_VALUE;
 const SPORT_LABEL = SPORT_LABEL_BY_VALUE;
 
-const SKILL_CONFIG: Record<SkillLevel, { label: string; bg: string; color: string }> = {
-  casual: { label: "Giải trí", bg: "#e6f9f5", color: "#006a65" },
-  intermediate: { label: "Bán chuyên", bg: "#fff1eb", color: "#a04100" },
-  competitive: { label: "Chuyên nghiệp", bg: "#ffdad6", color: "#ba1a1a" },
+const SKILL_CONFIG: Record<SkillLevel, { bg: string; color: string }> = {
+  casual: { bg: "#e6f9f5", color: "#006a65" },
+  intermediate: { bg: "#fff1eb", color: "#a04100" },
+  competitive: { bg: "#ffdad6", color: "#ba1a1a" },
 };
 
-const TYPE_CONFIG: Record<PostType, { label: string; bg: string; color: string }> = {
-  teammate: { label: "Tìm đồng đội", bg: "#e3f2fd", color: "#1565c0" },
-  opponent: { label: "Tìm đối thủ", bg: "#f3e5f5", color: "#6a1b9a" },
+const TYPE_CONFIG: Record<PostType, { bg: string; color: string }> = {
+  teammate: { bg: "#e3f2fd", color: "#1565c0" },
+  opponent: { bg: "#f3e5f5", color: "#6a1b9a" },
 };
 
-function formatTime(iso: string) {
+function formatTime(iso: string, locale: string) {
   const d = new Date(iso);
-  const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-  const dayName = days[d.getDay()];
-  const time = d.toLocaleTimeString("vi-VN", { hour: "numeric", minute: "2-digit" });
-  return `${dayName}, ${time}`;
+  return d.toLocaleString(locale, { weekday: "long", hour: "numeric", minute: "2-digit" });
 }
 
 function timeAgo(iso: string, t: (key: string, options?: any) => string) {
@@ -42,7 +38,8 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onContactNow }: PostCardProps) {
-  const { t } = useTranslation("matching");
+  const { t, i18n } = useTranslation("matching");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
   const skill = SKILL_CONFIG[post.skillLevel];
   const type = TYPE_CONFIG[post.type];
   const spotsLeft = post.playersNeeded - (post.currentPlayers - 1);
@@ -133,7 +130,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
               fontWeight: 600,
             }}
           >
-            {t(`skillLevels.${post.skillLevel}.label`, skill.label)}
+            {t(`skillLevels.${post.skillLevel}.label`, post.skillLevel)}
           </span>
           <span
             className="px-2.5 py-1 rounded-full"
@@ -145,7 +142,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
               fontWeight: 600,
             }}
           >
-            {t(`matchTypes.${post.type}`, type.label)}
+            {t(`matchTypes.${post.type}`, post.type)}
           </span>
         </div>
 
@@ -173,7 +170,7 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
           <div className="flex items-center gap-2">
             <Clock size={14} color="#8b7266" />
             <span style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", color: "#584238" }}>
-              {formatTime(post.time)}
+              {formatTime(post.time, locale)}
             </span>
           </div>
           <div className="flex items-center gap-2">

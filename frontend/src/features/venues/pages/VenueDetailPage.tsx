@@ -17,6 +17,7 @@ import { SlotGrid } from '../components/SlotGrid';
 import { BookingModal } from '../components/BookingModal';
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback';
 import type { Venue, VenueSlot, Booking } from '../types/venues.types';
+import { useTranslation } from 'react-i18next';
 
 const SPORT_EMOJI: Record<string, string> = {
   tennis: '🎾',
@@ -27,8 +28,8 @@ const SPORT_EMOJI: Record<string, string> = {
   volleyball: '🏐',
 };
 
-function formatPrice(n: number) {
-  return new Intl.NumberFormat('vi-VN').format(n) + '₫';
+function formatPrice(n: number, locale: string) {
+  return new Intl.NumberFormat(locale).format(n) + '₫';
 }
 
 function addDays(base: Date, n: number) {
@@ -69,6 +70,8 @@ function SummaryChip({ label, value, tone }: { label: string; value: number; ton
 }
 
 export default function VenueDetailPage() {
+  const { t, i18n } = useTranslation('matching');
+  const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const { venueId } = useParams<{ venueId: string }>();
   const navigate = useNavigate();
 
@@ -149,14 +152,14 @@ export default function VenueDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '20px', color: '#241914' }}>
-          Không tìm thấy địa điểm
+          {t('venues.detail.notFound')}
         </p>
         <button
           onClick={() => navigate('/venues')}
           className="mt-4"
           style={{ color: '#a04100', fontFamily: 'Inter, sans-serif' }}
         >
-          ← Quay lại danh sách sân
+          ← {t('venues.detail.backToList')}
         </button>
       </div>
     );
@@ -184,7 +187,7 @@ export default function VenueDetailPage() {
           }}
         >
           <ArrowLeft size={16} />
-          Sân đấu
+          {t('venues.detail.back')}
         </button>
         <div className="absolute bottom-6 left-6 right-6">
           <div className="flex flex-wrap gap-1.5 mb-2">
@@ -200,7 +203,7 @@ export default function VenueDetailPage() {
                   color: '#fff',
                 }}
               >
-                {SPORT_EMOJI[s]} {s}
+                {SPORT_EMOJI[s]} {t(`sports.${s}`, s)}
               </span>
             ))}
           </div>
@@ -234,7 +237,7 @@ export default function VenueDetailPage() {
             {[
               {
                 icon: <Star size={16} fill="#a04100" color="#a04100" />,
-                label: `${venue.rating} (${venue.reviewCount} đánh giá)`,
+                label: `${venue.rating} (${t('venues.detail.reviews', { count: venue.reviewCount })})`,
               },
               {
                 icon: <MapPin size={16} style={{ color: '#8b7266' }} />,
@@ -243,7 +246,7 @@ export default function VenueDetailPage() {
               { icon: <Clock size={16} style={{ color: '#8b7266' }} />, label: venue.openHours },
               {
                 icon: <Users size={16} style={{ color: '#8b7266' }} />,
-                label: `${venue.courtCount} sân`,
+                label: t('venues.card.courts', { count: venue.courtCount }),
               },
             ].map((stat, i) => (
               <div
@@ -270,21 +273,21 @@ export default function VenueDetailPage() {
                     color: '#241914',
                   }}
                 >
-                  Tóm tắt trạng thái
+                  {t('venues.detail.statusSummary')}
                 </h3>
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266', marginTop: 4 }}>
-                  Trạng thái trực tuyến cho {selectedDate.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {t('venues.detail.onlineStatus', { date: selectedDate.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) })}
                 </p>
               </div>
               <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: '#a04100' }}>
-                {availabilitySummary.totalSlots} tổng số khung giờ
+                {t('venues.detail.totalSlots', { count: availabilitySummary.totalSlots })}
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <SummaryChip label="Còn trống" value={availabilitySummary.availableSlots} tone="green" />
-              <SummaryChip label="Tạm giữ" value={availabilitySummary.heldSlots} tone="brown" />
-              <SummaryChip label="Đã đặt" value={availabilitySummary.bookedSlots} tone="orange" />
-              <SummaryChip label="Không bán" value={availabilitySummary.unavailableSlots} tone="gray" />
+              <SummaryChip label={t('venues.status.available')} value={availabilitySummary.availableSlots} tone="green" />
+              <SummaryChip label={t('venues.status.held')} value={availabilitySummary.heldSlots} tone="brown" />
+              <SummaryChip label={t('venues.status.booked')} value={availabilitySummary.bookedSlots} tone="orange" />
+              <SummaryChip label={t('venues.status.unavailable')} value={availabilitySummary.unavailableSlots} tone="gray" />
             </div>
           </div>
 
@@ -298,7 +301,7 @@ export default function VenueDetailPage() {
                 marginBottom: 8,
               }}
             >
-              Về địa điểm này
+              {t('venues.detail.about')}
             </h3>
             <p
               style={{
@@ -342,7 +345,7 @@ export default function VenueDetailPage() {
                 }}
               >
                 <CalendarDays size={16} style={{ display: 'inline', marginRight: 8, color: '#a04100' }} />
-                Chọn Ngày & Khung Giờ
+                {t('venues.detail.selectDateSlots')}
               </h3>
             </div>
 
@@ -388,7 +391,7 @@ export default function VenueDetailPage() {
                             letterSpacing: '0.04em',
                           }}
                         >
-                          {isToday ? 'Hôm nay' : d.toLocaleDateString('vi-VN', { weekday: 'short' })}
+                          {isToday ? t('messages.today') : d.toLocaleDateString(locale, { weekday: 'short' })}
                         </span>
                         <span
                           style={{
@@ -408,7 +411,7 @@ export default function VenueDetailPage() {
                             color: isSelected ? 'rgba(255,255,255,0.8)' : '#8b7266',
                           }}
                         >
-                          {d.toLocaleDateString('vi-VN', { month: 'short' })}
+                          {d.toLocaleDateString(locale, { month: 'short' })}
                         </span>
                       </button>
                     );
@@ -428,11 +431,11 @@ export default function VenueDetailPage() {
 
               <div className="flex items-center gap-4 mb-4 flex-wrap">
                 {[
-                  { color: '#fff', border: '#dfc0b3', label: 'Còn trống' },
-                  { color: '#a04100', border: '#a04100', label: 'Đang chọn' },
-                  { color: '#f8e3d8', border: '#dfc0b3', label: 'Tạm giữ' },
-                  { color: '#f4ded5', border: '#e8c4b3', label: 'Đã đặt' },
-                  { color: '#f7f0ed', border: '#e8c4b3', label: 'Không bán / Đóng cửa' },
+                  { color: '#fff', border: '#dfc0b3', label: t('venues.status.available') },
+                  { color: '#a04100', border: '#a04100', label: t('venues.status.selected') },
+                  { color: '#f8e3d8', border: '#dfc0b3', label: t('venues.status.held') },
+                  { color: '#f4ded5', border: '#e8c4b3', label: t('venues.status.booked') },
+                  { color: '#f7f0ed', border: '#e8c4b3', label: t('venues.status.unavailableClosed') },
                 ].map(({ color, border, label }) => (
                   <div key={label} className="flex items-center gap-1.5">
                     <div className="w-3.5 h-3.5 rounded" style={{ background: color, border: `1.5px solid ${border}` }} />
@@ -471,12 +474,12 @@ export default function VenueDetailPage() {
                   color: '#241914',
                 }}
               >
-                Tóm tắt đặt sân
+                {t('venues.detail.bookingSummary')}
               </p>
             </div>
             <div className="px-5 py-4 flex flex-col gap-3">
               <div className="flex justify-between">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Ngày</span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>{t('venues.fields.date')}</span>
                 <span
                   style={{
                     fontFamily: 'Inter, sans-serif',
@@ -485,7 +488,7 @@ export default function VenueDetailPage() {
                     color: '#241914',
                   }}
                 >
-                  {selectedDate.toLocaleDateString('vi-VN', {
+                  {selectedDate.toLocaleDateString(locale, {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
@@ -493,7 +496,7 @@ export default function VenueDetailPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>Khung giờ đã chọn</span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>{t('venues.detail.selectedSlots')}</span>
                 <span
                   style={{
                     fontFamily: 'Inter, sans-serif',
@@ -502,7 +505,7 @@ export default function VenueDetailPage() {
                     color: '#241914',
                   }}
                 >
-                  {selectedSlots.length === 0 ? 'Chưa chọn' : `${selectedSlots.length} khung giờ`}
+                  {selectedSlots.length === 0 ? t('venues.detail.noneSelected') : t('venues.detail.slotCount', { count: selectedSlots.length })}
                 </span>
               </div>
 
@@ -527,7 +530,7 @@ export default function VenueDetailPage() {
                           color: '#241914',
                         }}
                       >
-                        {formatPrice(s.price)}
+                        {formatPrice(s.price, locale)}
                       </span>
                     </div>
                   ))}
@@ -535,9 +538,9 @@ export default function VenueDetailPage() {
               )}
 
               <div className="pt-2 border-t border-[#dfc0b3] flex items-center justify-between">
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>Tổng cộng</span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238' }}>{t('venues.fields.total')}</span>
                 <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '22px', fontWeight: 800, color: '#a04100' }}>
-                  {formatPrice(totalPrice)}
+                  {formatPrice(totalPrice, locale)}
                 </span>
               </div>
 
@@ -555,18 +558,18 @@ export default function VenueDetailPage() {
                   boxShadow: '0 4px 14px rgba(160,65,0,0.35)',
                 }}
               >
-                Tiếp tục thanh toán
+                {t('venues.detail.continuePayment')}
               </button>
 
               {selectedSlots.length > 1 && (
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>
-                  Hệ thống hiện chỉ hỗ trợ thanh toán một khung giờ tại một thời điểm. Vui lòng chọn một khung giờ duy nhất để tiếp tục.
+                  {t('venues.detail.singleSlotOnly')}
                 </p>
               )}
 
               {lastBooking && (
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#006a65' }}>
-                  Lịch đặt gần nhất: #{lastBooking.id.slice(-8).toUpperCase()}
+                  {t('venues.detail.latestBooking', { id: lastBooking.id.slice(-8).toUpperCase() })}
                 </p>
               )}
             </div>

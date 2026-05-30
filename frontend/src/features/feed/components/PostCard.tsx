@@ -28,14 +28,16 @@ import {
 } from "../api/socialApi";
 import { getCurrentUser } from "../../auth/store/authStore";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: TFunction<"matching">): string {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (m < 1) return "Vừa xong";
-  if (m < 60) return `${m} phút trước`;
+  if (m < 1) return t("timeAgo.now");
+  if (m < 60) return t("timeAgo.minutes", { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} giờ trước`;
-  return `${Math.floor(h / 24)} ngày trước`;
+  if (h < 24) return t("timeAgo.hours", { count: h });
+  return t("timeAgo.days", { count: Math.floor(h / 24) });
 }
 
 function initials(name: string) {
@@ -54,6 +56,7 @@ function CommentSection({
   postId: string;
   onCountChange: (delta: number) => void;
 }) {
+  const { t } = useTranslation("matching");
   const user = getCurrentUser();
   const [comments, setComments] = useState<ApiComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +105,7 @@ function CommentSection({
     if (r.success) {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       onCountChange(-1);
-      toast.success("Đã xóa bình luận");
+      toast.success(t("feed.comment.deleted"));
     } else {
       toast.error(r.message);
     }
@@ -113,7 +116,7 @@ function CommentSection({
   if (loading) {
     return (
       <div className="px-4 py-4 flex items-center gap-2 text-brand-muted text-sm">
-        <Loader2 size={14} className="animate-spin" /> Đang tải bình luận...
+        <Loader2 size={14} className="animate-spin" /> {t("feed.comment.loading")}
       </div>
     );
   }
@@ -161,9 +164,9 @@ function CommentSection({
             )}
 
             <div className="flex items-center gap-4 mt-1 pl-1">
-              <span className="text-[11px] text-brand-muted">{timeAgo(c.createdAt)}</span>
+              <span className="text-[11px] text-brand-muted">{timeAgo(c.createdAt, t)}</span>
               {c.updatedAt !== c.createdAt && (
-                <span className="text-[11px] text-brand-muted italic">đã chỉnh sửa</span>
+                <span className="text-[11px] text-brand-muted italic">{t("feed.edited")}</span>
               )}
               {c.isOwner && editingId !== c.id && (
                 <>
@@ -175,11 +178,11 @@ function CommentSection({
                     }}
                     className="flex items-center gap-1 text-[11px] text-brand-muted hover:text-brand-teal transition-colors"
                   >
-                    <Edit3 size={10} /> Sửa
+                    <Edit3 size={10} /> {t("common:edit")}
                   </button>
                   {confirmDeleteId === c.id ? (
                     <span className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-brand-red">Xóa?</span>
+                      <span className="text-[11px] text-brand-red">{t("feed.comment.deleteQuestion")}</span>
                       <button
                         onClick={() => handleDelete(c.id)}
                         disabled={deletingId === c.id}
@@ -188,14 +191,14 @@ function CommentSection({
                         {deletingId === c.id ? (
                           <Loader2 size={10} className="animate-spin" />
                         ) : (
-                          "Xác nhận"
+                          t("common:confirm")
                         )}
                       </button>
                       <button
                         onClick={() => setConfirmDeleteId(null)}
                         className="text-[11px] text-brand-muted hover:underline"
                       >
-                        Hủy
+                        {t("common:cancel")}
                       </button>
                     </span>
                   ) : (
@@ -203,7 +206,7 @@ function CommentSection({
                       onClick={() => setConfirmDeleteId(c.id)}
                       className="flex items-center gap-1 text-[11px] text-brand-muted hover:text-brand-red transition-colors"
                     >
-                      <Trash2 size={10} /> Xóa
+                      <Trash2 size={10} /> {t("common:delete")}
                     </button>
                   )}
                 </>
@@ -230,7 +233,7 @@ function CommentSection({
                   handleSend();
                 }
               }}
-              placeholder="Viết bình luận..."
+              placeholder={t("feed.comment.placeholder")}
               className="flex-1 bg-transparent outline-none py-2 text-[13px] text-brand-dark border-none"
             />
             <button
@@ -243,7 +246,7 @@ function CommentSection({
           </div>
         </div>
       ) : (
-        <p className="text-[13px] text-brand-muted text-center py-1">Đăng nhập để bình luận</p>
+        <p className="text-[13px] text-brand-muted text-center py-1">{t("feed.comment.loginRequired")}</p>
       )}
     </div>
   );
@@ -258,17 +261,18 @@ function DeleteConfirmBanner({
   onCancel: () => void;
   loading: boolean;
 }) {
+  const { t } = useTranslation("matching");
   return (
     <div className="mx-4 mb-3 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#fff5f5] border border-[#fecdca]">
       <AlertTriangle size={16} className="text-brand-red shrink-0" />
       <p className="flex-1 text-[13px] text-brand-red">
-        Xóa bài viết không thể hoàn tác. Tiếp tục?
+        {t("feed.deleteConfirm")}
       </p>
       <button
         onClick={onCancel}
         className="h-7 px-3 rounded-lg border border-[#fecdca] text-[12px] text-brand-body hover:bg-white transition-colors"
       >
-        Hủy
+        {t("common:cancel")}
       </button>
       <button
         onClick={onConfirm}
@@ -276,7 +280,7 @@ function DeleteConfirmBanner({
         className="h-7 px-3 rounded-lg bg-brand-red text-[12px] text-white hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center gap-1"
       >
         {loading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-        Xóa
+        {t("common:delete")}
       </button>
     </div>
   );
@@ -291,6 +295,7 @@ export function PostCard({
   onUpdated: (updated: ApiPost) => void;
   onDeleted: (postId: string) => void;
 }) {
+  const { t } = useTranslation("matching");
   const user = getCurrentUser();
   const [post, setPost] = useState(initialPost);
   const [showComments, setShowComments] = useState(false);
@@ -308,7 +313,7 @@ export function PostCard({
 
   const handleLikeToggle = async () => {
     if (!user) {
-      toast.error("Đăng nhập để thích bài viết");
+      toast.error(t("feed.likeLoginRequired"));
       return;
     }
     if (liking) return;
@@ -332,7 +337,7 @@ export function PostCard({
       setPost(r.data);
       onUpdated(r.data);
       setEditing(false);
-      toast.success("Đã cập nhật bài viết");
+      toast.success(t("feed.updated"));
     } else {
       toast.error(r.message);
     }
@@ -343,7 +348,7 @@ export function PostCard({
     setDeleting(true);
     const r = await deletePost(post.id);
     if (r.success) {
-      toast.success("Đã xóa bài viết");
+      toast.success(t("feed.deleted"));
       onDeleted(post.id);
     } else {
       toast.error(r.message);
@@ -358,20 +363,18 @@ export function PostCard({
 
   const handleSharePost = async () => {
     const shareUrl = `${window.location.origin}/feed/${post.id}`;
-    const shareText = `${post.author.name}: ${post.content || "Bai viet co anh tren feed"}`;
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Bài viết cộng đồng thể thao",
-          text: shareText,
+          title: t("feed.shareTitle"),
           url: shareUrl,
         });
         return;
       }
       await navigator.clipboard.writeText(shareUrl);
-      toast.success("Đã copy link bài viết.");
+      toast.success(t("feed.shareCopied"));
     } catch {
-      toast.error("Không thể chia sẻ bài viết lúc này.");
+      toast.error(t("feed.shareFailed"));
     }
   };
 
@@ -395,8 +398,8 @@ export function PostCard({
             <div>
               <p className="text-sm font-bold text-brand-dark font-heading">{post.author.name}</p>
               <p className="text-xs text-brand-muted mt-0.5">
-                {timeAgo(post.createdAt)}
-                {post.updatedAt !== post.createdAt && " · đã chỉnh sửa"}
+                {timeAgo(post.createdAt, t)}
+                {post.updatedAt !== post.createdAt && ` · ${t("feed.edited")}`}
               </p>
             </div>
             {post.isOwner && (
@@ -423,7 +426,7 @@ export function PostCard({
                         }}
                         className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-brand-surface-orange transition-colors text-left text-[13px] text-brand-dark"
                       >
-                        <Edit3 size={14} className="text-brand-orange" /> Chỉnh sửa
+                        <Edit3 size={14} className="text-brand-orange" /> {t("common:edit")}
                       </button>
                       <button
                         onClick={() => {
@@ -432,7 +435,7 @@ export function PostCard({
                         }}
                         className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#fff5f5] transition-colors text-left text-[13px] text-brand-red"
                       >
-                        <Trash2 size={14} /> Xóa bài viết
+                        <Trash2 size={14} /> {t("feed.deletePost")}
                       </button>
                     </div>
                   </>
@@ -461,13 +464,13 @@ export function PostCard({
                 className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading disabled:opacity-60"
               >
                 {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                Lưu
+                {t("common:save")}
               </button>
               <button
                 onClick={() => setEditing(false)}
                 className="flex items-center gap-1.5 h-9 px-4 rounded-xl border border-brand-border text-sm text-brand-body hover:bg-brand-surface-orange transition-colors"
               >
-                <X size={14} /> Hủy
+                <X size={14} /> {t("common:cancel")}
               </button>
             </div>
           </div>
@@ -513,7 +516,7 @@ export function PostCard({
               onClick={() => setShowComments((s) => !s)}
               className="ml-auto flex items-center gap-1 text-[13px] text-brand-body hover:text-brand-teal transition-colors"
             >
-              {post.commentCount} bình luận
+              {t("feed.comment.count", { count: post.commentCount })}
             </button>
           )}
         </div>
@@ -534,7 +537,7 @@ export function PostCard({
             color={post.hasLiked ? "#c0392b" : "currentColor"}
             className={`transition-transform ${liking ? "scale-125" : ""}`}
           />
-          Thích
+          {t("feed.like")}
           {post.likeCount > 0 && (
             <span className="text-xs text-brand-muted font-normal">({post.likeCount})</span>
           )}
@@ -547,7 +550,7 @@ export function PostCard({
             ${showComments ? "text-brand-teal font-bold" : "text-brand-body font-medium"}`}
         >
           <MessageCircle size={17} />
-          Bình luận
+          {t("feed.comment.action")}
           {post.commentCount > 0 && (
             <span className="text-xs text-brand-muted font-normal">({post.commentCount})</span>
           )}
@@ -564,7 +567,7 @@ export function PostCard({
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all hover:bg-[#f4f0ee] text-[13px] text-brand-body font-medium"
         >
           <Share2 size={17} />
-          Chia sẻ
+          {t("feed.share")}
         </button>
       </div>
 
@@ -574,7 +577,7 @@ export function PostCard({
           className="inline-flex items-center gap-1.5 text-[13px] text-brand-teal hover:underline"
         >
           <ExternalLink size={14} />
-          Xem chi tiết bài viết
+          {t("feed.viewDetail")}
         </Link>
       </div>
 

@@ -1,10 +1,11 @@
-import React from "react";
 import { Search, Users } from "lucide-react";
 import type { Conversation } from "../types/messages.types";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
-function formatTimestamp(iso: string) {
+function formatTimestamp(iso: string, locale: string, t: TFunction<"matching">) {
   const d = new Date(iso);
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
@@ -12,13 +13,13 @@ function formatTimestamp(iso: string) {
   const diffHour = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return "Vừa xong";
-  if (diffMin < 60) return `${diffMin} phút trước`;
+  if (diffMin < 1) return t("timeAgo.now");
+  if (diffMin < 60) return t("timeAgo.minutes", { count: diffMin });
   if (diffHour < 24) {
-    return d.toLocaleTimeString("vi-VN", { hour: "numeric", minute: "2-digit" });
+    return d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
   }
-  if (diffDay === 1) return "Hôm qua";
-  return d.toLocaleDateString("vi-VN", { month: "short", day: "numeric" });
+  if (diffDay === 1) return t("messages.yesterday");
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 function AvatarBubble({
@@ -63,32 +64,6 @@ function AvatarBubble({
   );
 }
 
-function GroupAvatarBubble({
-  participants,
-  currentUserId,
-}: {
-  participants: { id: string; name: string; avatar: string }[];
-  currentUserId: string;
-}) {
-  const others = participants.filter((p) => p.id !== currentUserId).slice(0, 2);
-  return (
-    <div className="relative shrink-0" style={{ width: 44, height: 44 }}>
-      <div
-        className="absolute top-0 left-0 w-8 h-8 rounded-full flex items-center justify-center text-white"
-        style={{
-          background: "#006a65",
-          fontFamily: "Lexend, sans-serif",
-          fontWeight: 700,
-          fontSize: 12,
-          zIndex: 1,
-        }}
-      >
-        <Users size={14} />
-      </div>
-    </div>
-  );
-}
-
 interface Props {
   conversations: Conversation[];
   activeId: string | null;
@@ -110,6 +85,8 @@ export function ConversationList({
   onTabChange,
   currentUserId,
 }: Props) {
+  const { t, i18n } = useTranslation("matching");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
   const filtered = conversations.filter((conv) => {
     const matchesTab =
       activeTab === "all" ||
@@ -130,9 +107,9 @@ export function ConversationList({
   });
 
   const tabs: { value: "all" | "1-1" | "group"; label: string }[] = [
-    { value: "all", label: "Tất cả" },
+    { value: "all", label: t("messages.tabs.all") },
     { value: "1-1", label: "1-1" },
-    { value: "group", label: "Nhóm" },
+    { value: "group", label: t("messages.tabs.group") },
   ];
 
   return (
@@ -150,7 +127,7 @@ export function ConversationList({
             color: "#241914",
           }}
         >
-          Tin nhắn
+          {t("messages.title")}
         </h2>
       </div>
 
@@ -164,7 +141,7 @@ export function ConversationList({
           />
           <input
             type="text"
-            placeholder="Tìm kiếm người, nhóm..."
+            placeholder={t("messages.searchPlaceholder")}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full h-10 rounded-full pl-9 pr-4"
@@ -213,7 +190,7 @@ export function ConversationList({
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <p style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", color: "#8b7266" }}>
-              Chưa có cuộc trò chuyện nào
+              {t("messages.empty")}
             </p>
           </div>
         ) : (
@@ -222,16 +199,16 @@ export function ConversationList({
             const other =
               conv.type === "1-1" ? conv.participants.find((p) => p.id !== currentUserId) : null;
             const displayName =
-              conv.type === "group" ? (conv.name ?? "Nhóm") : (other?.name ?? "");
+              conv.type === "group" ? (conv.name ?? t("messages.group")) : (other?.name ?? "");
             const lastMsg = conv.lastMessage;
 
             let lastMsgPreview = "";
             if (lastMsg) {
-              if (lastMsg.type === "match_found") lastMsgPreview = "🎾 Đã tìm thấy đối thủ!";
-              else if (lastMsg.type === "venue_booked") lastMsgPreview = "📍 Đã đặt sân thành công";
+              if (lastMsg.type === "match_found") lastMsgPreview = `🎾 ${t("messages.system.matchFound")}`;
+              else if (lastMsg.type === "venue_booked") lastMsgPreview = `📍 ${t("messages.system.venueBooked")}`;
               else if (lastMsg.type === "system") lastMsgPreview = lastMsg.content;
               else if (lastMsg.senderId === currentUserId)
-                lastMsgPreview = `Bạn: ${lastMsg.content}`;
+                lastMsgPreview = t("messages.youMessage", { content: lastMsg.content });
               else if (conv.type === "group") {
                 const sender = conv.participants.find((p) => p.id === lastMsg.senderId);
                 lastMsgPreview = sender
@@ -287,7 +264,7 @@ export function ConversationList({
                         flexShrink: 0,
                       }}
                     >
-                      {lastMsg ? formatTimestamp(lastMsg.timestamp) : ""}
+                      {lastMsg ? formatTimestamp(lastMsg.timestamp, locale, t) : ""}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">

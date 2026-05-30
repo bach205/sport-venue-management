@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,14 +10,15 @@ import { forgotPassword } from "../api/authApi";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { Button } from "@/shared/components/ui/button";
+import { useTranslation } from "react-i18next";
 
-const schema = z.object({
-  email: z.string().min(1, "Vui lòng nhập email").email("Email không hợp lệ"),
-});
-
-type FormData = z.infer<typeof schema>;
+type FormData = { email: string };
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation("auth");
+  const schema = useMemo(() => z.object({
+    email: z.string().min(1, t("validation.emailRequired")).email(t("validation.emailInvalid")),
+  }), [t]);
   const [submitted, setSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
 
@@ -82,13 +83,13 @@ export default function ForgotPasswordPage() {
                 className="text-[#241914] mb-2"
                 style={{ fontFamily: "Lexend, sans-serif", fontSize: "22px", fontWeight: 700 }}
               >
-                Quên Mật Khẩu?
+                {t("forgot.title")}
               </h2>
               <p
                 className="text-[#584238]"
                 style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", lineHeight: 1.6 }}
               >
-                Nhập email của bạn và chúng tôi sẽ gửi link đặt lại mật khẩu.
+                {t("forgot.subtitle")}
               </p>
             </div>
 
@@ -109,7 +110,7 @@ export default function ForgotPasswordPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Nhập email của bạn"
+                    placeholder={t("forgot.emailPlaceholder")}
                     className="pl-9 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20 h-11"
                     style={{ fontFamily: "Inter, sans-serif" }}
                     {...register("email")}
@@ -141,7 +142,7 @@ export default function ForgotPasswordPage() {
                   <Loader2 size={18} className="animate-spin" />
                 ) : (
                   <>
-                    Gửi Link Đặt Lại
+                    {t("forgot.submit")}
                     <ArrowRight size={18} />
                   </>
                 )}
@@ -163,13 +164,13 @@ export default function ForgotPasswordPage() {
                 className="text-[#241914] mb-2"
                 style={{ fontFamily: "Lexend, sans-serif", fontSize: "22px", fontWeight: 700 }}
               >
-                Kiểm Tra Email
+                {t("forgot.checkEmail")}
               </h2>
               <p
                 className="text-[#584238] mb-2"
                 style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", lineHeight: 1.6 }}
               >
-                Chúng tôi đã gửi link đặt lại mật khẩu đến
+                {t("forgot.sentTo")}
               </p>
               <p
                 className="text-[#a04100]"
@@ -181,7 +182,7 @@ export default function ForgotPasswordPage() {
                 className="text-[#584238] mt-3"
                 style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", lineHeight: 1.6 }}
               >
-                Link có hiệu lực trong 15 phút. Kiểm tra cả hộp thư spam nếu không thấy.
+                {t("forgot.expiryNotice")}
               </p>
             </div>
             <Button
@@ -190,7 +191,7 @@ export default function ForgotPasswordPage() {
               className="w-full h-11 rounded-lg border-[#dfc0b3] text-[#584238] hover:bg-[#fff1eb]"
               style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}
             >
-              Gửi lại email khác
+              {t("forgot.useAnotherEmail")}
             </Button>
           </>
         )}
@@ -201,7 +202,7 @@ export default function ForgotPasswordPage() {
             className="text-[#8b7266] hover:text-[#a04100] transition-colors"
             style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}
           >
-            ← Quay lại đăng nhập
+            ← {t("forgot.backToLogin")}
           </Link>
         </div>
       </div>

@@ -29,14 +29,14 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
 ];
 
 const RECENT_ACTIVITY: ActivityItem[] = [
-  { id: 'a1', type: 'booking',     title: 'Đã đặt Sân bóng rổ Bình Thạnh', subtitle: '2 khung giờ · 150.000₫',         date: '2026-05-07', icon: '🏀' },
-  { id: 'a2', type: 'achievement', title: 'Mở khóa thành tựu: Chú chim sớm mai',    subtitle: 'Nhận +80 XP',              date: '2026-05-05', icon: '🌅' },
-  { id: 'a3', type: 'match',       title: 'Tìm thấy trận đấu qua Matchill',            subtitle: 'Cầu lông · Trung bình · Gò Vấp', date: '2026-04-28', icon: '🏸' },
-  { id: 'a4', type: 'booking',     title: 'Đã đặt Nhà thi đấu Cầu lông Gò Vấp',        subtitle: '3 khung giờ · 240.000₫',         date: '2026-04-22', icon: '🏸' },
-  { id: 'a5', type: 'message',     title: 'Đã chấp nhận yêu cầu ghép cặp mới',          subtitle: 'Từ: Tuấn Phạm',             date: '2026-04-20', icon: '✉️' },
-  { id: 'a6', type: 'achievement', title: 'Mở khóa thành tựu: Phong độ thăng hoa',       subtitle: 'Nhận +150 XP',             date: '2026-04-20', icon: '🔥' },
-  { id: 'a7', type: 'booking',     title: 'Đã đặt CLB Pickleball Quận 7',   subtitle: '1 khung giờ · 100.000₫',          date: '2026-04-12', icon: '🏓' },
-  { id: 'a8', type: 'match',       title: 'Đã đăng yêu cầu tìm đồng đội',             subtitle: 'Cầu lông · Quận 3',     date: '2026-04-08', icon: '🤝' },
+  { id: 'a1', type: 'booking',     date: '2026-05-07', icon: '🏀' },
+  { id: 'a2', type: 'achievement', date: '2026-05-05', icon: '🌅' },
+  { id: 'a3', type: 'match',       date: '2026-04-28', icon: '🏸' },
+  { id: 'a4', type: 'booking',     date: '2026-04-22', icon: '🏸' },
+  { id: 'a5', type: 'message',     date: '2026-04-20', icon: '✉️' },
+  { id: 'a6', type: 'achievement', date: '2026-04-20', icon: '🔥' },
+  { id: 'a7', type: 'booking',     date: '2026-04-12', icon: '🏓' },
+  { id: 'a8', type: 'match',       date: '2026-04-08', icon: '🤝' },
 ];
 
 // ─── FE-only display data (not returned by API) ───────────────────────────────
