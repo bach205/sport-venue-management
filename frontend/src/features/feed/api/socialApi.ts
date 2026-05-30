@@ -66,7 +66,7 @@ import axios from "axios";
 import { isMockApi, API_BASE_URL } from "../../../shared/constants/api";
 import i18n from "../../../shared/i18n/i18n";
 import { getCurrentUser, getToken } from "../../auth/store/authStore";
-import type { ApiPost, ApiComment, ApiAuthor, FeedData, CommentsData } from "../types/feed.types";
+import type { ApiPost, ApiComment, ApiAuthor, FeedData, CommentsData, FeedFilters } from "../types/feed.types";
 import type { ApiResponse } from "../../auth/types/auth.types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,6 +85,19 @@ interface PostBase {
   id: string;
   content: string;
   imageUrl?: string | null;
+  intentType: "post" | "sell";
+  sport?: string;
+  category?: string;
+  title?: string;
+  details?: string;
+  quantity: number;
+  priceType: "fixed" | "range" | "negotiable" | "quote_requested";
+  priceMin?: number;
+  priceMax?: number;
+  currency: string;
+  condition?: "new" | "like_new" | "used";
+  location: string;
+  status: "open" | "matched" | "closed" | "expired";
   author: ApiAuthor;
   createdAt: string;
   updatedAt: string;
@@ -119,6 +132,16 @@ const _posts: PostBase[] = [
     id: "post-1",
     content:
       "Hom nay danh cau long tai Phu Nhuan that tuyet! Ai muon danh trinh trung binh ket minh nha 🏸 Minh hay danh chieu T3, T5, T7.",
+    category: "Equipment",
+    title: "Vợt cầu lông Yonex qua sử dụng",
+    details: "Hom nay danh cau long tai Phu Nhuan that tuyet! Ai muon danh trinh trung binh ket minh nha",
+    quantity: 1,
+    priceType: "fixed",
+    priceMin: 500000,
+    currency: "VND",
+    condition: "used",
+    location: "Phú Nhuận, TP.HCM",
+    status: "open",
     author: MOCK_AUTHORS["u-linh"],
     createdAt: minsAgo(12),
     updatedAt: minsAgo(12),
@@ -129,6 +152,15 @@ const _posts: PostBase[] = [
     id: "post-2",
     content:
       "Vua book san tennis tai Matchill Sports, san rat dep va gia hop ly. Recommend cho moi nguoi nhe! 🎾\n\nGia khoang 150k/h vao buoi sang weekday.",
+    category: "Equipment",
+    title: "Bán lại hộp bóng tennis mới",
+    details: "Vua book san tennis tai Matchill Sports, san rat dep va gia hop ly. Recommend cho moi nguoi nhe!",
+    quantity: 2,
+    priceType: "negotiable",
+    currency: "VND",
+    condition: "new",
+    location: "Quận 1, TP.HCM",
+    status: "open",
     author: MOCK_AUTHORS["u-player"],
     createdAt: minsAgo(45),
     updatedAt: minsAgo(45),
@@ -139,6 +171,18 @@ const _posts: PostBase[] = [
     id: "post-3",
     content:
       "Tim 2 nguoi choi pickleball buoi toi thu 6. San o Q.1. Trinh intermediate tro len. DM neu ban co hung thu! 🏓",
+    intentType: "post",
+    sport: "Pickleball",
+    category: "Equipment",
+    title: "Tìm mua vợt pickleball cũ giá rẻ",
+    details: "Tim 2 nguoi choi pickleball buoi toi thu 6. San o Q.1.",
+    quantity: 1,
+    priceType: "range",
+    priceMin: 300000,
+    priceMax: 800000,
+    currency: "VND",
+    location: "Quận 1, TP.HCM",
+    status: "open",
     author: MOCK_AUTHORS["u-thanh"],
     createdAt: minsAgo(90),
     updatedAt: minsAgo(90),
@@ -149,6 +193,16 @@ const _posts: PostBase[] = [
     id: "post-4",
     content:
       "Chinh thuc khai truong them 3 san cau long tai co so Binh Thanh! Booking ngay tren Matchill de nhan uu dai khai truong 20% 🎉",
+    category: "Tickets",
+    title: "Sang lại vé tháng sân cầu lông Bình Thạnh",
+    details: "Chinh thuc khai truong them 3 san cau long tai co so Binh Thanh!",
+    quantity: 1,
+    priceType: "fixed",
+    priceMin: 1200000,
+    currency: "VND",
+    condition: "new",
+    location: "Bình Thạnh, TP.HCM",
+    status: "open",
     author: MOCK_AUTHORS["u-owner"],
     createdAt: minsAgo(180),
     updatedAt: minsAgo(180),
@@ -159,6 +213,16 @@ const _posts: PostBase[] = [
     id: "post-5",
     content:
       "Tips ky thuat: De cai thien backhand trong tennis, hay tap focus vao viec xoay vai som va giu khuu tay cao. Day la diem minh da cai thien rat nhieu trong 3 thang gan day. 💪",
+    intentType: "post",
+    sport: "Tennis",
+    category: "Apparel",
+    title: "Tìm mua giày tennis size 42",
+    details: "Tips ky thuat: De cai thien backhand trong tennis",
+    quantity: 1,
+    priceType: "quote_requested",
+    currency: "VND",
+    location: "Thủ Đức, TP.HCM",
+    status: "open",
     author: MOCK_AUTHORS["u-nam"],
     createdAt: minsAgo(300),
     updatedAt: minsAgo(300),
@@ -169,6 +233,15 @@ const _posts: PostBase[] = [
     id: "post-6",
     content:
       "Ket qua giai dau noi bo Matchill Cup thang 5:\n🥇 1st: Alex Nguyen\n🥈 2nd: Linh Pham\n🥉 3rd: Nam Vo\n\nCam on tat ca moi nguoi da tham gia! 🏆",
+    category: "Accessories",
+    title: "Thanh lý cúp thể thao",
+    details: "Ket qua giai dau noi bo Matchill Cup thang 5",
+    quantity: 10,
+    priceType: "negotiable",
+    currency: "VND",
+    condition: "like_new",
+    location: "Quận 3, TP.HCM",
+    status: "open",
     author: MOCK_AUTHORS["u-admin"],
     createdAt: minsAgo(720),
     updatedAt: minsAgo(720),
@@ -277,6 +350,17 @@ function resolvePost(base: PostBase, userId: string | null): ApiPost {
     id: base.id,
     content: base.content,
     imageUrl: base.imageUrl ?? null,
+    category: base.category,
+    title: base.title,
+    details: base.details,
+    quantity: base.quantity,
+    priceType: base.priceType,
+    priceMin: base.priceMin,
+    priceMax: base.priceMax,
+    currency: base.currency,
+    condition: base.condition,
+    location: base.location,
+    status: base.status,
     author: base.author,
     createdAt: base.createdAt,
     updatedAt: base.updatedAt,
@@ -302,14 +386,15 @@ function resolveComment(base: CommentBase, userId: string | null): ApiComment {
 // ─── API functions ─────────────────────────────────────────────────────────────
 
 export async function getFeed(
-  page: number = 1,
-  limit: number = 20
+  filters: Partial<FeedFilters> = {}
 ): Promise<ApiResponse<FeedData>> {
   if (isMockApi) {
     await delay(600);
     const user = getCurrentUser();
     const userId = user ? user._id : null;
     const sorted = _posts.slice().reverse();
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
     const start = (page - 1) * limit;
     const items = sorted.slice(start, start + limit).map((p) => resolvePost(p, userId));
     const total = sorted.length;
@@ -323,7 +408,7 @@ export async function getFeed(
   try {
     const res = await axios.get(`${API_BASE_URL}/social/feed`, {
       headers: authHeader(),
-      params: { page, limit },
+      params: filters,
     });
     return { success: true, message: res.data.message || feedMessage("feedLoaded"), data: res.data.data };
   } catch (err: any) {
@@ -386,19 +471,17 @@ export async function getPostDetail(postId: string): Promise<ApiResponse<ApiPost
 }
 
 export async function createPost(
-  content: string,
-  imageUrl?: string | null
+  payload: Partial<ApiPost>
 ): Promise<ApiResponse<ApiPost>> {
   if (isMockApi) {
     await delay(500);
     const user = getCurrentUser();
-    if (!user) return { success: false, message: feedMessage("unauthorized") };
-    if (!content.trim() && !imageUrl) return { success: false, message: feedMessage("contentOrImageRequired") };
+    if (!user) return { success: false, message: "Không có quyền truy cập." };
+    if (!payload.title?.trim() && !payload.imageUrl) return { success: false, message: "Vui lòng nhập tiêu đề hoặc đính kèm hình ảnh." };
     const now = new Date().toISOString();
-    const newPost: PostBase = {
+    const newPost: any = {
+      ...payload,
       id: `post-${++_postIdCounter}`,
-      content: content.trim(),
-      imageUrl: imageUrl ?? null,
       author: { id: user._id, email: user.email, name: user.name, avatarUrl: user.avatar },
       createdAt: now,
       updatedAt: now,
@@ -415,7 +498,7 @@ export async function createPost(
   try {
     const res = await axios.post(
       `${API_BASE_URL}/social/posts`,
-      { content, image_url: imageUrl },
+      { ...payload, image_url: payload.imageUrl },
       {
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }
@@ -429,7 +512,7 @@ export async function createPost(
   }
 }
 
-export async function updatePost(postId: string, content: string): Promise<ApiResponse<ApiPost>> {
+export async function updatePost(postId: string, payload: Partial<ApiPost>): Promise<ApiResponse<ApiPost>> {
   if (isMockApi) {
     await delay(400);
     const user = getCurrentUser();
@@ -437,8 +520,8 @@ export async function updatePost(postId: string, content: string): Promise<ApiRe
     const idx = _posts.findIndex((p) => p.id === postId);
     if (idx === -1) return { success: false, message: feedMessage("postNotFound") };
     if (_posts[idx].author.id !== user._id)
-      return { success: false, message: feedMessage("ownPostEditOnly") };
-    _posts[idx].content = content.trim();
+      return { success: false, message: "Bạn chỉ có thể chỉnh sửa bài viết của chính mình." };
+    _posts[idx] = { ..._posts[idx], ...payload } as any;
     _posts[idx].updatedAt = new Date().toISOString();
     return {
       success: true,
@@ -449,7 +532,7 @@ export async function updatePost(postId: string, content: string): Promise<ApiRe
   try {
     const res = await axios.patch(
       `${API_BASE_URL}/social/posts/${postId}`,
-      { content },
+      { ...payload, image_url: payload.imageUrl },
       {
         headers: { ...authHeader(), "Content-Type": "application/json" },
       }

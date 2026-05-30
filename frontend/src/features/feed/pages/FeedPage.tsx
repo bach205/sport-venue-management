@@ -19,11 +19,21 @@ export default function FeedPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterIntent, setFilterIntent] = useState<"buy" | "sell" | "">("");
+  const [filterSport, setFilterSport] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "price_asc" | "price_desc">("newest");
 
   const loadFeed = useCallback(async (page = 1, append = false) => {
     if (page === 1) setLoading(true);
     else setLoadingMore(true);
-    const result = searchQuery ? await searchFeed(searchQuery, page, 20) : await getFeed(page, 20);
+
+    const filters = {
+      intentType: filterIntent || undefined,
+      sport: filterSport || undefined,
+      sort: sortOrder,
+    };
+
+    const result = searchQuery ? await searchFeed(searchQuery, page, 20) : await getFeed(filters as any);
     if (result.success && result.data) {
       setPosts((prev) => (append ? [...prev, ...result.data!.items] : result.data!.items));
       setPagination(result.data.pagination);
@@ -32,7 +42,7 @@ export default function FeedPage() {
     }
     if (page === 1) setLoading(false);
     else setLoadingMore(false);
-  }, [searchQuery]);
+  }, [searchQuery, filterIntent, filterSport, sortOrder]);
 
   useEffect(() => {
     loadFeed(1);
@@ -122,8 +132,8 @@ export default function FeedPage() {
           </button>
         </div>
 
-        <div className="rounded-2xl bg-white border border-brand-border p-3">
-          <div className="flex items-center gap-2">
+        <div className="rounded-2xl bg-white border border-brand-border p-3 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-2">
             <div className="flex-1 flex items-center gap-2 px-3 h-10 rounded-xl bg-brand-surface border border-brand-border">
               <Search size={15} className="text-brand-muted shrink-0" />
               <input
@@ -143,11 +153,44 @@ export default function FeedPage() {
             </div>
             <button
               onClick={handleSearch}
-              className="h-10 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading hover:opacity-90"
+              className="h-10 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading hover:opacity-90 whitespace-nowrap"
             >
               {t("common:search")}
             </button>
           </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={filterIntent}
+              onChange={(e) => setFilterIntent(e.target.value as any)}
+              className="h-9 px-3 rounded-lg border border-brand-border text-[13px] bg-brand-surface text-brand-dark outline-none focus:border-brand-teal"
+            >
+              <option value="">Tất cả loại tin</option>
+              <option value="post">Tin thường</option>
+              <option value="sell">Tin rao bán</option>
+            </select>
+            <select
+              value={filterSport}
+              onChange={(e) => setFilterSport(e.target.value)}
+              className="h-9 px-3 rounded-lg border border-brand-border text-[13px] bg-brand-surface text-brand-dark outline-none focus:border-brand-teal"
+            >
+              <option value="">Tất cả môn thể thao</option>
+              <option value="Pickleball">Pickleball</option>
+              <option value="Tennis">Tennis</option>
+              <option value="Badminton">Badminton</option>
+              <option value="Football">Football</option>
+            </select>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as any)}
+              className="h-9 px-3 rounded-lg border border-brand-border text-[13px] bg-brand-surface text-brand-dark outline-none focus:border-brand-teal ml-auto"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="price_asc">Giá tăng dần</option>
+              <option value="price_desc">Giá giảm dần</option>
+            </select>
+          </div>
+
           {searchQuery && (
             <p className="text-xs text-brand-muted mt-2">
               {t("feed.page.resultsFor")} <span className="font-semibold">{searchQuery}</span>

@@ -30,6 +30,7 @@ import { getCurrentUser } from "../../auth/store/authStore";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { CreatePostModal } from "./CreatePostModal";
 
 function timeAgo(iso: string, t: TFunction<"matching">): string {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -302,8 +303,6 @@ export function PostCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [liking, setLiking] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editContent, setEditContent] = useState(post.content);
-  const [savingEdit, setSavingEdit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -329,21 +328,6 @@ export function PostCard({
     setLiking(false);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editContent.trim()) return;
-    setSavingEdit(true);
-    const r = await updatePost(post.id, editContent.trim());
-    if (r.success && r.data) {
-      setPost(r.data);
-      onUpdated(r.data);
-      setEditing(false);
-      toast.success(t("feed.updated"));
-    } else {
-      toast.error(r.message);
-    }
-    setSavingEdit(false);
-  };
-
   const handleDelete = async () => {
     setDeleting(true);
     const r = await deletePost(post.id);
@@ -364,13 +348,6 @@ export function PostCard({
   const handleSharePost = async () => {
     const shareUrl = `${window.location.origin}/feed/${post.id}`;
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: t("feed.shareTitle"),
-          url: shareUrl,
-        });
-        return;
-      }
       await navigator.clipboard.writeText(shareUrl);
       toast.success(t("feed.shareCopied"));
     } catch {
@@ -420,7 +397,6 @@ export function PostCard({
                       <button
                         onClick={() => {
                           setEditing(true);
-                          setEditContent(post.content);
                           setMenuOpen(false);
                           setConfirmDelete(false);
                         }}
@@ -448,37 +424,59 @@ export function PostCard({
 
       {/* Content */}
       <div className="px-4 pb-3">
-        {editing ? (
-          <div className="flex flex-col gap-2">
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              rows={4}
-              className="w-full resize-none rounded-xl border border-brand-teal px-3 py-2.5 text-sm text-brand-dark outline-none bg-brand-surface leading-relaxed"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSaveEdit}
-                disabled={savingEdit || !editContent.trim()}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-xl gradient-orange text-sm font-bold text-white font-heading disabled:opacity-60"
-              >
-                {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                {t("common:save")}
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-xl border border-brand-border text-sm text-brand-body hover:bg-brand-surface-orange transition-colors"
-              >
-                <X size={14} /> {t("common:cancel")}
-              </button>
+        {post.intentType === "sell" && (
+          <>
+            {post.title && (
+              <h3 className="text-lg font-bold text-brand-dark mb-2 leading-tight">
+                {post.title}
+              </h3>
+            )}
+
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-brand-surface text-brand-teal border border-brand-teal">
+                Rao Bán
+              </span>
+              <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-[11px] font-semibold border border-gray-200">
+                {post.sport} &bull; {post.category}
+              </span>
+              {post.condition && (
+                <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-[11px] font-semibold border border-gray-200">
+                  {post.condition === "new" ? "Mới" : post.condition === "like_new" ? "Như mới" : "Đã qua sử dụng"}
+                </span>
+              )}
+              {post.quantity != null && (
+                <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-[11px] font-semibold border border-gray-200">
+                  SL: {post.quantity}
+                </span>
+              )}
             </div>
+
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs text-brand-muted font-bold uppercase w-16 shrink-0">Giá:</span>
+                <span className="text-sm font-bold text-brand-orange">
+                  {post.priceType === "fixed" && post.priceMin != null
+                    ? `${post.priceMin.toLocaleString()} ${post.currency}`
+                    : post.priceType === "range" && post.priceMin != null && post.priceMax != null
+                    ? `${post.priceMin.toLocaleString()} - ${post.priceMax.toLocaleString()} ${post.currency}`
+                    : post.priceType === "negotiable"
+                    ? "Thỏa thuận"
+                    : "Yêu cầu báo giá"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-brand-muted font-bold uppercase w-16 shrink-0">Khu vực:</span>
+                <span className="text-sm text-brand-dark">{post.location}</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {(post.details || post.content) && (
+          <div className="text-sm text-brand-dark leading-relaxed whitespace-pre-wrap pt-2 border-t border-brand-border/50">
+            {post.details || post.content}
           </div>
-        ) : post.content ? (
-          <p className="text-sm text-brand-dark leading-relaxed whitespace-pre-wrap">
-            {post.content}
-          </p>
-        ) : null}
+        )}
       </div>
 
       {post.imageUrl && (
@@ -586,6 +584,21 @@ export function PostCard({
         <div className="pt-3">
           <CommentSection postId={post.id} onCountChange={handleCommentCountChange} />
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {editing && (
+        <CreatePostModal
+          editPost={post}
+          onClose={() => setEditing(false)}
+          onSuccess={(updated) => {
+            if (updated) {
+              setPost(updated);
+              onUpdated(updated);
+            }
+            setEditing(false);
+          }}
+        />
       )}
     </article>
   );

@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { ImagePlus, Loader2, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { uploadImage } from "@/shared/api/uploadApi";
-import { createPost } from "../api/socialApi";
+import { createPost, updatePost } from "../api/socialApi";
 import { getCurrentUser } from "../../auth/store/authStore";
+import type { ApiPost } from "../types/feed.types";
 import { useTranslation } from "react-i18next";
 
 const MAX_CHARS = 2000;
@@ -11,26 +12,64 @@ const MAX_CHARS = 2000;
 export function CreatePostModal({
   onClose,
   onSuccess,
+  editPost,
 }: {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (post?: ApiPost) => void;
+  editPost?: ApiPost;
 }) {
   const { t } = useTranslation("matching");
   const user = getCurrentUser();
-  const [content, setContent] = useState("");
+
+  const [intentType, setIntentType] = useState<"post" | "sell">(editPost?.intentType || "post");
+  const [sport, setSport] = useState(editPost?.sport || "Pickleball");
+  const [category, setCategory] = useState(editPost?.category || "Equipment");
+  const [title, setTitle] = useState(editPost?.title || "");
+  const [details, setDetails] = useState(editPost?.details || editPost?.content || "");
+  const [quantity, setQuantity] = useState<number>(editPost?.quantity || 1);
+  const [priceType, setPriceType] = useState<"fixed" | "range" | "negotiable" | "quote_requested">(
+    editPost?.priceType || "fixed"
+  );
+  const [priceMin, setPriceMin] = useState<number | "">(editPost?.priceMin ?? "");
+  const [priceMax, setPriceMax] = useState<number | "">(editPost?.priceMax ?? "");
+  const [condition, setCondition] = useState<"new" | "like_new" | "used">(
+    editPost?.condition || "new"
+  );
+  const [location, setLocation] = useState(editPost?.location || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(editPost?.imageUrl || null);
   const [posting, setPosting] = useState(false);
 
-  const remaining = MAX_CHARS - content.length;
+  const remaining = MAX_CHARS - details.length;
   const isOverLimit = remaining < 0;
-  const canPost = Boolean(content.trim() || imageFile) && !isOverLimit && !posting;
+
+  const isFormValid = () => {
+    if (isOverLimit) return false;
+
+    if (intentType === "post") {
+      if (!details.trim() && !imageFile) return false;
+      return true;
+    }
+
+    if (intentType === "sell") {
+      if (!title.trim()) return false;
+      if (title.trim().length > 120) return false;
+      if (!location.trim()) return false;
+      if (quantity <= 0) return false;
+      if (priceType === "fixed" && (priceMin === "" || priceMin < 0)) return false;
+      if (priceType === "range" && (priceMin === "" || priceMax === "" || priceMax < priceMin))
+        return false;
+      return true;
+    }
+
+    return false;
+  };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error(t("feed.create.imageRequired"));
+      toast.error(t("feed.create.imageRequired", "Vui lòng chọn ảnh hợp lệ"));
       return;
     }
     if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -45,10 +84,13 @@ export function CreatePostModal({
   };
 
   const handlePost = async () => {
-    if (!canPost || !user) return;
+    if (!isFormValid() || !user) {
+      toast.error("Vui lòng kiểm tra lại các trường bắt buộc.");
+      return;
+    }
     setPosting(true);
 
-    let imageUrl: string | null = null;
+    let imageUrl: string | null = editPost?.imageUrl || null;
     if (imageFile) {
       const uploadResult = await uploadImage(imageFile);
       if (!uploadResult.success || !uploadResult.data) {
@@ -57,28 +99,76 @@ export function CreatePostModal({
         return;
       }
       imageUrl = uploadResult.data.imageUrl;
+    } else if (!imagePreview) {
+      imageUrl = null;
     }
 
-    const result = await createPost(content.trim(), imageUrl);
+    let payload: Partial<ApiPost>;
+
+    if (intentType === "post") {
+      payload = {
+        intentType: "post",
+        content: details.trim(),
+        imageUrl,
+      };
+    } else {
+      payload = {
+        intentType: "sell",
+        sport,
+        category,
+        title: title.trim(),
+        details: details.trim(),
+        content: details.trim(), // fallback
+        quantity,
+        priceType,
+        priceMin: priceMin !== "" ? priceMin : undefined,
+        priceMax: priceMax !== "" ? priceMax : undefined,
+        currency: "VND",
+        condition,
+        location: location.trim(),
+        status: "open",
+        imageUrl,
+      };
+    }
+
+    let result;
+    if (editPost) {
+      result = await updatePost(editPost.id, payload);
+    } else {
+      result = await createPost(payload);
+    }
+
     if (result.success) {
-      toast.success(t("feed.create.success"));
-      onSuccess();
+      toast.success(
+        editPost
+          ? "Cập nhật bài đăng thành công!"
+          : t("feed.create.success", "Đăng bài thành công!")
+      );
+      onSuccess(result.data);
     } else {
       toast.error(result.message);
       setPosting(false);
     }
   };
 
-  const initials = user?.name?.split(" ").map((w) => w[0]).slice(-2).join("") ?? "U";
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((w) => w[0])
+      .slice(-2)
+      .join("") ?? "U";
+  const canPost = isFormValid() && !posting;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/55 backdrop-blur-sm">
       <div
-        className="relative w-full max-w-lg flex flex-col rounded-2xl overflow-hidden bg-white"
+        className="relative w-full max-w-2xl flex flex-col max-h-[90vh] rounded-2xl overflow-hidden bg-white"
         style={{ boxShadow: "0 32px 80px rgba(36,25,20,0.35)" }}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-brand-border">
-          <h2 className="font-heading text-lg font-bold text-brand-dark">{t("feed.create.title")}</h2>
+          <h2 className="font-heading text-lg font-bold text-brand-dark">
+            {editPost ? "Cập nhật bài đăng" : "Tạo bài đăng mới"}
+          </h2>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-brand-surface-warm transition-colors text-brand-body"
@@ -87,53 +177,240 @@ export function CreatePostModal({
           </button>
         </div>
 
-        <div className="px-5 pt-4 pb-3 flex gap-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 gradient-teal-diag text-white text-[15px] font-bold font-heading">
-            {initials}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold text-brand-dark font-heading">{user?.name ?? t("feed.create.you")}</p>
-            <p className="text-xs text-brand-muted">{t("feed.create.destination")}</p>
-          </div>
-        </div>
-
-        <div className="px-5 pb-4">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={t("feed.create.placeholder")}
-            className="w-full resize-none outline-none text-[15px] text-brand-dark bg-transparent leading-relaxed border-none min-h-[120px]"
-            autoFocus
-          />
-          {content.length > MAX_CHARS * 0.7 && (
-            <p
-              className={`text-right text-[12px] mt-1 ${
-                isOverLimit ? "text-brand-red font-semibold" : "text-brand-muted"
-              }`}
-            >
-              {t("feed.create.charactersRemaining", { count: remaining })}
-            </p>
-          )}
-          {imagePreview && (
-            <div className="relative mt-3 overflow-hidden rounded-xl border border-brand-border bg-brand-surface">
-              <img src={imagePreview} alt="Preview" className="max-h-80 w-full object-cover" />
-              <button
-                type="button"
-                onClick={removeImage}
-                className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand-red shadow-sm hover:bg-white"
-              >
-                <Trash2 size={15} />
-              </button>
+        <div className="px-5 pt-4 pb-3 flex flex-col gap-3 overflow-y-scroll">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 gradient-teal-diag text-white text-[15px] font-bold font-heading">
+              {initials}
             </div>
-          )}
+            <div className="flex-1">
+              <p className="text-sm font-bold text-brand-dark font-heading">
+                {user?.name ?? t("feed.create.you", "Bạn")}
+              </p>
+              <p className="text-xs text-brand-muted">
+                {t("feed.create.destination", "Chia sẻ với cộng đồng")}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {!editPost && (
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-brand-dark mb-1">
+                  Loại tin đăng *
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIntentType("post")}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg border transition-colors ${
+                      intentType === "post"
+                        ? "border-brand-teal bg-brand-surface text-brand-teal"
+                        : "border-brand-border text-brand-body hover:bg-brand-surface"
+                    }`}
+                  >
+                    Bài đăng thường
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIntentType("sell")}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg border transition-colors ${
+                      intentType === "sell"
+                        ? "border-brand-yellow bg-[#FFFAF0] text-brand-orange"
+                        : "border-brand-border text-brand-body hover:bg-brand-surface"
+                    }`}
+                  >
+                    Rao bán
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {intentType === "sell" && (
+              <>
+                <div>
+                  <label className="block text-xs font-bold text-brand-dark mb-1">
+                    Môn thể thao *
+                  </label>
+                  <select
+                    value={sport}
+                    onChange={(e) => setSport(e.target.value)}
+                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                  >
+                    <option value="Pickleball">Pickleball</option>
+                    <option value="Tennis">Tennis</option>
+                    <option value="Badminton">Badminton</option>
+                    <option value="Football">Football</option>
+                    <option value="Other">Khác</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-brand-dark mb-1">Danh mục *</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                  >
+                    <option value="Equipment">Thiết bị (Equipment)</option>
+                    <option value="Apparel">Trang phục (Apparel)</option>
+                    <option value="Accessories">Phụ kiện (Accessories)</option>
+                    <option value="Tickets">Vé (Tickets)</option>
+                    <option value="Other">Khác</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-brand-dark mb-1">
+                    Tiêu đề tin đăng *
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Tiêu đề ngắn gọn, rõ ràng (tối đa 120 ký tự)"
+                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                    maxLength={120}
+                  />
+                  <p className="text-right text-[11px] text-brand-muted mt-1">{title.length}/120</p>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-brand-dark mb-1">Kiểu giá *</label>
+                  <select
+                    value={priceType}
+                    onChange={(e) => setPriceType(e.target.value as any)}
+                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                  >
+                    <option value="fixed">Giá cố định</option>
+                    <option value="negotiable">Thỏa thuận</option>
+                    <option value="range">Khoảng giá</option>
+                    <option value="quote_requested">Yêu cầu báo giá</option>
+                  </select>
+                </div>
+
+                {(priceType === "fixed" || priceType === "range") && (
+                  <div className={priceType === "range" ? "col-span-1" : "col-span-2"}>
+                    <label className="block text-xs font-bold text-brand-dark mb-1">
+                      {priceType === "range" ? "Giá tối thiểu (VND) *" : "Mức giá (VND) *"}
+                    </label>
+                    <input
+                      type="number"
+                      value={priceMin}
+                      onChange={(e) => setPriceMin(e.target.value ? Number(e.target.value) : "")}
+                      placeholder="0"
+                      className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                      min="0"
+                    />
+                  </div>
+                )}
+
+                {priceType === "range" && (
+                  <div className="col-span-1">
+                    <label className="block text-xs font-bold text-brand-dark mb-1">
+                      Giá tối đa (VND) *
+                    </label>
+                    <input
+                      type="number"
+                      value={priceMax}
+                      onChange={(e) => setPriceMax(e.target.value ? Number(e.target.value) : "")}
+                      placeholder="0"
+                      className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                      min="0"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-brand-dark mb-1">Số lượng *</label>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                    min="1"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-brand-dark mb-1">
+                    Tình trạng *
+                  </label>
+                  <select
+                    value={condition}
+                    onChange={(e) => setCondition(e.target.value as any)}
+                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                  >
+                    <option value="new">Mới (New)</option>
+                    <option value="like_new">Như mới (Like New)</option>
+                    <option value="used">Đã qua sử dụng (Used)</option>
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-brand-dark mb-1">
+                    Khu vực / Địa điểm *
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="VD: Quận 1, TP.HCM"
+                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-brand-dark mb-1">Nội dung</label>
+              <textarea
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                placeholder={
+                  intentType === "post"
+                    ? "Bạn đang nghĩ gì?"
+                    : "Nhập thông tin chi tiết về sản phẩm..."
+                }
+                className="w-full p-3 border border-brand-border rounded-lg text-[14px] text-brand-dark bg-white outline-none focus:border-brand-teal min-h-[100px] resize-y"
+              />
+              <p
+                className={`text-right text-[11px] mt-1 ${
+                  isOverLimit ? "text-brand-red font-semibold" : "text-brand-muted"
+                }`}
+              >
+                {details.length}/{MAX_CHARS}
+              </p>
+            </div>
+
+            <div className="col-span-2">
+              <label className="flex w-fit cursor-pointer items-center gap-2 px-4 py-2 rounded-lg bg-brand-surface border border-brand-border text-[13px] font-semibold text-brand-dark hover:bg-brand-surface-warm transition-colors">
+                <ImagePlus size={17} className="text-brand-teal" />
+                Thêm ảnh
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </label>
+            </div>
+
+            {imagePreview && (
+              <div className="col-span-2 relative mt-2 overflow-hidden rounded-xl border border-brand-border bg-brand-surface">
+                <img src={imagePreview} alt="Preview" className="max-h-60 w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand-red shadow-sm hover:bg-white"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-brand-border flex items-center justify-between gap-3">
-          <label className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold text-brand-teal hover:opacity-80">
-            <ImagePlus size={17} />
-            {t("feed.create.addImage")}
-            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-          </label>
+        <div className="px-5 py-4 border-t border-brand-border bg-white flex items-center justify-end gap-3 shrink-0">
           <button
             onClick={handlePost}
             disabled={!canPost}
@@ -144,11 +421,12 @@ export function CreatePostModal({
           >
             {posting ? (
               <>
-                <Loader2 size={16} className="animate-spin" /> {t("feed.create.posting")}
+                <Loader2 size={16} className="animate-spin" />{" "}
+                {editPost ? "Đang cập nhật..." : "Đang đăng..."}
               </>
             ) : (
               <>
-                <Send size={16} /> {t("feed.create.submit")}
+                <Send size={16} /> {editPost ? "Cập nhật" : "Đăng bài"}
               </>
             )}
           </button>

@@ -18,21 +18,51 @@ class SocialService {
       user_id: userId,
       content: payload.content ? String(payload.content).trim() : "",
       image_url: payload.image_url ? String(payload.image_url).trim() : undefined,
+      intentType: payload.intentType,
+      sport: payload.sport,
+      category: payload.category,
+      title: payload.title,
+      details: payload.details,
+      quantity: payload.quantity,
+      priceType: payload.priceType,
+      priceMin: payload.priceMin,
+      priceMax: payload.priceMax,
+      currency: payload.currency || "VND",
+      condition: payload.condition,
+      location: payload.location,
+      status: "open",
     });
 
     return this.getFeedItemByPost(post._id, userId);
   }
 
-  async getFeed(userId, page = 1, limit = 20) {
+  async getFeed(userId, page = 1, limit = 20, filters = {}) {
     const skip = (page - 1) * limit;
 
+    const query = {};
+    if (filters.intentType) query.intentType = filters.intentType;
+    if (filters.sport) query.sport = filters.sport;
+    if (filters.category) query.category = filters.category;
+    if (filters.location) query.location = filters.location;
+    if (filters.priceType) query.priceType = filters.priceType;
+    if (filters.condition) query.condition = filters.condition;
+    
+    // Prefer open items, hide expired or closed if not explicitly requested
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (filters.sort === "price_asc") sortOption = { priceMin: 1, createdAt: -1 };
+    if (filters.sort === "price_desc") sortOption = { priceMin: -1, createdAt: -1 };
+
     const [posts, total] = await Promise.all([
-      Post.find({})
+      Post.find(query)
         .populate("user_id", "email status is_verified createdAt updatedAt")
-        .sort({ createdAt: -1 })
+        .sort(sortOption)
         .skip(skip)
         .limit(limit),
-      Post.countDocuments({}),
+      Post.countDocuments(query),
     ]);
 
     const postIds = posts.map((post) => post._id);
@@ -135,13 +165,17 @@ class SocialService {
     const post = await this.getPostOrThrow(postId);
     this.assertOwnership(post.user_id, userId, "You can only update your own posts.");
 
-    if (payload.content !== undefined) {
-      post.content = String(payload.content).trim();
-    }
-
-    if (payload.image_url !== undefined) {
-      post.image_url = payload.image_url ? String(payload.image_url).trim() : undefined;
-    }
+    if (payload.content !== undefined) post.content = String(payload.content).trim();
+    if (payload.image_url !== undefined) post.image_url = payload.image_url ? String(payload.image_url).trim() : undefined;
+    if (payload.title !== undefined) post.title = payload.title;
+    if (payload.details !== undefined) post.details = payload.details;
+    if (payload.quantity !== undefined) post.quantity = payload.quantity;
+    if (payload.priceType !== undefined) post.priceType = payload.priceType;
+    if (payload.priceMin !== undefined) post.priceMin = payload.priceMin;
+    if (payload.priceMax !== undefined) post.priceMax = payload.priceMax;
+    if (payload.location !== undefined) post.location = payload.location;
+    if (payload.condition !== undefined) post.condition = payload.condition;
+    if (payload.status !== undefined) post.status = payload.status;
 
     await post.save();
 
@@ -346,6 +380,19 @@ class SocialService {
       id: postId,
       content: post.content,
       imageUrl: post.image_url || null,
+      intentType: post.intentType,
+      sport: post.sport,
+      category: post.category,
+      title: post.title,
+      details: post.details,
+      quantity: post.quantity,
+      priceType: post.priceType,
+      priceMin: post.priceMin,
+      priceMax: post.priceMax,
+      currency: post.currency,
+      condition: post.condition,
+      location: post.location,
+      status: post.status,
       author: this.formatAuthor(post.user_id, profile),
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,

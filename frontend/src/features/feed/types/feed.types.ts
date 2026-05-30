@@ -6,11 +6,25 @@ export interface ApiAuthor {
   avatarUrl?: string | null;
 }
 
-/** Single post as returned by GET /social/feed and POST /social/posts */
+/** Single post/listing as returned by GET /social/feed and POST /social/posts */
 export interface ApiPost {
   id: string;
-  content: string;
+  content?: string;
   imageUrl?: string | null;
+  intentType: "post" | "sell";
+  sport: string;
+  category: string;
+  itemType: string;
+  title: string;
+  details?: string;
+  quantity: number;
+  priceType: "fixed" | "range" | "negotiable" | "quote_requested";
+  priceMin?: number;
+  priceMax?: number;
+  currency: string;
+  condition?: "new" | "like_new" | "used";
+  location: string;
+  status: "open" | "matched" | "closed" | "expired";
   author: ApiAuthor;
   createdAt: string;
   updatedAt: string;
@@ -18,6 +32,19 @@ export interface ApiPost {
   commentCount: number;
   isOwner: boolean;
   hasLiked: boolean;
+}
+
+export interface FeedFilters {
+  intentType?: "post" | "sell";
+  sport?: string;
+  category?: string;
+  location?: string;
+  priceType?: "fixed" | "range" | "negotiable" | "quote_requested";
+  condition?: "new" | "like_new" | "used";
+  status?: "open" | "matched" | "closed" | "expired";
+  sort?: "newest" | "price_asc" | "price_desc" | "recently_active";
+  page?: number;
+  limit?: number;
 }
 
 /** Single comment as returned by GET/POST /social/posts/:id/comments */
