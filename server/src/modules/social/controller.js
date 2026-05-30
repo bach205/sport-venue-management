@@ -40,7 +40,18 @@ class SocialController {
     }
 
     try {
-      const data = await socialService.getFeed(req.user.id, value.page, value.limit);
+      const filters = {
+        intentType: req.query.intentType,
+        sport: req.query.sport,
+        category: req.query.category,
+        location: req.query.location,
+        priceType: req.query.priceType,
+        condition: req.query.condition,
+        status: req.query.status,
+        sort: req.query.sort,
+      };
+
+      const data = await socialService.getFeed(req.user.id, value.page, value.limit, filters);
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Feed fetched successfully.",

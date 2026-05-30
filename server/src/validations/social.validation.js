@@ -56,15 +56,52 @@ const validateOptionalPostContent = (content, errors) => {
 const validateCreatePostPayload = (payload = {}) => {
   const errors = [];
 
-  validateOptionalPostContent(payload.content, errors);
-  validateOptionalImageUrl(payload.image_url, errors);
-
-  if (
-    (payload.content === undefined || payload.content === null || String(payload.content).trim() === "") &&
-    (payload.image_url === undefined || payload.image_url === null || String(payload.image_url).trim() === "")
-  ) {
-    errors.push("Content or image is required.");
+  // Core structured trade listing fields
+  if (!payload.intentType || !["post", "sell"].includes(payload.intentType)) {
+    errors.push("Intent type must be either 'post' or 'sell'.");
   }
+
+  if (payload.intentType === "sell") {
+    if (!payload.sport || String(payload.sport).trim() === "") {
+      errors.push("Sport is required for sell posts.");
+    }
+    if (!payload.category || String(payload.category).trim() === "") {
+      errors.push("Category is required for sell posts.");
+    }
+    if (!payload.title || String(payload.title).trim() === "") {
+      errors.push("Title is required for sell posts.");
+    } else if (String(payload.title).trim().length > 120) {
+      errors.push("Title must not exceed 120 characters.");
+    }
+    
+    if (payload.quantity === undefined || payload.quantity === null || Number(payload.quantity) <= 0) {
+      errors.push("Quantity must be greater than zero.");
+    }
+
+    if (!payload.priceType || !["fixed", "range", "negotiable", "quote_requested"].includes(payload.priceType)) {
+      errors.push("Valid price type is required.");
+    } else {
+      if (payload.priceType === "fixed" && (payload.priceMin === undefined || payload.priceMin === null)) {
+        errors.push("Price is required for fixed price type.");
+      }
+      if (payload.priceType === "range") {
+        if (payload.priceMin === undefined || payload.priceMin === null || payload.priceMax === undefined || payload.priceMax === null) {
+          errors.push("Price min and max are required for range price type.");
+        } else if (Number(payload.priceMax) < Number(payload.priceMin)) {
+          errors.push("Price max must be greater than or equal to price min.");
+        }
+      }
+    }
+
+    if (!payload.location || String(payload.location).trim() === "") {
+      errors.push("Location is required for sell posts.");
+    }
+  }
+
+  // Backwards compatibility with old fields
+  validateOptionalPostContent(payload.content, errors);
+  validateOptionalPostContent(payload.details, errors);
+  validateOptionalImageUrl(payload.image_url, errors);
 
   return {
     isValid: errors.length === 0,
@@ -80,7 +117,30 @@ const validateUpdatePostPayload = (payload = {}) => {
   }
 
   validateOptionalContent(payload.content, "Content", errors);
+  validateOptionalContent(payload.details, "Details", errors);
   validateOptionalImageUrl(payload.image_url, errors);
+
+  if (payload.title !== undefined) {
+    if (String(payload.title).trim() === "") {
+      errors.push("Title cannot be empty.");
+    } else if (String(payload.title).trim().length > 120) {
+      errors.push("Title must not exceed 120 characters.");
+    }
+  }
+
+  if (payload.quantity !== undefined && Number(payload.quantity) <= 0) {
+    errors.push("Quantity must be greater than zero.");
+  }
+  
+  if (payload.priceType !== undefined && !["fixed", "range", "negotiable", "quote_requested"].includes(payload.priceType)) {
+    errors.push("Valid price type is required.");
+  }
+
+  if (payload.priceType === "range" || (payload.priceMin !== undefined && payload.priceMax !== undefined)) {
+    if (payload.priceMax !== undefined && payload.priceMin !== undefined && Number(payload.priceMax) < Number(payload.priceMin)) {
+      errors.push("Price max must be greater than or equal to price min.");
+    }
+  }
 
   return {
     isValid: errors.length === 0,
