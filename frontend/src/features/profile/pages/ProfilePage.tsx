@@ -14,7 +14,8 @@ import { getLevelProgress, getFEOnlyData } from '../store/profileStore';
 import type { UserProfile, Achievement, Gender, SkillLevel, Sport } from '../types/profile.types';
 import type { ApiUser, UpdateProfilePayload } from '../../auth/types/auth.types';
 import { toast } from 'sonner';
-import { LOCATION_OPTIONS, SKILL_LEVEL_OPTIONS, SPORT_OPTIONS } from '@/shared/constants/matchOptions';
+import { uploadImage } from '@/shared/api/uploadApi';
+import { SKILL_LEVEL_OPTIONS, SPORT_OPTIONS } from '@/shared/constants/matchOptions';
 import { useTranslation } from 'react-i18next';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -36,11 +37,31 @@ const GENDERS: { value: Gender; label: string }[] = [
   { value: 'prefer_not_to_say', label: 'Không muốn tiết lộ' },
 ];
 
-const CATEGORY_CONFIG: Record<string, { color: string; textClass: string; bgClass: string }> = {
+const GENDER_LABELS: Record<Gender, string> = {
+  male:              'Nam',
+  female:            'Nữ',
+  other:             'Khác',
+  prefer_not_to_say: 'Không muốn tiết lộ',
+};
+
+const STATUS_MAP: Record<ApiUser['status'], string> = {
+  active:  'Hoạt động',
+  warning: 'Cảnh báo',
+  banned:  'Đã khóa',
+};
+
+const CATEGORY_CONFIG: Record<Achievement['category'], { color: string; textClass: string; bgClass: string }> = {
   booking: { color: '#a04100', textClass: 'text-brand-orange', bgClass: 'bg-brand-surface-orange' },
   social:  { color: '#1a5fb4', textClass: 'text-brand-navy',   bgClass: 'bg-[#ddeeff]' },
   skill:   { color: '#006a65', textClass: 'text-brand-teal',   bgClass: 'bg-brand-surface-teal' },
   loyalty: { color: '#856404', textClass: 'text-[#856404]',    bgClass: 'bg-[#fff3cd]' },
+};
+
+const CATEGORY_LABELS: Record<Achievement['category'], string> = {
+  booking: 'Đặt sân',
+  social:  'Kết nối',
+  skill:   'Kỹ năng',
+  loyalty: 'Gắn bó',
 };
 
 function formatDate(d: string) {
@@ -116,10 +137,6 @@ function EditForm({
     sport_preference: [...profile.sport_preference],
     skill_level:      profile.skill_level,
   });
-  const locationChoices = LOCATION_OPTIONS.includes(form.location as typeof LOCATION_OPTIONS[number])
-    ? LOCATION_OPTIONS
-    : [form.location, ...LOCATION_OPTIONS].filter(Boolean);
-
   const toggleSport = (s: Sport) =>
     setForm(f => ({
       ...f,
@@ -151,9 +168,7 @@ function EditForm({
         </div>
         <div>
           <label className="text-[13px] font-semibold text-brand-dark block mb-1.5">{t('form.location')}</label>
-          <select className={inputCls + ' cursor-pointer'} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}>
-            {locationChoices.map(location => <option key={location} value={location}>{t(`locations.${location}`, location)}</option>)}
-          </select>
+          <input className={inputCls} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Nhập khu vực của bạn" />
         </div>
       </div>
 
@@ -442,7 +457,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[
             { icon: '🏸', label: 'Bộ môn yêu thích',         value: profile.sport_preference.slice(0, 2).map(s => SPORTS.find(x => x.value === s)?.label || s).join(', ') || '–' },
-            { icon: '⚡', label: 'Trình độ',    value: SKILL_LEVEL_MAP[profile.skill_level] || profile.skill_level },
+            { icon: '⚡', label: 'Trình độ',    value: t(`skillLevels.${profile.skill_level}.label`, profile.skill_level) },
             { icon: '📅', label: 'Tổng lượt đặt', value: `${profile.totalBookings}` },
             { icon: '🤝', label: 'Trận đã chơi', value: `${profile.totalMatchesPlayed}` },
           ].map((s, i) => (
@@ -524,7 +539,7 @@ export default function ProfilePage() {
                         { label: 'Tuổi',             value: profile.age ? `${profile.age} tuổi` : '—' },
                         { label: 'Giới tính',        value: GENDER_LABELS[profile.gender] || '—' },
                         { label: 'Khu vực',          value: profile.location || '—' },
-                        { label: 'Trình độ',         value: SKILL_LEVEL_MAP[profile.skill_level] || '—' },
+                        { label: 'Trình độ',         value: t(`skillLevels.${profile.skill_level}.label`, profile.skill_level) },
                         { label: 'Điểm uy tín',      value: `${profile.reputation_score} điểm` },
                         { label: 'Xác minh',         value: profile.is_verified ? '✅ Đã xác minh' : '⚠️ Chưa xác minh' },
                         { label: 'Ngày tham gia',    value: formatDate(profile.joinedAt) },

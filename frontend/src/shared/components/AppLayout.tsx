@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router';
 import { Bell, LogIn, ChevronDown, LogOut, User, Building2, ShieldCheck } from 'lucide-react';
 import { MatchingFAB } from '../../features/matching/components/MatchingFAB';
@@ -49,7 +49,7 @@ export default function AppLayout() {
         <div className="max-w-screen-xl mx-auto px-6 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-10">
             <Link to="/discover" className="font-heading text-md font-extrabold text-brand-orange no-underline">
-              <img src="/public/logo.png" alt="Logo" className="w-14 h-14 inline-block " />
+              <img src="/logo.png" alt="Logo" className="w-14 h-14 inline-block object-contain" />
               Matchill
             </Link>
             <nav className="hidden md:flex items-center gap-5 lg:gap-7">
