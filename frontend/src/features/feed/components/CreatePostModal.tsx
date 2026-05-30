@@ -35,7 +35,6 @@ export function CreatePostModal({
   const [condition, setCondition] = useState<"new" | "like_new" | "used">(
     editPost?.condition || "new"
   );
-  const [location, setLocation] = useState(editPost?.location || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editPost?.imageUrl || null);
   const [posting, setPosting] = useState(false);
@@ -54,7 +53,6 @@ export function CreatePostModal({
     if (intentType === "sell") {
       if (!title.trim()) return false;
       if (title.trim().length > 120) return false;
-      if (!location.trim()) return false;
       if (quantity <= 0) return false;
       if (priceType === "fixed" && (priceMin === "" || priceMin < 0)) return false;
       if (priceType === "range" && (priceMin === "" || priceMax === "" || priceMax < priceMin))
@@ -125,7 +123,6 @@ export function CreatePostModal({
         priceMax: priceMax !== "" ? priceMax : undefined,
         currency: "VND",
         condition,
-        location: location.trim(),
         status: "open",
         imageUrl,
       };
@@ -219,7 +216,7 @@ export function CreatePostModal({
                         : "border-brand-border text-brand-body hover:bg-brand-surface"
                     }`}
                   >
-                    Rao bán
+                    Bán
                   </button>
                 </div>
               </div>
@@ -344,19 +341,6 @@ export function CreatePostModal({
                     <option value="like_new">Như mới (Like New)</option>
                     <option value="used">Đã qua sử dụng (Used)</option>
                   </select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-brand-dark mb-1">
-                    Khu vực / Địa điểm *
-                  </label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="VD: Quận 1, TP.HCM"
-                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                  />
                 </div>
               </>
             )}

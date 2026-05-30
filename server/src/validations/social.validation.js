@@ -92,10 +92,6 @@ const validateCreatePostPayload = (payload = {}) => {
         }
       }
     }
-
-    if (!payload.location || String(payload.location).trim() === "") {
-      errors.push("Location is required for sell posts.");
-    }
   }
 
   // Backwards compatibility with old fields

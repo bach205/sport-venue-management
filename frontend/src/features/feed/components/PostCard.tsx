@@ -183,7 +183,9 @@ function CommentSection({
                   </button>
                   {confirmDeleteId === c.id ? (
                     <span className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-brand-red">{t("feed.comment.deleteQuestion")}</span>
+                      <span className="text-[11px] text-brand-red">
+                        {t("feed.comment.deleteQuestion")}
+                      </span>
                       <button
                         onClick={() => handleDelete(c.id)}
                         disabled={deletingId === c.id}
@@ -247,7 +249,9 @@ function CommentSection({
           </div>
         </div>
       ) : (
-        <p className="text-[13px] text-brand-muted text-center py-1">{t("feed.comment.loginRequired")}</p>
+        <p className="text-[13px] text-brand-muted text-center py-1">
+          {t("feed.comment.loginRequired")}
+        </p>
       )}
     </div>
   );
@@ -266,9 +270,7 @@ function DeleteConfirmBanner({
   return (
     <div className="mx-4 mb-3 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#fff5f5] border border-[#fecdca]">
       <AlertTriangle size={16} className="text-brand-red shrink-0" />
-      <p className="flex-1 text-[13px] text-brand-red">
-        {t("feed.deleteConfirm")}
-      </p>
+      <p className="flex-1 text-[13px] text-brand-red">{t("feed.deleteConfirm")}</p>
       <button
         onClick={onCancel}
         className="h-7 px-3 rounded-lg border border-[#fecdca] text-[12px] text-brand-body hover:bg-white transition-colors"
@@ -367,7 +369,15 @@ export function PostCard({
           />
         ) : (
           <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white gradient-orange-diag font-heading">
-            {post.author.avatarUrl ? <img src={post.author.avatarUrl} alt={post.author.name} className="w-full h-full object-cover rounded-full" /> : initials(post.author.name)}
+            {post.author.avatarUrl ? (
+              <img
+                src={post.author.avatarUrl}
+                alt={post.author.name}
+                className="w-full h-full object-cover rounded-full"
+              />
+            ) : (
+              initials(post.author.name)
+            )}
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -427,21 +437,23 @@ export function PostCard({
         {post.intentType === "sell" && (
           <>
             {post.title && (
-              <h3 className="text-lg font-bold text-brand-dark mb-2 leading-tight">
-                {post.title}
-              </h3>
+              <h3 className="text-lg font-bold text-brand-dark mb-2 leading-tight">{post.title}</h3>
             )}
 
             <div className="flex flex-wrap gap-2 mb-3">
               <span className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-brand-surface text-brand-teal border border-brand-teal">
-                Rao Bán
+                Bán
               </span>
               <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-[11px] font-semibold border border-gray-200">
                 {post.sport} &bull; {post.category}
               </span>
               {post.condition && (
                 <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-[11px] font-semibold border border-gray-200">
-                  {post.condition === "new" ? "Mới" : post.condition === "like_new" ? "Như mới" : "Đã qua sử dụng"}
+                  {post.condition === "new"
+                    ? "Mới"
+                    : post.condition === "like_new"
+                      ? "Như mới"
+                      : "Đã qua sử dụng"}
                 </span>
               )}
               {post.quantity != null && (
@@ -453,20 +465,18 @@ export function PostCard({
 
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs text-brand-muted font-bold uppercase w-16 shrink-0">Giá:</span>
+                <span className="text-xs text-brand-muted font-bold uppercase w-16 shrink-0">
+                  Giá:
+                </span>
                 <span className="text-sm font-bold text-brand-orange">
                   {post.priceType === "fixed" && post.priceMin != null
                     ? `${post.priceMin.toLocaleString()} ${post.currency}`
                     : post.priceType === "range" && post.priceMin != null && post.priceMax != null
-                    ? `${post.priceMin.toLocaleString()} - ${post.priceMax.toLocaleString()} ${post.currency}`
-                    : post.priceType === "negotiable"
-                    ? "Thỏa thuận"
-                    : "Yêu cầu báo giá"}
+                      ? `${post.priceMin.toLocaleString()} - ${post.priceMax.toLocaleString()} ${post.currency}`
+                      : post.priceType === "negotiable"
+                        ? "Thỏa thuận"
+                        : "Yêu cầu báo giá"}
                 </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-brand-muted font-bold uppercase w-16 shrink-0">Khu vực:</span>
-                <span className="text-sm text-brand-dark">{post.location}</span>
               </div>
             </div>
           </>
