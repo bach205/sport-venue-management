@@ -66,7 +66,6 @@ function ConfirmStep({
   const { t, i18n } = useTranslation('matching');
   const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const total = slots.reduce((s, sl) => s + sl.price, 0);
-  const isSingleSlot = slots.length === 1;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -108,14 +107,6 @@ function ConfirmStep({
             </p>
           </div>
         </div>
-
-        {!isSingleSlot && (
-          <div className="rounded-xl px-4 py-3" style={{ background: '#fff3cd', border: '1px solid rgba(218,165,32,0.3)' }}>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#856404' }}>
-              {t('venues.booking.singleSlotOnly')}
-            </p>
-          </div>
-        )}
 
         <div>
           <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914', marginBottom: 8 }}>
@@ -184,7 +175,7 @@ function ConfirmStep({
         </div>
         <button
           onClick={onNext}
-          disabled={!isSingleSlot || loading}
+          disabled={slots.length === 0 || loading}
           className="w-full h-13 rounded-xl flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
             background: 'linear-gradient(90deg,#a04100,#ff7e36)',
@@ -214,6 +205,7 @@ function PaymentStep({
   onBack,
   loading,
   error,
+  onClose,
 }: {
   total: number;
   payment: VenuePayment | null;
@@ -223,6 +215,7 @@ function PaymentStep({
   onBack: () => void;
   loading: boolean;
   error: string | null;
+  onClose: () => void;
 }) {
   const { t, i18n } = useTranslation('matching');
   const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
@@ -240,10 +233,9 @@ function PaymentStep({
             {t('venues.booking.bankOnly')}
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-1 rounded-full px-2 py-1" style={{ color: '#006a65', background: 'rgba(0,106,101,0.08)' }}>
-          <Lock size={14} />
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: 600, color: '#006a65' }}>SSL</span>
-        </div>
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#fff1eb] transition-colors" style={{ color: '#584238' }}>
+          <X size={20} />
+        </button>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
@@ -480,8 +472,8 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
   const total = slots.reduce((s, sl) => s + sl.price, 0);
 
   const handleContinueToPayment = async () => {
-    if (slots.length !== 1) {
-      setError(t('venues.booking.errors.selectOneSlot'));
+    if (slots.length === 0) {
+      setError(t('venues.booking.errors.selectAtLeastOneSlot'));
       return;
     }
 
@@ -489,20 +481,22 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
     setError(null);
 
     try {
-      const selectedSlot = slots[0];
+      const sortedSlots = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      const firstSlot = sortedSlots[0];
+      const lastSlot = sortedSlots[sortedSlots.length - 1];
       const holdResult = await createBookingHold({
         venue_id: venue.id,
         date: selectedDate,
-        start_time: selectedSlot.startTime,
-        end_time: selectedSlot.endTime,
+        start_time: firstSlot.startTime,
+        end_time: lastSlot.endTime,
       });
 
       const paymentResult = holdResult.payment?.provider === 'sepay'
         ? holdResult
         : await createBookingPayment(holdResult.booking.id, {
-            provider: 'sepay',
-            return_url: window.location.href,
-          });
+          provider: 'sepay',
+          return_url: window.location.href,
+        });
 
       if (!paymentResult.payment) {
         throw new Error('Payment record was not returned by the server.');
@@ -593,6 +587,7 @@ export function BookingModal({ venue, slots, selectedDate, sport, onClose, onSuc
             }}
             loading={loading}
             error={error}
+            onClose={onClose}
           />
         )}
         {step === 'success' && booking && (

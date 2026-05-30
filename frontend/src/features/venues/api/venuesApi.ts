@@ -177,12 +177,18 @@ type BackendBooking = {
   id: string;
   status: BookingStatus;
   amount: number;
+  slotCount?: number;
   holdExpiresAt: string | null;
   slot: {
     date: string;
     startTime: string;
     endTime: string;
   };
+  slots?: Array<{
+    date: string;
+    startTime: string;
+    endTime: string;
+  }>;
   venue?: BackendVenue | null;
   user?: {
     id: string;
@@ -293,6 +299,12 @@ function mapBooking(backendBooking: BackendBooking): Booking {
   const venue = backendBooking.venue ? mapVenue(backendBooking.venue) : null;
   const payment = mapPayment(backendBooking.payment);
   const refund = mapRefund(backendBooking.refund);
+  const backendSlots =
+    backendBooking.slots && backendBooking.slots.length > 0
+      ? backendBooking.slots
+      : [backendBooking.slot];
+  const slotCount = backendBooking.slotCount ?? backendSlots.length;
+  const slotPrice = slotCount > 0 ? backendBooking.amount / slotCount : backendBooking.amount;
 
   return {
     id: backendBooking.id,
@@ -302,14 +314,12 @@ function mapBooking(backendBooking: BackendBooking): Booking {
     venueAddress: venue?.fullAddress || 'Venue address unavailable',
     sport: venue?.sports[0] || 'tennis',
     date: backendBooking.slot.date,
-    slots: [
-      {
-        slotId: `${backendBooking.id}_${backendBooking.slot.date}_${backendBooking.slot.startTime}`,
-        startTime: backendBooking.slot.startTime,
-        endTime: backendBooking.slot.endTime,
-        price: backendBooking.amount,
-      },
-    ],
+    slots: backendSlots.map((slot) => ({
+      slotId: `${backendBooking.id}_${slot.date}_${slot.startTime}`,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      price: slotPrice,
+    })),
     totalPrice: backendBooking.amount,
     status: backendBooking.status,
     paymentMethod: PAYMENT_METHOD_BY_PROVIDER[payment?.provider || 'stub'] || 'card',

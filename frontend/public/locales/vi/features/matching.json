@@ -26,13 +26,34 @@
   "matchingMock": {
     "today": "Hôm nay",
     "venues": {
-      "tennis": { "name": "Sân Riverside", "detail": "Sân số 3, Sân vận động chính" },
-      "basketball": { "name": "Trung tâm Thể thao Downtown", "detail": "Sân B, Tầng trên" },
-      "badminton": { "name": "CLB Trong nhà Bình Thạnh", "detail": "Nhà thi đấu 2, Sân số 1" },
-      "football": { "name": "Khu Phức hợp Gò Vấp", "detail": "Sân số 4, Khu Đông" },
-      "pickleball": { "name": "Trung tâm Giải trí Thủ Đức", "detail": "Sân số 6" },
-      "volleyball": { "name": "Sân Bãi biển Quận 1", "detail": "Khu A" },
-      "default": { "name": "Trung tâm Thể thao", "detail": "Sân số 1" }
+      "tennis": {
+        "name": "Sân Riverside",
+        "detail": "Sân số 3, Sân vận động chính"
+      },
+      "basketball": {
+        "name": "Trung tâm Thể thao Downtown",
+        "detail": "Sân B, Tầng trên"
+      },
+      "badminton": {
+        "name": "CLB Trong nhà Bình Thạnh",
+        "detail": "Nhà thi đấu 2, Sân số 1"
+      },
+      "football": {
+        "name": "Khu Phức hợp Gò Vấp",
+        "detail": "Sân số 4, Khu Đông"
+      },
+      "pickleball": {
+        "name": "Trung tâm Giải trí Thủ Đức",
+        "detail": "Sân số 6"
+      },
+      "volleyball": {
+        "name": "Sân Bãi biển Quận 1",
+        "detail": "Khu A"
+      },
+      "default": {
+        "name": "Trung tâm Thể thao",
+        "detail": "Sân số 1"
+      }
     }
   },
   "owner": {
@@ -136,7 +157,7 @@
       "manualRequestCount": "{{count}} yêu cầu thủ công",
       "noBookings": "Chưa có booking nào",
       "scheduleTitle": "Quản lý lịch sân",
-      "scheduleSubtitle": "Dữ liệu slot được lấy trực tiếp từ API GET /venues/:venueId/slots.",
+      "scheduleSubtitle": "Dữ liệu slot được lấy trực tiếp",
       "today": "Hôm nay",
       "blockAllSuccess": "Đã chặn tất cả slot trống",
       "openAllSuccess": "Đã mở lại toàn bộ slot unavailable"
@@ -398,14 +419,38 @@
         "achievement": "Thành tựu"
       },
       "items": {
-        "a1": { "title": "Đã đặt Sân bóng rổ Bình Thạnh", "subtitle": "2 khung giờ · 150.000₫" },
-        "a2": { "title": "Mở khóa thành tựu: Chú chim sớm mai", "subtitle": "Nhận +80 XP" },
-        "a3": { "title": "Tìm thấy trận đấu qua Matchill", "subtitle": "Cầu lông · Trung bình · Gò Vấp" },
-        "a4": { "title": "Đã đặt Nhà thi đấu Cầu lông Gò Vấp", "subtitle": "3 khung giờ · 240.000₫" },
-        "a5": { "title": "Đã chấp nhận yêu cầu ghép cặp mới", "subtitle": "Từ: Tuấn Phạm" },
-        "a6": { "title": "Mở khóa thành tựu: Phong độ thăng hoa", "subtitle": "Nhận +150 XP" },
-        "a7": { "title": "Đã đặt CLB Pickleball Quận 7", "subtitle": "1 khung giờ · 100.000₫" },
-        "a8": { "title": "Đã đăng yêu cầu tìm đồng đội", "subtitle": "Cầu lông · Quận 3" }
+        "a1": {
+          "title": "Đã đặt Sân bóng rổ Bình Thạnh",
+          "subtitle": "2 khung giờ · 150.000₫"
+        },
+        "a2": {
+          "title": "Mở khóa thành tựu: Chú chim sớm mai",
+          "subtitle": "Nhận +80 XP"
+        },
+        "a3": {
+          "title": "Tìm thấy trận đấu qua Matchill",
+          "subtitle": "Cầu lông · Trung bình · Gò Vấp"
+        },
+        "a4": {
+          "title": "Đã đặt Nhà thi đấu Cầu lông Gò Vấp",
+          "subtitle": "3 khung giờ · 240.000₫"
+        },
+        "a5": {
+          "title": "Đã chấp nhận yêu cầu ghép cặp mới",
+          "subtitle": "Từ: Tuấn Phạm"
+        },
+        "a6": {
+          "title": "Mở khóa thành tựu: Phong độ thăng hoa",
+          "subtitle": "Nhận +150 XP"
+        },
+        "a7": {
+          "title": "Đã đặt CLB Pickleball Quận 7",
+          "subtitle": "1 khung giờ · 100.000₫"
+        },
+        "a8": {
+          "title": "Đã đăng yêu cầu tìm đồng đội",
+          "subtitle": "Cầu lông · Quận 3"
+        }
       }
     },
     "api": {
@@ -613,13 +658,12 @@
       "noneSelected": "Chưa chọn",
       "slotCount": "{{count}} khung giờ",
       "continuePayment": "Tiếp tục thanh toán",
-      "singleSlotOnly": "Hệ thống hiện chỉ hỗ trợ thanh toán một khung giờ tại một thời điểm. Vui lòng chọn một khung giờ duy nhất để tiếp tục.",
+      "contiguousSelectionHint": "Bạn chỉ có thể chọn một dải khung giờ liền nhau. Nếu chọn khung rời, hệ thống sẽ bắt đầu lại từ khung mới.",
       "latestBooking": "Lịch đặt gần nhất: #{{id}}"
     },
     "booking": {
       "confirmTitle": "Xác nhận đặt sân",
-      "confirmSubtitle": "Kiểm tra lại khung giờ đã chọn",
-      "singleSlotOnly": "Hệ thống hiện chỉ hỗ trợ đặt một khung giờ tại một thời điểm. Vui lòng quay lại và chọn một khung giờ duy nhất.",
+      "confirmSubtitle": "Kiểm tra lại dải khung giờ đã chọn",
       "selectedSlots": "Khung giờ đã chọn ({{count}})",
       "notes": "Ghi chú (tùy chọn)",
       "notesPlaceholder": "Ví dụ: Cần thuê vợt, 4 người chơi",
@@ -652,7 +696,7 @@
         "unavailable": "Tạm thời không khả dụng cho luồng này"
       },
       "errors": {
-        "selectOneSlot": "Vui lòng chọn chính xác một khung giờ cho quy trình thanh toán này.",
+        "selectAtLeastOneSlot": "Vui lòng chọn ít nhất một khung giờ trước khi tiếp tục.",
         "createPayment": "Không thể tạo yêu cầu thanh toán.",
         "notInitialized": "Yêu cầu thanh toán chưa được khởi tạo.",
         "expired": "Thanh toán chưa hoàn tất hoặc thời gian tạm giữ sân đã hết hạn.",

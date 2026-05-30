@@ -26,13 +26,34 @@
   "matchingMock": {
     "today": "Today",
     "venues": {
-      "tennis": { "name": "Riverside Court", "detail": "Court 3, Main stadium" },
-      "basketball": { "name": "Downtown Sports Center", "detail": "Court B, Upper floor" },
-      "badminton": { "name": "Binh Thanh Indoor Club", "detail": "Arena 2, Court 1" },
-      "football": { "name": "Go Vap Sports Complex", "detail": "Court 4, East wing" },
-      "pickleball": { "name": "Thu Duc Recreation Center", "detail": "Court 6" },
-      "volleyball": { "name": "District 1 Beach Court", "detail": "Zone A" },
-      "default": { "name": "Sports Center", "detail": "Court 1" }
+      "tennis": {
+        "name": "Riverside Court",
+        "detail": "Court 3, Main stadium"
+      },
+      "basketball": {
+        "name": "Downtown Sports Center",
+        "detail": "Court B, Upper floor"
+      },
+      "badminton": {
+        "name": "Binh Thanh Indoor Club",
+        "detail": "Arena 2, Court 1"
+      },
+      "football": {
+        "name": "Go Vap Sports Complex",
+        "detail": "Court 4, East wing"
+      },
+      "pickleball": {
+        "name": "Thu Duc Recreation Center",
+        "detail": "Court 6"
+      },
+      "volleyball": {
+        "name": "District 1 Beach Court",
+        "detail": "Zone A"
+      },
+      "default": {
+        "name": "Sports Center",
+        "detail": "Court 1"
+      }
     }
   },
   "owner": {
@@ -136,7 +157,7 @@
       "manualRequestCount": "{{count}} manual requests",
       "noBookings": "No bookings",
       "scheduleTitle": "Manage venue schedule",
-      "scheduleSubtitle": "Slot data is loaded directly from API GET /venues/:venueId/slots.",
+      "scheduleSubtitle": "Slot data is loaded directly",
       "today": "Today",
       "blockAllSuccess": "Blocked all available slots",
       "openAllSuccess": "Reopened all unavailable slots"
@@ -398,14 +419,38 @@
         "achievement": "Achievement"
       },
       "items": {
-        "a1": { "title": "Booked Binh Thanh Basketball Court", "subtitle": "2 time slots · 150,000₫" },
-        "a2": { "title": "Unlocked achievement: Early Bird", "subtitle": "Earned +80 XP" },
-        "a3": { "title": "Found a match through Matchill", "subtitle": "Badminton · Intermediate · Go Vap" },
-        "a4": { "title": "Booked Go Vap Badminton Arena", "subtitle": "3 time slots · 240,000₫" },
-        "a5": { "title": "Accepted a new matching request", "subtitle": "From: Tuan Pham" },
-        "a6": { "title": "Unlocked achievement: On Fire", "subtitle": "Earned +150 XP" },
-        "a7": { "title": "Booked District 7 Pickleball Club", "subtitle": "1 time slot · 100,000₫" },
-        "a8": { "title": "Posted a teammate request", "subtitle": "Badminton · District 3" }
+        "a1": {
+          "title": "Booked Binh Thanh Basketball Court",
+          "subtitle": "2 time slots · 150,000₫"
+        },
+        "a2": {
+          "title": "Unlocked achievement: Early Bird",
+          "subtitle": "Earned +80 XP"
+        },
+        "a3": {
+          "title": "Found a match through Matchill",
+          "subtitle": "Badminton · Intermediate · Go Vap"
+        },
+        "a4": {
+          "title": "Booked Go Vap Badminton Arena",
+          "subtitle": "3 time slots · 240,000₫"
+        },
+        "a5": {
+          "title": "Accepted a new matching request",
+          "subtitle": "From: Tuan Pham"
+        },
+        "a6": {
+          "title": "Unlocked achievement: On Fire",
+          "subtitle": "Earned +150 XP"
+        },
+        "a7": {
+          "title": "Booked District 7 Pickleball Club",
+          "subtitle": "1 time slot · 100,000₫"
+        },
+        "a8": {
+          "title": "Posted a teammate request",
+          "subtitle": "Badminton · District 3"
+        }
       }
     },
     "api": {
@@ -613,13 +658,12 @@
       "noneSelected": "None selected",
       "slotCount": "{{count}} slots",
       "continuePayment": "Continue to payment",
-      "singleSlotOnly": "Only one time slot can be paid for at a time. Select a single slot to continue.",
+      "contiguousSelectionHint": "You can only select one continuous time range. If you pick a separated slot, the selection restarts from that slot.",
       "latestBooking": "Latest booking: #{{id}}"
     },
     "booking": {
       "confirmTitle": "Confirm booking",
-      "confirmSubtitle": "Review your selected time slot",
-      "singleSlotOnly": "Only one time slot can be booked at a time. Go back and select a single slot.",
+      "confirmSubtitle": "Review your selected time range",
       "selectedSlots": "Selected slots ({{count}})",
       "notes": "Notes (optional)",
       "notesPlaceholder": "Example: Need racket rental, 4 players",
@@ -652,7 +696,7 @@
         "unavailable": "Temporarily unavailable for this flow"
       },
       "errors": {
-        "selectOneSlot": "Select exactly one time slot for this payment flow.",
+        "selectAtLeastOneSlot": "Select at least one time slot before continuing.",
         "createPayment": "Unable to create a payment request.",
         "notInitialized": "The payment request has not been initialized.",
         "expired": "Payment is incomplete or the venue hold has expired.",

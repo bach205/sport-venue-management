@@ -42,6 +42,14 @@ function toISODate(d: Date) {
   return d.toISOString().split('T')[0];
 }
 
+function sortSlotsByTime(slots: VenueSlot[]) {
+  return [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+function isAdjacentSlot(previous: VenueSlot, next: VenueSlot) {
+  return previous.date === next.date && previous.endTime === next.startTime;
+}
+
 function getAvailabilitySummary(slots: VenueSlot[], date: string) {
   return {
     date,
@@ -92,6 +100,7 @@ export default function VenueDetailPage() {
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [lastBooking, setLastBooking] = useState<Booking | null>(null);
+  const [selectionHint, setSelectionHint] = useState<string | null>(null);
 
   useEffect(() => {
     if (!venueId) return;
@@ -131,12 +140,47 @@ export default function VenueDetailPage() {
       return;
     }
 
-    setSelectedSlotIds((ids) =>
-      ids.includes(slot.id) ? ids.filter((id) => id !== slot.id) : [...ids, slot.id]
-    );
+    setSelectionHint(null);
+    setSelectedSlotIds((ids) => {
+      if (ids.includes(slot.id)) {
+        const selected = sortSlotsByTime(slots.filter((item) => ids.includes(item.id)));
+        if (selected.length <= 1) {
+          return [];
+        }
+
+        const first = selected[0];
+        const last = selected[selected.length - 1];
+        if (slot.id === first.id) {
+          return selected.slice(1).map((item) => item.id);
+        }
+        if (slot.id === last.id) {
+          return selected.slice(0, -1).map((item) => item.id);
+        }
+
+        setSelectionHint(t('venues.detail.contiguousSelectionHint'));
+        return [slot.id];
+      }
+
+      if (ids.length === 0) {
+        return [slot.id];
+      }
+
+      const selected = sortSlotsByTime(slots.filter((item) => ids.includes(item.id)));
+      const first = selected[0];
+      const last = selected[selected.length - 1];
+      if (isAdjacentSlot(slot, first)) {
+        return [slot.id, ...ids];
+      }
+      if (isAdjacentSlot(last, slot)) {
+        return [...ids, slot.id];
+      }
+
+      setSelectionHint(t('venues.detail.contiguousSelectionHint'));
+      return [slot.id];
+    });
   };
 
-  const selectedSlots = slots.filter((s) => selectedSlotIds.includes(s.id));
+  const selectedSlots = sortSlotsByTime(slots.filter((s) => selectedSlotIds.includes(s.id)));
   const totalPrice = selectedSlots.reduce((s, sl) => s + sl.price, 0);
   const availabilitySummary = venue?.availabilitySummary ?? getAvailabilitySummary(slots, selectedDateStr);
 
@@ -561,9 +605,9 @@ export default function VenueDetailPage() {
                 {t('venues.detail.continuePayment')}
               </button>
 
-              {selectedSlots.length > 1 && (
+              {selectionHint && (
                 <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>
-                  {t('venues.detail.singleSlotOnly')}
+                  {selectionHint}
                 </p>
               )}
 

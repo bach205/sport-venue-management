@@ -9,6 +9,7 @@ const {
   Venue,
   VenueAvailabilityOverride,
   Booking,
+  BookingItem,
   Payment,
   Refund,
 } = require("../src/modules/venue/model");
@@ -113,6 +114,7 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   await mongoose.connect(mongoServer.getUri());
   await Booking.syncIndexes();
+  await BookingItem.syncIndexes();
   await VenueAvailabilityOverride.syncIndexes();
 });
 
@@ -243,6 +245,44 @@ describe("Venue booking module", () => {
 
     const statuses = [responseA.status, responseB.status].sort((a, b) => a - b);
     expect(statuses).toEqual([201, 400]);
+  });
+
+  test("creates one booking with multiple booking items for a contiguous time range", async () => {
+    const owner = await createUser("owner", "owner-multi@example.com");
+    const user = await createUser("user", "multi-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "08:00", "10:00");
+
+    expect(holdResponse.status).toBe(201);
+    expect(holdResponse.body.data.booking.status).toBe("hold");
+    expect(holdResponse.body.data.booking.slot.startTime).toBe("08:00");
+    expect(holdResponse.body.data.booking.slot.endTime).toBe("10:00");
+    expect(holdResponse.body.data.booking.slotCount).toBe(2);
+    expect(holdResponse.body.data.booking.amount).toBe(500000);
+    expect(holdResponse.body.data.booking.slots).toEqual([
+      { date: TEST_DATE, startTime: "08:00", endTime: "09:00" },
+      { date: TEST_DATE, startTime: "09:00", endTime: "10:00" },
+    ]);
+
+    const bookingId = holdResponse.body.data.booking.id;
+    expect(await BookingItem.countDocuments({ booking_id: bookingId })).toBe(2);
+
+    const paymentResponse = await createPayment(user.token, bookingId);
+    expect(paymentResponse.status).toBe(201);
+    expect(paymentResponse.body.data.payment.amount).toBe(500000);
+
+    const slotsResponse = await request(app).get(
+      `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
+    );
+
+    expect(slotsResponse.status).toBe(200);
+    expect(slotsResponse.body.data.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: "08:00", endTime: "09:00", status: "booked" }),
+        expect.objectContaining({ startTime: "09:00", endTime: "10:00", status: "booked" }),
+      ])
+    );
   });
 
   test("confirms payment through webhook and updates booking state", async () => {

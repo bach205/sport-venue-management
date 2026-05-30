@@ -39,12 +39,25 @@ Lấy lịch sử booking của user hiện tại.
       {
         "id": "6820booking123...",
         "status": "confirmed",
-        "amount": 250000,
+        "amount": 500000,
+        "slotCount": 2,
         "slot": {
           "date": "2026-05-11",
           "startTime": "08:00",
-          "endTime": "09:00"
+          "endTime": "10:00"
         },
+        "slots": [
+          {
+            "date": "2026-05-11",
+            "startTime": "08:00",
+            "endTime": "09:00"
+          },
+          {
+            "date": "2026-05-11",
+            "startTime": "09:00",
+            "endTime": "10:00"
+          }
+        ],
         "venue": {
           "id": "6820venue123...",
           "name": "Central Court"
@@ -55,30 +68,19 @@ Lấy lịch sử booking của user hiện tại.
         },
         "refund": null
       }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 20,
-      "total": 1,
-      "pages": 1
-    }
+    ]
   }
 }
 ```
 
-### Error - 400
-Lỗi query.
-
-### Error - 401
-Token thiếu hoặc sai.
-
 ## Logic flow
 1. Route đi qua `authMiddleware`.
 2. Controller validate pagination và status filter.
-3. Service expire các booking cũ của user nếu đã quá hạn.
-4. Service query `bookings` theo `user_id` và filter `status` nếu có.
-5. Service nạp thêm `venue`, `payment`, và refund mới nhất cho từng booking.
-6. Response trả về danh sách booking đã format sẵn cho frontend.
+3. Service expire các booking quá hạn của user nếu cần.
+4. Service query `bookings` theo `user_id`.
+5. Service nạp thêm `booking_items`, `venue`, `payment`, và refund mới nhất cho từng booking.
+6. Response trả về cả khoảng tổng quát `slot` và danh sách slot con `slots`.
 
 ## Ghi chú
-- Route này không trả thông tin requester hoặc owner vì người gọi là chính user đặt sân.
+- `slot` là khoảng tổng quát.
+- `slots` là các slot con thực tế dùng để khóa lịch.

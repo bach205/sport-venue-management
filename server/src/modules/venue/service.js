@@ -4,6 +4,7 @@ const {
   Venue,
   VenueAvailabilityOverride,
   Booking,
+  BookingItem,
   Payment,
   Refund,
 } = require("./model");
@@ -46,6 +47,18 @@ const getDayOfWeek = (dateString) => {
 };
 
 const buildSlotKey = (date, startTime, endTime) => `${date}|${startTime}|${endTime}`;
+const sortSlotsByTime = (slots = []) =>
+  [...slots].sort((left, right) => {
+    if (left.date !== right.date) {
+      return String(left.date).localeCompare(String(right.date));
+    }
+
+    if (left.start_time !== right.start_time) {
+      return String(left.start_time).localeCompare(String(right.start_time));
+    }
+
+    return String(left.end_time).localeCompare(String(right.end_time));
+  });
 const normalizeSepayReference = (value) =>
   String(value || "")
     .trim()
@@ -101,10 +114,10 @@ class VenueService {
         venue_id: { $in: venueIds },
         date,
       }),
-      Booking.find({
+      BookingItem.find({
         venue_id: { $in: venueIds },
         date,
-        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+        booking_status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
       }),
     ]);
 
@@ -118,10 +131,10 @@ class VenueService {
       overridesByVenueId.set(key, current);
     });
 
-    activeBookings.forEach((booking) => {
-      const key = String(booking.venue_id);
+    activeBookings.forEach((bookingItem) => {
+      const key = String(bookingItem.venue_id);
       const current = bookingsByVenueId.get(key) || [];
-      current.push(booking);
+      current.push(bookingItem);
       bookingsByVenueId.set(key, current);
     });
 
@@ -144,16 +157,16 @@ class VenueService {
     await this.expireStaleBookings({ venue_id: venueId, date });
 
     const venue = await this.getVenueOrThrow(venueId);
-    const [overrides, activeBookings] = await Promise.all([
+    const [overrides, activeBookingItems] = await Promise.all([
       VenueAvailabilityOverride.find({ venue_id: venueId, date }),
-      Booking.find({
+      BookingItem.find({
         venue_id: venueId,
         date,
-        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+        booking_status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
       }),
     ]);
 
-    const slots = this.buildSlotsForDate(venue, date, overrides, activeBookings);
+    const slots = this.buildSlotsForDate(venue, date, overrides, activeBookingItems);
 
     return {
       venue: this.formatVenue(venue),
@@ -166,44 +179,55 @@ class VenueService {
     await this.expireStaleBookings({ venue_id: payload.venue_id, date: payload.date });
 
     const venue = await this.getVenueOrThrow(payload.venue_id);
-    const matchedSlot = this.assertSlotExistsInSchedule(
+    const matchedSlots = this.resolveBookingRangeSlots(
       venue,
       payload.date,
       payload.start_time,
       payload.end_time
     );
+    const requestedSlotKeys = matchedSlots.map((slot) =>
+      buildSlotKey(slot.date, slot.start_time, slot.end_time)
+    );
 
     const existingOverride = await VenueAvailabilityOverride.findOne({
       venue_id: venue._id,
       date: payload.date,
-      start_time: payload.start_time,
-      end_time: payload.end_time,
+      $or: matchedSlots.map((slot) => ({
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+      })),
     });
 
     if (existingOverride) {
       throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This slot is unavailable.");
     }
 
-    const activeBooking = await Booking.findOne({
+    const activeBookingItem = await BookingItem.findOne({
       venue_id: venue._id,
       date: payload.date,
-      start_time: payload.start_time,
-      end_time: payload.end_time,
-      status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+      booking_status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+      $or: matchedSlots.map((slot) => ({
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+      })),
     });
 
-    if (activeBooking) {
+    if (activeBookingItem) {
+      const activeBooking = await this.getBookingOrThrow(activeBookingItem.booking_id);
       if (
         String(activeBooking.user_id) === String(userId) &&
-        ["hold", "payment_pending"].includes(activeBooking.status)
+        ["hold", "payment_pending"].includes(activeBooking.status) &&
+        this.bookingMatchesSlotKeys(activeBooking, requestedSlotKeys)
       ) {
         activeBooking.hold_expires_at = new Date(Date.now() + HOLD_TTL_MS);
         await activeBooking.save();
+        await this.syncBookingItemsStatus([activeBooking._id], activeBooking.status);
 
         const existingPayment = await Payment.findOne({ booking_id: activeBooking._id });
         return {
           booking: this.formatBooking(activeBooking, {
             venue,
+            bookingItems: matchedSlots,
           }),
           payment: existingPayment ? this.formatPayment(existingPayment) : null,
         };
@@ -213,20 +237,36 @@ class VenueService {
     }
 
     try {
+      const orderedSlots = sortSlotsByTime(matchedSlots);
+      const bookingAmount = venue.slot_price * orderedSlots.length;
       const booking = await Booking.create({
         user_id: userId,
         venue_id: venue._id,
-        date: matchedSlot.date,
-        start_time: matchedSlot.start_time,
-        end_time: matchedSlot.end_time,
-        amount: venue.slot_price,
+        date: orderedSlots[0].date,
+        start_time: orderedSlots[0].start_time,
+        end_time: orderedSlots[orderedSlots.length - 1].end_time,
+        amount: bookingAmount,
+        slot_count: orderedSlots.length,
         status: "hold",
         hold_expires_at: new Date(Date.now() + HOLD_TTL_MS),
       });
 
+      await BookingItem.insertMany(
+        orderedSlots.map((slot) => ({
+          booking_id: booking._id,
+          venue_id: venue._id,
+          date: slot.date,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          amount: venue.slot_price,
+          booking_status: booking.status,
+        }))
+      );
+
       return {
         booking: this.formatBooking(booking, {
           venue,
+          bookingItems: orderedSlots,
         }),
         payment: null,
       };
@@ -262,8 +302,9 @@ class VenueService {
       await existingPayment.save();
 
       const venue = await this.getVenueOrThrow(booking.venue_id);
+      const bookingItems = await this.getBookingItemsForBooking(booking._id);
       return {
-        booking: this.formatBooking(booking, { venue }),
+        booking: this.formatBooking(booking, { venue, bookingItems }),
         payment: this.formatPayment(existingPayment),
       };
     }
@@ -278,11 +319,13 @@ class VenueService {
     if (booking.hold_expires_at.getTime() < Date.now()) {
       booking.status = "expired";
       await booking.save();
+      await this.syncBookingItemsStatus([booking._id], booking.status);
       throw createHttpError(HTTP_STATUS.BAD_REQUEST, "This booking hold has expired.");
     }
 
     booking.status = "payment_pending";
     await booking.save();
+    await this.syncBookingItemsStatus([booking._id], booking.status);
 
     const providerReference = payload.provider === SEPAY_PROVIDER
       ? (payload.provider_reference || this.buildSepayPaymentReference(booking._id))
@@ -297,9 +340,10 @@ class VenueService {
     });
 
     const venue = await this.getVenueOrThrow(booking.venue_id);
+    const bookingItems = await this.getBookingItemsForBooking(booking._id);
 
     return {
-      booking: this.formatBooking(booking, { venue }),
+      booking: this.formatBooking(booking, { venue, bookingItems }),
       payment: this.formatPayment(payment),
     };
   }
@@ -336,9 +380,10 @@ class VenueService {
     const latestBooking = await this.getBookingOrThrow(booking._id);
     const latestPayment = await Payment.findById(payment._id);
     const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+    const bookingItems = await this.getBookingItemsForBooking(latestBooking._id);
 
     return {
-      booking: this.formatBooking(latestBooking, { venue }),
+      booking: this.formatBooking(latestBooking, { venue, bookingItems }),
       payment: this.formatPayment(latestPayment),
     };
   }
@@ -370,13 +415,14 @@ class VenueService {
     const latestBooking = await this.getBookingOrThrow(booking._id);
     const latestPayment = await Payment.findById(payment._id);
     const venue = await this.getVenueOrThrow(latestBooking.venue_id);
+    const bookingItems = await this.getBookingItemsForBooking(latestBooking._id);
 
     if (payload.transfer_type !== "in") {
       return {
         acknowledged: true,
         ignored: true,
         reason: "Sepay webhook is not an incoming transfer.",
-        booking: this.formatBooking(latestBooking, { venue }),
+        booking: this.formatBooking(latestBooking, { venue, bookingItems }),
         payment: this.formatPayment(latestPayment),
       };
     }
@@ -386,7 +432,7 @@ class VenueService {
         acknowledged: true,
         ignored: true,
         reason: "Transferred amount is lower than the payment amount.",
-        booking: this.formatBooking(latestBooking, { venue }),
+        booking: this.formatBooking(latestBooking, { venue, bookingItems }),
         payment: this.formatPayment(latestPayment),
       };
     }
@@ -442,10 +488,12 @@ class VenueService {
   }
 
   async settleSuccessfulPayment(booking, payment, venue, payload) {
+    const bookingItems = await this.getBookingItemsForBooking(booking._id);
+
     if (payment.status === "paid" && booking.status === "confirmed") {
       return {
         acknowledged: true,
-        booking: this.formatBooking(booking, { venue }),
+        booking: this.formatBooking(booking, { venue, bookingItems }),
         payment: this.formatPayment(payment),
       };
     }
@@ -453,7 +501,7 @@ class VenueService {
     if (booking.status !== "payment_pending" || payment.status !== "pending") {
       return {
         acknowledged: true,
-        booking: this.formatBooking(booking, { venue }),
+        booking: this.formatBooking(booking, { venue, bookingItems }),
         payment: this.formatPayment(payment),
       };
     }
@@ -462,10 +510,11 @@ class VenueService {
       booking.status = "expired";
       payment.status = "failed";
       await Promise.all([booking.save(), payment.save()]);
+      await this.syncBookingItemsStatus([booking._id], booking.status);
 
       return {
         acknowledged: true,
-        booking: this.formatBooking(booking, { venue }),
+        booking: this.formatBooking(booking, { venue, bookingItems }),
         payment: this.formatPayment(payment),
       };
     }
@@ -476,19 +525,23 @@ class VenueService {
     booking.status = "confirmed";
 
     await Promise.all([payment.save(), booking.save()]);
+    await this.syncBookingItemsStatus([booking._id], booking.status);
+    const confirmedBookingItems = await this.getBookingItemsForBooking(booking._id);
 
     return {
       acknowledged: true,
-      booking: this.formatBooking(booking, { venue }),
+      booking: this.formatBooking(booking, { venue, bookingItems: confirmedBookingItems }),
       payment: this.formatPayment(payment),
     };
   }
 
   async settleFailedPayment(booking, payment, venue) {
+    const bookingItems = await this.getBookingItemsForBooking(booking._id);
+
     if (["failed", "refunded"].includes(payment.status) || booking.status === "expired") {
       return {
         acknowledged: true,
-        booking: this.formatBooking(booking, { venue }),
+        booking: this.formatBooking(booking, { venue, bookingItems }),
         payment: this.formatPayment(payment),
       };
     }
@@ -497,11 +550,14 @@ class VenueService {
       payment.status = "failed";
       booking.status = "expired";
       await Promise.all([payment.save(), booking.save()]);
+      await this.syncBookingItemsStatus([booking._id], booking.status);
     }
+
+    const expiredBookingItems = await this.getBookingItemsForBooking(booking._id);
 
     return {
       acknowledged: true,
-      booking: this.formatBooking(booking, { venue }),
+      booking: this.formatBooking(booking, { venue, bookingItems: expiredBookingItems }),
       payment: this.formatPayment(payment),
     };
   }
@@ -535,12 +591,14 @@ class VenueService {
     }
 
     const venue = await this.getVenueOrThrow(booking.venue_id);
+    const bookingItems = await this.getBookingItemsForBooking(booking._id);
     const isAutoRefund = (Date.now() - payment.paid_at.getTime()) <= AUTO_REFUND_WINDOW_MS;
 
     if (isAutoRefund) {
       booking.status = "refund_processing";
       payment.status = "refund_pending";
       await Promise.all([booking.save(), payment.save()]);
+      await this.syncBookingItemsStatus([booking._id], booking.status);
 
       const refund = await Refund.create({
         booking_id: booking._id,
@@ -558,10 +616,11 @@ class VenueService {
       refund.processed_at = new Date();
 
       await Promise.all([payment.save(), booking.save(), refund.save()]);
+      await this.syncBookingItemsStatus([booking._id], booking.status);
 
       return {
         mode: "auto",
-        booking: this.formatBooking(booking, { venue }),
+        booking: this.formatBooking(booking, { venue, bookingItems }),
         payment: this.formatPayment(payment),
         refund: this.formatRefund(refund),
       };
@@ -578,7 +637,7 @@ class VenueService {
 
     return {
       mode: "manual",
-      booking: this.formatBooking(booking, { venue }),
+      booking: this.formatBooking(booking, { venue, bookingItems }),
       payment: this.formatPayment(payment),
       refund: this.formatRefund(refund),
     };
@@ -624,7 +683,7 @@ class VenueService {
 
   async deleteVenue(ownerId, venueId) {
     const venue = await this.getOwnedVenueOrThrow(ownerId, venueId);
-    const relatedBookingCount = await Booking.countDocuments({ venue_id: venue._id });
+    const relatedBookingCount = await BookingItem.countDocuments({ venue_id: venue._id });
 
     if (relatedBookingCount > 0) {
       throw createHttpError(
@@ -662,11 +721,15 @@ class VenueService {
 
     if (payload.status === "unavailable") {
       const activeBooking = await Booking.findOne({
-        venue_id: venue._id,
-        date: payload.date,
-        start_time: payload.start_time,
-        end_time: payload.end_time,
-        status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+        _id: {
+          $in: await BookingItem.find({
+            venue_id: venue._id,
+            date: payload.date,
+            start_time: payload.start_time,
+            end_time: payload.end_time,
+            booking_status: { $in: ACTIVE_BOOKING_QUERY_STATUSES },
+          }).distinct("booking_id"),
+        },
       });
 
       if (activeBooking) {
@@ -794,6 +857,7 @@ class VenueService {
       refund.processed_by = ownerId;
       refund.note = payload.note || refund.note;
       await Promise.all([booking.save(), payment.save(), refund.save()]);
+      await this.syncBookingItemsStatus([booking._id], booking.status);
 
       booking.status = "refunded";
       payment.status = "refunded";
@@ -801,6 +865,7 @@ class VenueService {
       refund.status = "completed";
       refund.processed_at = new Date();
       await Promise.all([booking.save(), payment.save(), refund.save()]);
+      await this.syncBookingItemsStatus([booking._id], booking.status);
     } else {
       refund.status = "rejected";
       refund.processed_by = ownerId;
@@ -808,11 +873,15 @@ class VenueService {
       refund.note = payload.note || refund.note;
       booking.status = "confirmed";
       await Promise.all([booking.save(), refund.save()]);
+      await this.syncBookingItemsStatus([booking._id], booking.status);
     }
 
     return {
       venue: this.formatVenue(venue),
-      booking: this.formatBooking(booking, { venue }),
+      booking: this.formatBooking(booking, {
+        venue,
+        bookingItems: await this.getBookingItemsForBooking(booking._id),
+      }),
       payment: this.formatPayment(payment),
       refund: this.formatRefund(refund),
     };
@@ -841,6 +910,10 @@ class VenueService {
           status: "pending",
         },
         { $set: { status: "failed" } }
+      ),
+      BookingItem.updateMany(
+        { booking_id: { $in: bookingIds } },
+        { $set: { booking_status: "expired" } }
       ),
     ]);
   }
@@ -879,6 +952,21 @@ class VenueService {
     }
 
     return payment;
+  }
+
+  async getBookingItemsForBooking(bookingId) {
+    return BookingItem.find({ booking_id: bookingId }).sort({ date: 1, start_time: 1 });
+  }
+
+  async syncBookingItemsStatus(bookingIds, status) {
+    if (!Array.isArray(bookingIds) || bookingIds.length === 0) {
+      return;
+    }
+
+    await BookingItem.updateMany(
+      { booking_id: { $in: bookingIds } },
+      { $set: { booking_status: status } }
+    );
   }
 
   buildSepayPaymentReference(bookingId) {
@@ -922,26 +1010,26 @@ class VenueService {
     return `https://qr.sepay.vn/img?${query.toString()}`;
   }
 
-  buildSlotsForDate(venue, date, overrides = [], activeBookings = []) {
+  buildSlotsForDate(venue, date, overrides = [], activeBookingItems = []) {
     const generatedSlots = this.generateScheduleSlots(venue, date);
     const overrideSet = new Set(
       overrides.map((item) => buildSlotKey(item.date, item.start_time, item.end_time))
     );
     const bookingMap = new Map(
-      activeBookings.map((booking) => [
-        buildSlotKey(booking.date, booking.start_time, booking.end_time),
-        booking,
+      activeBookingItems.map((bookingItem) => [
+        buildSlotKey(bookingItem.date, bookingItem.start_time, bookingItem.end_time),
+        bookingItem,
       ])
     );
 
     return generatedSlots.map((slot) => {
       const key = buildSlotKey(slot.date, slot.start_time, slot.end_time);
-      const booking = bookingMap.get(key);
+      const bookingItem = bookingMap.get(key);
       const hasOverride = overrideSet.has(key);
       const status = hasOverride
         ? "unavailable"
-        : booking
-          ? (BOOKING_STATUS_TO_SLOT_STATUS[booking.status] || "booked")
+        : bookingItem
+          ? (BOOKING_STATUS_TO_SLOT_STATUS[bookingItem.booking_status] || "booked")
           : "available";
 
       return {
@@ -949,7 +1037,7 @@ class VenueService {
         startTime: slot.start_time,
         endTime: slot.end_time,
         status,
-        bookingId: booking ? String(booking._id) : null,
+        bookingId: bookingItem ? String(bookingItem.booking_id) : null,
       };
     });
   }
@@ -1024,6 +1112,76 @@ class VenueService {
     return slot;
   }
 
+  resolveBookingRangeSlots(venue, date, startTime, endTime) {
+    const generatedSlots = sortSlotsByTime(this.generateScheduleSlots(venue, date));
+    const matchingSlots = generatedSlots.filter(
+      (slot) => slot.start_time >= startTime && slot.end_time <= endTime
+    );
+
+    if (matchingSlots.length === 0) {
+      throw createHttpError(
+        HTTP_STATUS.BAD_REQUEST,
+        "The selected slot is not part of this venue schedule."
+      );
+    }
+
+    if (
+      matchingSlots[0].start_time !== startTime ||
+      matchingSlots[matchingSlots.length - 1].end_time !== endTime
+    ) {
+      throw createHttpError(
+        HTTP_STATUS.BAD_REQUEST,
+        "The selected time range must align with generated venue slots."
+      );
+    }
+
+    for (let index = 1; index < matchingSlots.length; index += 1) {
+      if (matchingSlots[index - 1].end_time !== matchingSlots[index].start_time) {
+        throw createHttpError(
+          HTTP_STATUS.BAD_REQUEST,
+          "The selected time range must cover contiguous venue slots."
+        );
+      }
+    }
+
+    return matchingSlots;
+  }
+
+  bookingMatchesSlotKeys(booking, requestedSlotKeys) {
+    const bookingKeys = this.buildBookingSlotKeys(booking);
+
+    if (bookingKeys.length !== requestedSlotKeys.length) {
+      return false;
+    }
+
+    return bookingKeys.every((key, index) => key === requestedSlotKeys[index]);
+  }
+
+  buildBookingSlotKeys(booking) {
+    const slotKeys = [];
+    const cursor = timeToMinutes(booking.start_time);
+    const bookingEnd = timeToMinutes(booking.end_time);
+    const step = booking.slot_count > 0
+      ? Math.round((bookingEnd - cursor) / booking.slot_count)
+      : 0;
+
+    if (step <= 0) {
+      return slotKeys;
+    }
+
+    for (let current = cursor; current < bookingEnd; current += step) {
+      slotKeys.push(
+        buildSlotKey(
+          booking.date,
+          minutesToTime(current),
+          minutesToTime(current + step)
+        )
+      );
+    }
+
+    return slotKeys;
+  }
+
   async getBookingCollection(filter, page, limit, options = {}) {
     const skip = (page - 1) * limit;
     const [bookings, total] = await Promise.all([
@@ -1043,15 +1201,16 @@ class VenueService {
   }
 
   async getBookingDetail(booking) {
-    const [venue, payment, refund, userInfo] = await Promise.all([
+    const [venue, payment, refund, userInfo, bookingItems] = await Promise.all([
       this.getVenueOrThrow(booking.venue_id),
       Payment.findOne({ booking_id: booking._id }),
       Refund.findOne({ booking_id: booking._id }).sort({ createdAt: -1 }),
       this.getUserSummary(booking.user_id),
+      BookingItem.find({ booking_id: booking._id }).sort({ start_time: 1 }),
     ]);
 
     return {
-      ...this.formatBooking(booking, { venue, user: userInfo }),
+      ...this.formatBooking(booking, { venue, user: userInfo, bookingItems }),
       payment: payment ? this.formatPayment(payment) : null,
       refund: refund ? this.formatRefund(refund) : null,
     };
@@ -1068,16 +1227,18 @@ class VenueService {
       ? [...new Set(bookings.map((booking) => String(booking.user_id)))]
       : [];
 
-    const [venues, payments, refunds, users] = await Promise.all([
+    const [venues, payments, refunds, users, bookingItems] = await Promise.all([
       Venue.find({ _id: { $in: venueIds } }),
       Payment.find({ booking_id: { $in: bookingIds } }),
       Refund.find({ booking_id: { $in: bookingIds } }).sort({ createdAt: -1 }),
       options.includeUser ? this.getUserSummaries(userIds) : Promise.resolve(new Map()),
+      BookingItem.find({ booking_id: { $in: bookingIds } }).sort({ start_time: 1 }),
     ]);
 
     const venueMap = new Map(venues.map((venue) => [String(venue._id), venue]));
     const paymentMap = new Map(payments.map((payment) => [String(payment.booking_id), payment]));
     const refundMap = new Map();
+    const bookingItemsMap = new Map();
 
     refunds.forEach((refund) => {
       const key = String(refund.booking_id);
@@ -1086,10 +1247,18 @@ class VenueService {
       }
     });
 
+    bookingItems.forEach((bookingItem) => {
+      const key = String(bookingItem.booking_id);
+      const current = bookingItemsMap.get(key) || [];
+      current.push(bookingItem);
+      bookingItemsMap.set(key, current);
+    });
+
     return bookings.map((booking) => ({
       ...this.formatBooking(booking, {
         venue: venueMap.get(String(booking.venue_id)),
         user: users.get(String(booking.user_id)) || null,
+        bookingItems: bookingItemsMap.get(String(booking._id)) || [],
       }),
       payment: paymentMap.has(String(booking._id))
         ? this.formatPayment(paymentMap.get(String(booking._id)))
@@ -1113,15 +1282,24 @@ class VenueService {
     const bookings = await Booking.find({ _id: { $in: bookingIds } });
     const venueIds = [...new Set(bookings.map((booking) => String(booking.venue_id)))];
 
-    const [payments, venues, requesters] = await Promise.all([
+    const [payments, venues, requesters, bookingItems] = await Promise.all([
       Payment.find({ _id: { $in: paymentIds } }),
       Venue.find({ _id: { $in: venueIds } }),
       options.includeUser ? this.getUserSummaries(requesterIds) : Promise.resolve(new Map()),
+      BookingItem.find({ booking_id: { $in: bookingIds } }).sort({ start_time: 1 }),
     ]);
 
     const bookingMap = new Map(bookings.map((booking) => [String(booking._id), booking]));
     const paymentMap = new Map(payments.map((payment) => [String(payment._id), payment]));
     const venueMap = new Map(venues.map((venue) => [String(venue._id), venue]));
+    const bookingItemsMap = new Map();
+
+    bookingItems.forEach((bookingItem) => {
+      const key = String(bookingItem.booking_id);
+      const current = bookingItemsMap.get(key) || [];
+      current.push(bookingItem);
+      bookingItemsMap.set(key, current);
+    });
 
     return refunds.map((refund) => {
       const booking = bookingMap.get(String(refund.booking_id));
@@ -1129,7 +1307,12 @@ class VenueService {
 
       return {
         ...this.formatRefund(refund),
-        booking: booking ? this.formatBooking(booking, { venue }) : null,
+        booking: booking
+          ? this.formatBooking(booking, {
+              venue,
+              bookingItems: bookingItemsMap.get(String(booking._id)) || [],
+            })
+          : null,
         payment: paymentMap.has(String(refund.payment_id))
           ? this.formatPayment(paymentMap.get(String(refund.payment_id)))
           : null,
@@ -1199,16 +1382,30 @@ class VenueService {
       return null;
     }
 
+    const bookingItems = sortSlotsByTime(
+      (context.bookingItems || []).map((item) => ({
+        date: item.date,
+        start_time: item.start_time,
+        end_time: item.end_time,
+      }))
+    );
+
     return {
       id: String(booking._id),
       status: booking.status,
       amount: booking.amount,
+      slotCount: booking.slot_count,
       holdExpiresAt: booking.hold_expires_at,
       slot: {
         date: booking.date,
         startTime: booking.start_time,
         endTime: booking.end_time,
       },
+      slots: bookingItems.map((item) => ({
+        date: item.date,
+        startTime: item.start_time,
+        endTime: item.end_time,
+      })),
       venue: context.venue ? this.formatVenue(context.venue) : undefined,
       user: context.user || undefined,
       createdAt: booking.createdAt,

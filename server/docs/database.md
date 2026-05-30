@@ -52,13 +52,15 @@ Manages sport facility availability and reservations.
 
 - **venues**: Details of sport facilities, owners, default slot price, slot duration, and weekly schedule templates.
 - **venue_availability_overrides**: Per-date unavailable slot exceptions created by owners for manual schedule control.
-- **bookings**: Reservation records for generated schedule slots, including temporary holds and refund lifecycle states.
+- **bookings**: Parent reservation records, including temporary holds, aggregated time range, total amount, and refund lifecycle states.
+- **booking_items**: Child slot records belonging to a booking. Each item locks one generated slot and is the source of truth for availability and double-booking prevention.
 - **payments**: Payment lifecycle records linked to bookings.
 - **refunds**: Auto/manual refund processing records linked to bookings and payments.
 
 ### Relationships
 - A **venue** defines multiple weekly schedule ranges and can have many availability overrides.
 - A **venue** can have many **bookings** derived from generated schedule slots.
+- A **booking** can have many **booking_items**.
 - A **booking** has one **payment** and can have refund request records over time.
 - A **refund** belongs to one **booking** and one **payment**.
 
@@ -86,6 +88,7 @@ erDiagram
     USER ||--|{ VENUE : "owns"
     VENUE ||--|{ VENUE_AVAILABILITY_OVERRIDE : "overrides"
     VENUE ||--|{ BOOKING : "receives"
+    BOOKING ||--|{ BOOKING_ITEM : "contains"
     BOOKING ||--|| PAYMENT : "settled_by"
     BOOKING ||--|{ REFUND : "processed_by"
     USER ||--|{ BOOKING : "makes"

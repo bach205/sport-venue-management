@@ -28,6 +28,10 @@ function formatDate(d: string, locale: string) {
   return new Date(d).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function formatSlotRange(booking: Booking) {
+  return booking.slots.map((slot) => `${slot.startTime}-${slot.endTime}`).join(', ');
+}
+
 function formatCountdown(ms: number) {
   const s = Math.ceil(ms / 1000);
   const m = Math.floor(s / 60);
@@ -100,6 +104,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
   const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const remaining = getRefundWindowRemaining(booking);
   const canRefund = booking.status === 'confirmed';
+  const canContactOwner = booking.status === 'confirmed';
 
   return (
     <div
@@ -152,7 +157,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
           <div>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>{t('venues.fields.slots').toUpperCase()}</p>
             <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>
-              {booking.slots.map(s => s.startTime).join(', ')}
+              {formatSlotRange(booking)}
             </p>
           </div>
           <div>
@@ -162,7 +167,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
             </p>
           </div>
           <div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>{t('venues.fields.paid').toUpperCase()}</p>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 2 }}>{t('venues.booking.amountDue').toUpperCase()}</p>
             <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 800, color: '#a04100' }}>
               {formatPrice(booking.totalPrice, locale)}
             </p>
@@ -225,7 +230,7 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
               {t('venues.refund.request')}
             </button>
           )}
-          {(booking.status === 'expired' || booking.status === 'refund_rejected') && (
+          {canContactOwner && (
             <button
               onClick={() => onRefund(booking)}
               className="flex items-center gap-2 px-3 h-10 rounded-xl hover:bg-[#fff1eb] transition-colors"

@@ -18,9 +18,7 @@ import { useTranslation } from "react-i18next";
 
 const NAV = [
   { to: "/owner/venues", icon: <Building2 size={18} />, key: "owner.nav.venues" },
-  { to: "/owner/bookings", icon: <CalendarDays size={18} />, key: "owner.nav.bookings" },
-  { to: "/owner/analytics", icon: <BarChart3 size={18} />, key: "owner.nav.analytics" },
-  { to: "/owner/settings", icon: <Settings size={18} />, key: "owner.nav.settings" },
+
 ];
 
 export default function OwnerLayout() {

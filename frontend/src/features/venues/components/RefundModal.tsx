@@ -23,6 +23,10 @@ function getRefundWindowRemaining(booking: Booking): number {
   return Math.max(0, REFUND_WINDOW_MS - elapsed);
 }
 
+function formatSlotRange(booking: Booking) {
+  return booking.slots.map((slot) => `${slot.startTime}-${slot.endTime}`).join(', ');
+}
+
 interface Props {
   booking: Booking;
   onClose: () => void;
@@ -235,7 +239,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                 </p>
                 <Row label={t('venues.fields.venue')} value={booking.venueName} />
                 <Row label={t('venues.fields.date')} value={new Date(booking.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })} />
-                <Row label={t('venues.fields.slots')} value={booking.slots.map(s => s.startTime).join(', ')} />
+                <Row label={t('venues.fields.slots')} value={formatSlotRange(booking)} />
                 <Row label={t('venues.refund.amount')} value={formatPrice(booking.totalPrice, locale)} highlight />
               </div>
 

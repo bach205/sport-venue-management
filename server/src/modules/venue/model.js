@@ -134,6 +134,7 @@ const BookingSchema = new mongoose.Schema(
       match: timePattern,
     },
     amount: { type: Number, required: true, min: 0 },
+    slot_count: { type: Number, required: true, min: 1, default: 1 },
     status: {
       type: String,
       enum: BOOKING_STATUSES,
@@ -151,14 +152,58 @@ const BookingSchema = new mongoose.Schema(
   { timestamps: true, collection: "bookings" }
 );
 
-BookingSchema.index(
+const BookingItemSchema = new mongoose.Schema(
+  {
+    booking_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      required: true,
+      index: true,
+    },
+    venue_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Venue",
+      required: true,
+      index: true,
+    },
+    date: {
+      type: String,
+      required: true,
+      match: datePattern,
+      index: true,
+    },
+    start_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+    end_time: {
+      type: String,
+      required: true,
+      match: timePattern,
+    },
+    amount: { type: Number, required: true, min: 0 },
+    booking_status: {
+      type: String,
+      enum: BOOKING_STATUSES,
+      default: "hold",
+      required: true,
+      index: true,
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date },
+  },
+  { timestamps: true, collection: "booking_items" }
+);
+
+BookingItemSchema.index(
   { venue_id: 1, date: 1, start_time: 1, end_time: 1 },
   {
     unique: true,
     partialFilterExpression: {
-      status: { $in: ACTIVE_BOOKING_STATUSES },
+      booking_status: { $in: ACTIVE_BOOKING_STATUSES },
     },
-    name: "unique_active_slot_booking",
+    name: "unique_active_slot_booking_item",
   }
 );
 
@@ -238,6 +283,7 @@ function updateTimestamp(next) {
   VenueSchema,
   VenueAvailabilityOverrideSchema,
   BookingSchema,
+  BookingItemSchema,
   PaymentSchema,
   RefundSchema,
 ].forEach((schema) => {
@@ -262,6 +308,7 @@ const VenueAvailabilityOverride = mongoose.model(
   VenueAvailabilityOverrideSchema
 );
 const Booking = mongoose.model("Booking", BookingSchema);
+const BookingItem = mongoose.model("BookingItem", BookingItemSchema);
 const Payment = mongoose.model("Payment", PaymentSchema);
 const Refund = mongoose.model("Refund", RefundSchema);
 
@@ -273,6 +320,7 @@ module.exports = {
   Venue,
   VenueAvailabilityOverride,
   Booking,
+  BookingItem,
   Payment,
   Refund,
 };
