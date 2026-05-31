@@ -11,7 +11,7 @@ export interface ApiPost {
   id: string;
   content?: string;
   imageUrl?: string | null;
-  intentType: "post" | "sell";
+  intentType: "buy" | "sell";
   sport: string;
   category: string;
   itemType: string;
@@ -34,7 +34,7 @@ export interface ApiPost {
 }
 
 export interface FeedFilters {
-  intentType?: "post" | "sell";
+  intentType?: "buy" | "sell";
   sport?: string;
   category?: string;
   location?: string;

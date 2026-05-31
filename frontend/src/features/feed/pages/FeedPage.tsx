@@ -1,18 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Plus,
-  RefreshCw,
-  Loader2,
-  Search,
-  X,
-  ShoppingBag,
-  Newspaper,
-  Bell,
-  MessageSquare,
-  Tag,
-  Pencil,
-  Trophy,
-} from "lucide-react";
+import { Plus, Loader2, Search, X, ShoppingBag, Tag, ShoppingCart } from "lucide-react";
 import { getFeed, searchFeed } from "../api/socialApi";
 import type { ApiPost, Pagination } from "../types/feed.types";
 import { PostCard } from "../components/PostCard";
@@ -22,7 +9,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 
-type FeedTab = "sell" | "post";
+type FeedTab = "all" | "buy" | "sell";
 
 const SPORTS = ["Badminton", "Tennis", "Pickleball", "Football"];
 const SPORT_EMOJI: Record<string, string> = {
@@ -32,10 +19,17 @@ const SPORT_EMOJI: Record<string, string> = {
   Football: "⚽",
 };
 
+const SPORT_NAMES: Record<string, string> = {
+  Badminton: "Cầu lông",
+  Tennis: "Tennis",
+  Pickleball: "Pickleball",
+  Football: "Bóng đá",
+};
+
 export default function FeedPage() {
   const { t } = useTranslation("matching");
   const user = getCurrentUser();
-  const [activeTab, setActiveTab] = useState<FeedTab>("sell");
+  const [activeTab, setActiveTab] = useState<FeedTab>("all");
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +48,7 @@ export default function FeedPage() {
       const result = searchQuery
         ? await searchFeed(searchQuery, page, 20)
         : await getFeed({
-            intentType: activeTab,
+            intentType: activeTab === "all" ? undefined : activeTab,
             sport: filterSport || undefined,
             sort: sortOrder,
             page,
@@ -110,36 +104,49 @@ export default function FeedPage() {
     setSearchQuery("");
   };
 
-  const isSell = activeTab === "sell";
-  const initials = user?.name?.split(" ").map((w) => w[0]).slice(-2).join("") ?? "U";
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((w) => w[0])
+      .slice(-2)
+      .join("") ?? "U";
 
   return (
     <div className="min-h-screen bg-[#f5f0ed]">
       {/* ── Header ── */}
       <div className="bg-white border-b border-[#ede5e0]">
         <div className="max-w-2xl mx-auto">
-     
           {/* Tabs */}
           <div className="flex">
             <button
-              onClick={() => handleTabChange("sell")}
+              onClick={() => handleTabChange("all")}
               className={`flex-1 h-10 flex items-center justify-center gap-2 text-[13px] font-heading font-bold border-b-[2.5px] transition-all ${
-                isSell
+                activeTab === "all"
                   ? "text-brand-orange border-brand-orange"
                   : "text-brand-muted border-transparent hover:text-brand-body"
               }`}
             >
-              <ShoppingBag size={15} /> Chợ
+              <ShoppingBag size={15} /> Tất cả
             </button>
             <button
-              onClick={() => handleTabChange("post")}
+              onClick={() => handleTabChange("buy")}
               className={`flex-1 h-10 flex items-center justify-center gap-2 text-[13px] font-heading font-bold border-b-[2.5px] transition-all ${
-                !isSell
+                activeTab === "buy"
                   ? "text-brand-orange border-brand-orange"
                   : "text-brand-muted border-transparent hover:text-brand-body"
               }`}
             >
-              <Newspaper size={15} /> Bài viết
+              <ShoppingCart size={15} /> Cần mua
+            </button>
+            <button
+              onClick={() => handleTabChange("sell")}
+              className={`flex-1 h-10 flex items-center justify-center gap-2 text-[13px] font-heading font-bold border-b-[2.5px] transition-all ${
+                activeTab === "sell"
+                  ? "text-brand-orange border-brand-orange"
+                  : "text-brand-muted border-transparent hover:text-brand-body"
+              }`}
+            >
+              <ShoppingBag size={15} /> Cần bán
             </button>
           </div>
         </div>
@@ -153,11 +160,14 @@ export default function FeedPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder={isSell ? "Tìm vợt, bóng, giày thể thao…" : "Tìm bài viết, chủ đề…"}
+              placeholder="Tìm vợt, bóng, giày thể thao…"
               className="flex-1 bg-transparent outline-none text-[13px] text-brand-dark placeholder:text-[#b0a09a]"
             />
             {searchText && (
-              <button onClick={handleClearSearch} className="text-brand-muted hover:text-brand-dark">
+              <button
+                onClick={handleClearSearch}
+                className="text-brand-muted hover:text-brand-dark"
+              >
                 <X size={13} />
               </button>
             )}
@@ -171,21 +181,22 @@ export default function FeedPage() {
         </div>
         {/* ── Sport filter chips ── */}
         <div className="bg-white border-b border-[#ede5e0] rounded-b-2xl px-4 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none">
-          {[{ key: "", label: "Tất cả" }, ...SPORTS.map((s) => ({ key: s, label: `${SPORT_EMOJI[s]} ${s}` }))].map(
-            ({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setFilterSport(key)}
-                className={`h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap flex-shrink-0 border transition-all ${
-                  filterSport === key
-                    ? "bg-brand-orange text-white border-brand-orange font-bold"
-                    : "bg-white text-brand-body border-brand-border hover:border-brand-orange hover:text-brand-orange"
-                }`}
-              >
-                {label}
-              </button>
-            )
-          )}
+          {[
+            { key: "", label: "Tất cả" },
+            ...SPORTS.map((s) => ({ key: s, label: `${SPORT_EMOJI[s]} ${SPORT_NAMES[s]}` })),
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setFilterSport(key)}
+              className={`h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap flex-shrink-0 border transition-all ${
+                filterSport === key
+                  ? "bg-brand-orange text-white border-brand-orange font-bold"
+                  : "bg-white text-brand-body border-brand-border hover:border-brand-orange hover:text-brand-orange"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value as any)}
@@ -205,7 +216,11 @@ export default function FeedPage() {
             {user ? (
               <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold text-white bg-brand-orange font-heading">
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-full" />
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 ) : (
                   initials
                 )}
@@ -215,20 +230,16 @@ export default function FeedPage() {
                 <ShoppingBag size={16} />
               </div>
             )}
-            <span className="flex-1 text-[13px] text-[#b0a09a]">
-              {isSell ? "Bạn đang muốn bán gì?" : "Chia sẻ điều gì đó về thể thao…"}
-            </span>
+            <span className="flex-1 text-[13px] text-[#b0a09a]">Bạn đang muốn mua bán gì?</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowCreateModal(true);
               }}
-              className={`flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-[12px] font-bold text-white font-heading hover:opacity-90 transition-opacity flex-shrink-0 ${
-                isSell ? "bg-brand-orange" : "bg-brand-orange"
-              }`}
+              className={`flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-[12px] font-bold text-white font-heading hover:opacity-90 transition-opacity flex-shrink-0 bg-brand-orange`}
             >
-              {isSell ? <Tag size={12} /> : <Pencil size={12} />}
-              {isSell ? "Đăng bán" : "Đăng"}
+              <Tag size={12} />
+              Đăng tin
             </button>
           </div>
           {searchQuery && (
@@ -240,21 +251,15 @@ export default function FeedPage() {
           {loading ? (
             <div className="flex flex-col gap-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl overflow-hidden border border-[#e8e0dc]">
-                  {isSell && <Skeleton className="h-48 w-full rounded-none" />}
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl overflow-hidden border border-[#e8e0dc]"
+                >
+                  <Skeleton className="h-48 w-full rounded-none" />
                   <div className="p-4 space-y-3">
-                    {!isSell && (
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-2 flex-1">
-                          <Skeleton className="h-3.5 w-28" />
-                          <Skeleton className="h-3 w-20" />
-                        </div>
-                      </div>
-                    )}
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
-                    {isSell && <Skeleton className="h-6 w-36" />}
+                    <Skeleton className="h-6 w-36" />
                     <div className="flex gap-2 pt-1">
                       <Skeleton className="h-8 w-20 rounded-xl" />
                       <Skeleton className="h-8 w-20 rounded-xl" />
@@ -265,29 +270,30 @@ export default function FeedPage() {
             </div>
           ) : posts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border-2 border-dashed border-[#e8e0dc]">
-              <span className="text-5xl mb-4">{isSell ? "🛍️" : "✍️"}</span>
+              <span className="text-5xl mb-4">🛍️</span>
               <p className="font-heading text-[15px] font-bold text-brand-dark mb-1">
-                {isSell ? "Chưa có sản phẩm nào" : "Chưa có bài viết nào"}
+                Chưa có tin đăng nào
               </p>
               <p className="text-[12px] text-brand-muted mb-5 text-center max-w-[220px]">
-                {isSell
-                  ? "Hãy là người đầu tiên đăng bán đồ thể thao!"
-                  : "Chia sẻ trải nghiệm thể thao của bạn với cộng đồng!"}
+                Hãy là người đầu tiên đăng mua bán đồ thể thao!
               </p>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className={`flex items-center gap-2 h-9 px-5 rounded-xl text-[13px] font-bold text-white font-heading ${
-                  isSell ? "bg-brand-orange" : "bg-brand-orange"
-                }`}
+                className="flex items-center gap-2 h-9 px-5 rounded-xl text-[13px] font-bold text-white font-heading bg-brand-orange"
               >
                 <Plus size={14} />
-                {isSell ? "Đăng bán ngay" : "Tạo bài viết"}
+                Đăng tin ngay
               </button>
             </div>
           ) : (
             <>
               {posts.map((post) => (
-                <PostCard key={post.id} post={post} onUpdated={handlePostUpdated} onDeleted={handlePostDeleted} />
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onUpdated={handlePostUpdated}
+                  onDeleted={handlePostDeleted}
+                />
               ))}
               {pagination && pagination.page < pagination.pages && (
                 <button

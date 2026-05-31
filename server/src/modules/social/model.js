@@ -13,7 +13,7 @@ const PostSchema = new Schema(
     image_url: { type: String },
     
     // Trade Listing Fields
-    intentType: { type: String, enum: ["post", "sell"] },
+    intentType: { type: String, enum: ["buy", "sell"], required: true },
     sport: { type: String },
     category: { type: String },
     title: { type: String },

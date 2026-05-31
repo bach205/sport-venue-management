@@ -57,11 +57,11 @@ const validateCreatePostPayload = (payload = {}) => {
   const errors = [];
 
   // Core structured trade listing fields
-  if (!payload.intentType || !["post", "sell"].includes(payload.intentType)) {
-    errors.push("Intent type must be either 'post' or 'sell'.");
+  if (!payload.intentType || !["buy", "sell"].includes(payload.intentType)) {
+    errors.push("Intent type must be either 'buy' or 'sell'.");
   }
 
-  if (payload.intentType === "sell") {
+  if (payload.intentType === "sell" || payload.intentType === "buy") {
     if (!payload.sport || String(payload.sport).trim() === "") {
       errors.push("Sport is required for sell posts.");
     }

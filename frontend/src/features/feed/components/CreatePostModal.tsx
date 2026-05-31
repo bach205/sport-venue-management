@@ -21,7 +21,7 @@ export function CreatePostModal({
   const { t } = useTranslation("matching");
   const user = getCurrentUser();
 
-  const [intentType, setIntentType] = useState<"post" | "sell">(editPost?.intentType || "post");
+  const [intentType, setIntentType] = useState<"buy" | "sell">(editPost?.intentType || "sell");
   const [sport, setSport] = useState(editPost?.sport || "Pickleball");
   const [category, setCategory] = useState(editPost?.category || "Equipment");
   const [title, setTitle] = useState(editPost?.title || "");
@@ -45,22 +45,13 @@ export function CreatePostModal({
   const isFormValid = () => {
     if (isOverLimit) return false;
 
-    if (intentType === "post") {
-      if (!details.trim() && !imageFile) return false;
-      return true;
-    }
-
-    if (intentType === "sell") {
-      if (!title.trim()) return false;
-      if (title.trim().length > 120) return false;
-      if (quantity <= 0) return false;
-      if (priceType === "fixed" && (priceMin === "" || priceMin < 0)) return false;
-      if (priceType === "range" && (priceMin === "" || priceMax === "" || priceMax < priceMin))
-        return false;
-      return true;
-    }
-
-    return false;
+    if (!title.trim()) return false;
+    if (title.trim().length > 120) return false;
+    if (quantity <= 0) return false;
+    if (priceType === "fixed" && (priceMin === "" || priceMin < 0)) return false;
+    if (priceType === "range" && (priceMin === "" || priceMax === "" || priceMax < priceMin))
+      return false;
+    return true;
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,32 +92,22 @@ export function CreatePostModal({
       imageUrl = null;
     }
 
-    let payload: Partial<ApiPost>;
-
-    if (intentType === "post") {
-      payload = {
-        intentType: "post",
-        content: details.trim(),
-        imageUrl,
-      };
-    } else {
-      payload = {
-        intentType: "sell",
-        sport,
-        category,
-        title: title.trim(),
-        details: details.trim(),
-        content: details.trim(), // fallback
-        quantity,
-        priceType,
-        priceMin: priceMin !== "" ? priceMin : undefined,
-        priceMax: priceMax !== "" ? priceMax : undefined,
-        currency: "VND",
-        condition,
-        status: "open",
-        imageUrl,
-      };
-    }
+    const payload: Partial<ApiPost> = {
+      intentType,
+      sport,
+      category,
+      title: title.trim(),
+      details: details.trim(),
+      content: details.trim(), // fallback
+      quantity,
+      priceType,
+      priceMin: priceMin !== "" ? priceMin : undefined,
+      priceMax: priceMax !== "" ? priceMax : undefined,
+      currency: "VND",
+      condition,
+      status: "open",
+      imageUrl,
+    };
 
     let result;
     if (editPost) {
@@ -162,6 +143,7 @@ export function CreatePostModal({
         className="relative w-full max-w-2xl flex flex-col max-h-[90vh] rounded-2xl overflow-hidden bg-white"
         style={{ boxShadow: "0 32px 80px rgba(36,25,20,0.35)" }}
       >
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-brand-border">
           <h2 className="font-heading text-lg font-bold text-brand-dark">
             {editPost ? "Cập nhật bài đăng" : "Tạo bài đăng mới"}
@@ -174,8 +156,10 @@ export function CreatePostModal({
           </button>
         </div>
 
+        {/* Scrollable Form Content */}
         <div className="px-5 pt-4 pb-3 flex flex-col gap-3 overflow-y-scroll">
-          <div className="flex items-center gap-2">
+          {/* User Profile Info */}
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 gradient-teal-diag text-white text-[15px] font-bold font-heading">
               {initials}
             </div>
@@ -189,172 +173,163 @@ export function CreatePostModal({
             </div>
           </div>
 
+          {/* Form Fields Grid */}
           <div className="grid grid-cols-2 gap-4">
-            {!editPost && (
-              <div className="col-span-2">
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-brand-dark mb-1">
+                Loại tin đăng *
+              </label>
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setIntentType("sell")}
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    intentType === "sell"
+                      ? "bg-white shadow-sm text-brand-dark"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Cần bán
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIntentType("buy")}
+                  className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    intentType === "buy"
+                      ? "bg-white shadow-sm text-brand-dark"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Cần mua
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-brand-dark mb-1">
+                Môn thể thao *
+              </label>
+              <select
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+              >
+                <option value="Pickleball">Pickleball</option>
+                <option value="Tennis">Tennis</option>
+                <option value="Badminton">Cầu lông</option>
+                <option value="Football">Bóng đá</option>
+                <option value="Other">Khác</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-brand-dark mb-1">Danh mục *</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+              >
+                <option value="Equipment">Thiết bị</option>
+                <option value="Apparel">Trang phục</option>
+                <option value="Accessories">Phụ kiện</option>
+                <option value="Tickets">Vé</option>
+                <option value="Other">Khác</option>
+              </select>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-brand-dark mb-1">
+                Tiêu đề tin đăng *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Tiêu đề ngắn gọn, rõ ràng (tối đa 120 ký tự)"
+                className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                maxLength={120}
+              />
+              <p className="text-right text-[11px] text-brand-muted mt-1">{title.length}/120</p>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-brand-dark mb-1">Kiểu giá *</label>
+              <select
+                value={priceType}
+                onChange={(e) => setPriceType(e.target.value as any)}
+                className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+              >
+                <option value="fixed">Giá cố định</option>
+                <option value="negotiable">Thỏa thuận</option>
+                <option value="range">Khoảng giá</option>
+                <option value="quote_requested">Yêu cầu báo giá</option>
+              </select>
+            </div>
+
+            {(priceType === "fixed" || priceType === "range") && (
+              <div className={priceType === "range" ? "col-span-1" : "col-span-2"}>
                 <label className="block text-xs font-bold text-brand-dark mb-1">
-                  Loại tin đăng *
+                  {priceType === "range" ? "Giá tối thiểu (VND) *" : "Mức giá (VND) *"}
                 </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIntentType("post")}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg border transition-colors ${
-                      intentType === "post"
-                        ? "border-brand-teal bg-brand-surface text-brand-teal"
-                        : "border-brand-border text-brand-body hover:bg-brand-surface"
-                    }`}
-                  >
-                    Bài đăng thường
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIntentType("sell")}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg border transition-colors ${
-                      intentType === "sell"
-                        ? "border-brand-yellow bg-[#FFFAF0] text-brand-orange"
-                        : "border-brand-border text-brand-body hover:bg-brand-surface"
-                    }`}
-                  >
-                    Bán
-                  </button>
-                </div>
+                <input
+                  type="number"
+                  value={priceMin}
+                  onChange={(e) => setPriceMin(e.target.value ? Number(e.target.value) : "")}
+                  placeholder="0"
+                  className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                  min="0"
+                />
               </div>
             )}
 
-            {intentType === "sell" && (
-              <>
-                <div>
-                  <label className="block text-xs font-bold text-brand-dark mb-1">
-                    Môn thể thao *
-                  </label>
-                  <select
-                    value={sport}
-                    onChange={(e) => setSport(e.target.value)}
-                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                  >
-                    <option value="Pickleball">Pickleball</option>
-                    <option value="Tennis">Tennis</option>
-                    <option value="Badminton">Badminton</option>
-                    <option value="Football">Football</option>
-                    <option value="Other">Khác</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-brand-dark mb-1">Danh mục *</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                  >
-                    <option value="Equipment">Thiết bị (Equipment)</option>
-                    <option value="Apparel">Trang phục (Apparel)</option>
-                    <option value="Accessories">Phụ kiện (Accessories)</option>
-                    <option value="Tickets">Vé (Tickets)</option>
-                    <option value="Other">Khác</option>
-                  </select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-brand-dark mb-1">
-                    Tiêu đề tin đăng *
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Tiêu đề ngắn gọn, rõ ràng (tối đa 120 ký tự)"
-                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                    maxLength={120}
-                  />
-                  <p className="text-right text-[11px] text-brand-muted mt-1">{title.length}/120</p>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold text-brand-dark mb-1">Kiểu giá *</label>
-                  <select
-                    value={priceType}
-                    onChange={(e) => setPriceType(e.target.value as any)}
-                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                  >
-                    <option value="fixed">Giá cố định</option>
-                    <option value="negotiable">Thỏa thuận</option>
-                    <option value="range">Khoảng giá</option>
-                    <option value="quote_requested">Yêu cầu báo giá</option>
-                  </select>
-                </div>
-
-                {(priceType === "fixed" || priceType === "range") && (
-                  <div className={priceType === "range" ? "col-span-1" : "col-span-2"}>
-                    <label className="block text-xs font-bold text-brand-dark mb-1">
-                      {priceType === "range" ? "Giá tối thiểu (VND) *" : "Mức giá (VND) *"}
-                    </label>
-                    <input
-                      type="number"
-                      value={priceMin}
-                      onChange={(e) => setPriceMin(e.target.value ? Number(e.target.value) : "")}
-                      placeholder="0"
-                      className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                      min="0"
-                    />
-                  </div>
-                )}
-
-                {priceType === "range" && (
-                  <div className="col-span-1">
-                    <label className="block text-xs font-bold text-brand-dark mb-1">
-                      Giá tối đa (VND) *
-                    </label>
-                    <input
-                      type="number"
-                      value={priceMax}
-                      onChange={(e) => setPriceMax(e.target.value ? Number(e.target.value) : "")}
-                      placeholder="0"
-                      className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                      min="0"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-xs font-bold text-brand-dark mb-1">Số lượng *</label>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                    min="1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-brand-dark mb-1">
-                    Tình trạng *
-                  </label>
-                  <select
-                    value={condition}
-                    onChange={(e) => setCondition(e.target.value as any)}
-                    className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
-                  >
-                    <option value="new">Mới (New)</option>
-                    <option value="like_new">Như mới (Like New)</option>
-                    <option value="used">Đã qua sử dụng (Used)</option>
-                  </select>
-                </div>
-              </>
+            {priceType === "range" && (
+              <div className="col-span-1">
+                <label className="block text-xs font-bold text-brand-dark mb-1">
+                  Giá tối đa (VND) *
+                </label>
+                <input
+                  type="number"
+                  value={priceMax}
+                  onChange={(e) => setPriceMax(e.target.value ? Number(e.target.value) : "")}
+                  placeholder="0"
+                  className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                  min="0"
+                />
+              </div>
             )}
+
+            <div>
+              <label className="block text-xs font-bold text-brand-dark mb-1">Số lượng *</label>
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+                min="1"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-brand-dark mb-1">
+                Tình trạng *
+              </label>
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value as any)}
+                className="w-full h-11 px-3 border border-brand-border rounded-lg text-[14px] bg-white outline-none focus:border-brand-teal"
+              >
+                <option value="new">Mới (New)</option>
+                <option value="like_new">Như mới (Like New)</option>
+                <option value="used">Đã qua sử dụng (Used)</option>
+              </select>
+            </div>
 
             <div className="col-span-2">
               <label className="block text-xs font-bold text-brand-dark mb-1">Nội dung</label>
               <textarea
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
-                placeholder={
-                  intentType === "post"
-                    ? "Bạn đang nghĩ gì?"
-                    : "Nhập thông tin chi tiết về sản phẩm..."
-                }
+                placeholder="Nhập thông tin chi tiết về sản phẩm..."
                 className="w-full p-3 border border-brand-border rounded-lg text-[14px] text-brand-dark bg-white outline-none focus:border-brand-teal min-h-[100px] resize-y"
               />
               <p
@@ -394,6 +369,7 @@ export function CreatePostModal({
           </div>
         </div>
 
+        {/* Footer Actions */}
         <div className="px-5 py-4 border-t border-brand-border bg-white flex items-center justify-end gap-3 shrink-0">
           <button
             onClick={handlePost}

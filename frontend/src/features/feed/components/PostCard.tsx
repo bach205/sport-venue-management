@@ -45,6 +45,21 @@ function timeAgo(iso: string, t: TFunction<"matching">): string {
   return t("timeAgo.days", { count: Math.floor(h / 24) });
 }
 
+const CATEGORY_MAP: Record<string, string> = {
+  Equipment: "Thiết bị",
+  Apparel: "Trang phục",
+  Accessories: "Phụ kiện",
+  Tickets: "Vé",
+  Other: "Khác",
+};
+
+const SPORT_NAMES: Record<string, string> = {
+  Badminton: "Cầu lông",
+  Tennis: "Tennis",
+  Pickleball: "Pickleball",
+  Football: "Bóng đá",
+};
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -480,6 +495,7 @@ function SellCard({
             src={post.imageUrl}
             alt={post.title}
             className="w-full h-52 object-cover bg-[#f0e8e3]"
+            crossOrigin="anonymous"
           />
         ) : (
           <div className="w-full h-40 bg-[#f5f0ed] flex flex-col items-center justify-center gap-2 text-brand-muted">
@@ -488,8 +504,10 @@ function SellCard({
           </div>
         )}
         {/* Overlay badges */}
-        <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-brand-orange text-white font-heading tracking-wide">
-          BÁN
+        <span
+          className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold text-white font-heading tracking-wide ${post.intentType === "sell" ? "bg-brand-orange" : "bg-brand-teal"}`}
+        >
+          {post.intentType === "sell" ? "CẦN BÁN" : "CẦN MUA"}
         </span>
         {cond && (
           <span
@@ -559,11 +577,11 @@ function SellCard({
           <span
             className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${sportCls}`}
           >
-            {post.sport}
+            {SPORT_NAMES[post.sport] ? SPORT_NAMES[post.sport] : post.sport || "Khác"}
           </span>
           {post.category && (
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#f5f0ed] text-brand-body border border-[#e8e0dc]">
-              {post.category}
+              {CATEGORY_MAP[post.category] ? CATEGORY_MAP[post.category] : post.category || "Khác"}
             </span>
           )}
         </div>
@@ -708,240 +726,6 @@ function SellCard({
   );
 }
 
-// ── SocialPostCard ───────────────────────────────────────────
-function SocialPostCard({
-  post: initialPost,
-  onUpdated,
-  onDeleted,
-}: {
-  post: ApiPost;
-  onUpdated: (p: ApiPost) => void;
-  onDeleted: (id: string) => void;
-}) {
-  const { t } = useTranslation("matching");
-  const navigate = useNavigate();
-  const user = getCurrentUser();
-  const [post, setPost] = useState(initialPost);
-  const [showComments, setShowComments] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [liking, setLiking] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  React.useEffect(() => setPost(initialPost), [initialPost]);
-
-  const handleLike = async () => {
-    if (!user) {
-      toast.error(t("feed.likeLoginRequired"));
-      return;
-    }
-    if (liking) return;
-    setLiking(true);
-    const fn = post.hasLiked ? unlikePost : likePost;
-    const r = await fn(post.id);
-    if (r.success && r.data) {
-      setPost(r.data);
-      onUpdated(r.data);
-    } else toast.error(r.message);
-    setLiking(false);
-  };
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    const r = await deletePost(post.id);
-    if (r.success) {
-      toast.success(t("feed.deleted"));
-      onDeleted(post.id);
-    } else {
-      toast.error(r.message);
-      setDeleting(false);
-      setConfirmDelete(false);
-    }
-  };
-
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/feed/${post.id}`);
-      toast.success(t("feed.shareCopied"));
-    } catch {
-      toast.error(t("feed.shareFailed"));
-    }
-  };
-
-  const handleUserClick = () => {
-    if (user?._id === post.author.id) return;
-    navigate(
-      `/messages?with=${post.author.id}&name=${encodeURIComponent(
-        post.author.name
-      )}&avatar=${encodeURIComponent(post.author.avatarUrl || "")}`
-    );
-  };
-
-  const sportCls = SPORT_COLOR[post.sport] ?? "bg-[#f5f0ed] text-brand-body border-brand-border";
-
-  return (
-    <article className="flex flex-col bg-white rounded-2xl overflow-hidden border border-[#e8e0dc]">
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <button
-          onClick={handleUserClick}
-          className="outline-none cursor-pointer flex-shrink-0 hover:opacity-80 transition-opacity"
-        >
-          <Avatar name={post.author.name} src={post.author.avatarUrl} size={40} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <button
-            onClick={handleUserClick}
-            className="text-[13px] font-bold text-brand-dark font-heading hover:opacity-80 outline-none block"
-          >
-            {post.isOwner ? "Bạn" : post.author.name}
-          </button>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            {post.sport && (
-              <span
-                className={`px-1.5 py-px rounded-full text-[10px] font-bold border ${sportCls}`}
-              >
-                {post.sport}
-              </span>
-            )}
-            <span className="text-[11px] text-brand-muted">
-              {timeAgo(post.createdAt, t)}
-              {post.updatedAt !== post.createdAt && " · đã sửa"}
-            </span>
-          </div>
-        </div>
-        {post.isOwner && (
-          <div className="relative flex-shrink-0">
-            <button
-              onClick={() => {
-                setMenuOpen((o) => !o);
-                setConfirmDelete(false);
-              }}
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f5f0ed] transition-colors text-brand-muted"
-            >
-              <MoreHorizontal size={15} />
-            </button>
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-9 z-30 rounded-2xl overflow-hidden bg-white border border-[#e8e0dc] w-40 shadow-[0_8px_32px_rgba(36,25,20,0.14)]">
-                  <button
-                    onClick={() => {
-                      setEditing(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#f5f0ed] text-left text-[13px] text-brand-dark"
-                  >
-                    <Edit3 size={13} className="text-brand-orange" /> Chỉnh sửa
-                  </button>
-                  <button
-                    onClick={() => {
-                      setConfirmDelete(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#fff5f5] text-left text-[13px] text-brand-red"
-                  >
-                    <Trash2 size={13} /> Xoá bài
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-      {/* ── Content ── */}
-      <div className="px-4 pb-3">
-        {(post.details || post.content) && (
-          <p className="text-[13px] text-brand-dark leading-relaxed whitespace-pre-wrap">
-            {post.details || post.content}
-          </p>
-        )}
-      </div>
-      {post.imageUrl && (
-        <div className="px-4 pb-3">
-          <img
-            src={post.imageUrl}
-            alt="Post"
-            className="w-full max-h-[440px] rounded-2xl object-cover bg-[#f5f0ed] border border-[#e8e0dc]"
-          />
-        </div>
-      )}
-      {/* Delete confirm */}
-      {confirmDelete && (
-        <DeleteConfirmBanner
-          onConfirm={handleDelete}
-          onCancel={() => setConfirmDelete(false)}
-          loading={deleting}
-        />
-      )}
-      {/* Stats */}
-      {(post.likeCount > 0 || post.commentCount > 0) && (
-        <div className="flex items-center justify-between px-4 py-2 border-t border-[#f0ebe7]">
-          {post.likeCount > 0 && (
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-[#c0392b] flex items-center justify-center">
-                <Heart size={8} fill="white" color="white" />
-              </div>
-              <span className="text-[12px] text-brand-body">{post.likeCount} lượt thích</span>
-            </div>
-          )}
-          {post.commentCount > 0 && (
-            <button
-              onClick={() => setShowComments((s) => !s)}
-              className="ml-auto text-[12px] text-brand-body hover:text-brand-orange transition-colors"
-            >
-              {post.commentCount} bình luận
-            </button>
-          )}
-        </div>
-      )}
-      {/* View detail */}
-      <div className="px-4 py-1.5 border-t border-[#f0ebe7]">
-        <Link
-          to={`/feed/${post.id}`}
-          className="inline-flex items-center gap-1 text-[12px] text-brand-orange hover:underline"
-        >
-          <ExternalLink size={11} /> Xem chi tiết
-        </Link>
-      </div>
-      {/* Action bar */}
-      <ActionBar
-        post={post}
-        liking={liking}
-        showComments={showComments}
-        onLike={handleLike}
-        onToggleComments={() => setShowComments((s) => !s)}
-        onShare={handleShare}
-      />
-      {/* Comments */}
-      {showComments && (
-        <div className="pt-3 border-t border-[#f0ebe7]">
-          <CommentSection
-            postId={post.id}
-            onCountChange={(d) =>
-              setPost((p) => ({ ...p, commentCount: Math.max(0, p.commentCount + d) }))
-            }
-          />
-        </div>
-      )}
-      {editing && (
-        <CreatePostModal
-          editPost={post}
-          onClose={() => setEditing(false)}
-          onSuccess={(updated) => {
-            if (updated) {
-              setPost(updated);
-              onUpdated(updated);
-            }
-            setEditing(false);
-          }}
-        />
-      )}
-    </article>
-  );
-}
-
 // ── Export ───────────────────────────────────────────────────
 export function PostCard({
   post,
@@ -952,9 +736,5 @@ export function PostCard({
   onUpdated: (updated: ApiPost) => void;
   onDeleted: (postId: string) => void;
 }) {
-  return post.intentType === "sell" ? (
-    <SellCard post={post} onUpdated={onUpdated} onDeleted={onDeleted} />
-  ) : (
-    <SocialPostCard post={post} onUpdated={onUpdated} onDeleted={onDeleted} />
-  );
+  return <SellCard post={post} onUpdated={onUpdated} onDeleted={onDeleted} />;
 }
