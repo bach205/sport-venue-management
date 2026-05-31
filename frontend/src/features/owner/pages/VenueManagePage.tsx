@@ -340,12 +340,12 @@ function RefundRequestCard({ refund, locale, onProcess }: RefundRequestCardProps
           </div>
 
           <div className="rounded-2xl border p-4" style={{ borderColor: "#dfc0b3", background: "linear-gradient(180deg, #fff1eb 0%, #ffffff 100%)" }}>
-              <div className="mb-4 flex items-center gap-2">
-                <BadgeDollarSign size={16} style={{ color: "#a04100" }} />
-                <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "16px", fontWeight: 700, color: "#241914" }}>
-                  {t("owner.manage.refundUi.refundAction", { defaultValue: "Refund action" })}
-                </p>
-              </div>
+            <div className="mb-4 flex items-center gap-2">
+              <BadgeDollarSign size={16} style={{ color: "#a04100" }} />
+              <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "16px", fontWeight: 700, color: "#241914" }}>
+                {t("owner.manage.refundUi.refundAction", { defaultValue: "Refund action" })}
+              </p>
+            </div>
 
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full px-3 py-1" style={{ background: canProcess ? "#fff3cd" : "#eefbf7", color: canProcess ? "#856404" : "#006a65" }}>
@@ -1128,7 +1128,7 @@ export default function VenueManagePage() {
           setRefundDecisionNote("");
         }
       }}>
-        <DialogContent className="max-w-2xl rounded-[28px] border-0 bg-white p-0">
+        <DialogContent className="max-w-4xl rounded-[28px] border-0 bg-white p-0">
           {activeRefund && (
             <>
               <DialogHeader className="border-b px-6 py-5" style={{ borderColor: "#f4ded5", background: "linear-gradient(135deg, #fffaf7 0%, #fff1eb 100%)" }}>
@@ -1149,21 +1149,17 @@ export default function VenueManagePage() {
                   <div className="rounded-2xl p-3" style={{ background: "#fff1eb" }}>
                     <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("owner.manage.refundUi.requester", { defaultValue: "Requester" })}</p>
                     <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>{activeRefund.requester?.name || t("owner.manage.refundUi.unknown", { defaultValue: "Unknown" })}</p>
-                    <p className="mt-1 inline-flex items-center gap-1" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238" }}>
-                      <Mail size={12} /> {activeRefund.requester?.email || t("owner.manage.noEmail")}
-                    </p>
+
                   </div>
                   <div className="rounded-2xl p-3" style={{ background: "#eefbf7" }}>
                     <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("owner.manage.refundUi.booking", { defaultValue: "Booking" })}</p>
                     <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>#{activeRefund.booking?.id.slice(-6).toUpperCase() || "N/A"}</p>
-                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238", marginTop: 4 }}>{activeRefund.booking?.status || t("owner.manage.refundUi.unknown", { defaultValue: "Unknown" })}</p>
                   </div>
                   <div className="rounded-2xl p-3" style={{ background: "#f3f7ff" }}>
                     <p style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", color: "#8b7266", textTransform: "uppercase", letterSpacing: "0.08em" }}>{t("owner.manage.refundUi.payment", { defaultValue: "Payment" })}</p>
                     <p style={{ fontFamily: "Lexend, sans-serif", fontSize: "15px", fontWeight: 700, color: "#241914", marginTop: 6 }}>
                       {activeRefund.payment ? formatPrice(activeRefund.payment.amount, locale) : "N/A"}
                     </p>
-                    <p style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#584238", marginTop: 4 }}>{activeRefund.payment?.status || t("owner.manage.refundUi.unknown", { defaultValue: "Unknown" })}</p>
                   </div>
                 </div>
 

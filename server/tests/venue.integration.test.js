@@ -521,7 +521,7 @@ describe("Venue booking module", () => {
     );
   });
 
-  test("creates a manual refund request after five minutes and keeps the slot booked until owner acts", async () => {
+  test("creates a manual refund request after five minutes and marks the booking as refund processing", async () => {
     const owner = await createUser("owner", "owner7@example.com");
     const user = await createUser("user", "refund-manual@example.com");
     const venue = await createVenue(owner.user._id);
@@ -542,7 +542,8 @@ describe("Venue booking module", () => {
     expect(refundResponse.status).toBe(200);
     expect(refundResponse.body.data.mode).toBe("manual");
     expect(refundResponse.body.data.refund.status).toBe("pending_manual");
-    expect(refundResponse.body.data.booking.status).toBe("confirmed");
+    expect(refundResponse.body.data.booking.status).toBe("refund_processing");
+    expect(refundResponse.body.data.payment.status).toBe("refund_pending");
 
     const slotsResponse = await request(app).get(
       `/api/v1/venues/${venue._id}/slots?date=${TEST_DATE}`
@@ -550,7 +551,7 @@ describe("Venue booking module", () => {
 
     expect(slotsResponse.body.data.slots).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ startTime: "09:00", endTime: "10:00", status: "booked" }),
+        expect.objectContaining({ startTime: "09:00", endTime: "10:00", status: "refund_processing" }),
       ])
     );
   });
@@ -618,6 +619,7 @@ describe("Venue booking module", () => {
 
     expect(rejectResponse.status).toBe(200);
     expect(rejectResponse.body.data.booking.status).toBe("confirmed");
+    expect(rejectResponse.body.data.payment.status).toBe("paid");
     expect(rejectResponse.body.data.refund.status).toBe("rejected");
 
     const ownerBookingsResponse = await request(app)

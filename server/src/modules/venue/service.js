@@ -660,6 +660,11 @@ class VenueService {
       note: payload.note,
     });
 
+    booking.status = "refund_processing";
+    payment.status = "refund_pending";
+    await Promise.all([booking.save(), payment.save()]);
+    await this.syncBookingItemsStatus([booking._id], booking.status);
+
     return {
       mode: "manual",
       booking: this.formatBooking(booking, { venue, bookingItems }),
@@ -887,13 +892,10 @@ class VenueService {
     }
 
     if (payload.action === "approve") {
-      booking.status = "refund_processing";
-      payment.status = "refund_pending";
       refund.status = "approved";
       refund.processed_by = ownerId;
       refund.note = payload.note || refund.note;
-      await Promise.all([booking.save(), payment.save(), refund.save()]);
-      await this.syncBookingItemsStatus([booking._id], booking.status);
+      await refund.save();
 
       booking.status = "refunded";
       payment.status = "refunded";
@@ -908,7 +910,8 @@ class VenueService {
       refund.processed_at = new Date();
       refund.note = payload.note || refund.note;
       booking.status = "confirmed";
-      await Promise.all([booking.save(), refund.save()]);
+      payment.status = "paid";
+      await Promise.all([booking.save(), payment.save(), refund.save()]);
       await this.syncBookingItemsStatus([booking._id], booking.status);
     }
 
