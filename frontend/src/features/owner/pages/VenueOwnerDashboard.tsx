@@ -42,6 +42,7 @@ function createScheduleRange(): CreateVenuePayload["weekly_schedule"][number] {
 const EMPTY_FORM: CreateVenuePayload = {
   name: "",
   location: "",
+  phone_number: "",
   description: "",
   image_url: "",
   slot_price: 120000,
@@ -124,7 +125,7 @@ export default function VenueOwnerDashboard() {
   }, [locale, t, venues]);
 
   const handleCreateVenue = async () => {
-    if (!form.name.trim() || !form.location.trim()) {
+    if (!form.name.trim() || !form.location.trim() || !form.phone_number.trim()) {
       toast.error(t("owner.dashboard.requiredFields"));
       return;
     }
@@ -290,6 +291,10 @@ export default function VenueOwnerDashboard() {
               <div className="space-y-1.5">
                 <Label>{t("owner.dashboard.fields.location")}</Label>
                 <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("owner.dashboard.fields.phone")}</Label>
+                <Input value={form.phone_number} onChange={(e) => setForm((prev) => ({ ...prev, phone_number: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
               </div>
               <div className="space-y-1.5 lg:col-span-2">
                 <Label>{t("owner.dashboard.fields.image")}</Label>
@@ -479,6 +484,9 @@ export default function VenueOwnerDashboard() {
                         <div className="mt-1 flex items-center gap-1 text-[#584238]">
                           <MapPin size={15} />
                           <span style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}>{venue.location}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-1 text-[#584238]">
+                          <span style={{ fontFamily: "Inter, sans-serif", fontSize: "13px" }}>{venue.phoneNumber}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

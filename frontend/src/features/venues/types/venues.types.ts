@@ -43,6 +43,7 @@ export interface Venue {
   name: string;
   shortAddress: string;
   fullAddress: string;
+  phoneNumber: string;
   sports: Sport[];
   rating: number;
   reviewCount: number;
@@ -105,6 +106,7 @@ export interface Booking {
   venueName: string;
   venueImage: string;
   venueAddress: string;
+  venuePhone: string;
   sport: Sport;
   date: string;
   slots: BookedSlotRef[];

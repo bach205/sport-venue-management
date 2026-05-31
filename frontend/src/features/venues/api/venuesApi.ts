@@ -22,6 +22,7 @@ export interface UpsertVenuePayload {
   name: string;
   shortAddress: string;
   fullAddress: string;
+  phoneNumber: string;
   sports: Sport[];
   imageUrl: string;
   priceFrom: number;
@@ -122,6 +123,7 @@ type BackendVenue = {
   ownerId?: string;
   name: string;
   location: string;
+  phoneNumber?: string;
   description: string;
   imageUrl?: string;
   slotPrice: number;
@@ -241,6 +243,7 @@ function mapVenue(backendVenue: BackendVenue): Venue {
     name: backendVenue.name,
     shortAddress: district,
     fullAddress: backendVenue.location,
+    phoneNumber: backendVenue.phoneNumber || '',
     sports: inferSports(backendVenue.name, backendVenue.description),
     rating: 4.8,
     reviewCount: 0,
@@ -310,6 +313,7 @@ function mapBooking(backendBooking: BackendBooking): Booking {
     venueName: venue?.name || 'Venue booking',
     venueImage: venue?.imageUrl || DEFAULT_VENUE_IMAGE,
     venueAddress: venue?.fullAddress || 'Venue address unavailable',
+    venuePhone: venue?.phoneNumber || '',
     sport: venue?.sports[0] || 'tennis',
     date: backendBooking.slot.date,
     slots: backendSlots.map((slot) => ({
@@ -390,6 +394,7 @@ export let MOCK_VENUES: Venue[] = [
     name: 'District 1 Tennis Club',
     shortAddress: 'District 1, HCMC',
     fullAddress: '12 Nguyen Hue Blvd, Ben Nghe Ward, District 1, HCMC',
+    phoneNumber: '0900000000',
     sports: ['tennis'],
     rating: 4.9,
     reviewCount: 312,
@@ -571,6 +576,7 @@ export async function createVenue(payload: UpsertVenuePayload): Promise<{ succes
       name: payload.name,
       shortAddress: `${districtLabel}, HCMC`,
       fullAddress: payload.fullAddress,
+      phoneNumber: payload.phoneNumber,
       sports: payload.sports,
       rating: 4.8,
       reviewCount: 0,

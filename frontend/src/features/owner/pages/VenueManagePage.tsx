@@ -59,6 +59,7 @@ type RefundAction = "approve" | "reject";
 type SettingsForm = {
   name: string;
   location: string;
+  phoneNumber: string;
   description: string;
   imageUrl: string;
   slotPrice: number;
@@ -110,6 +111,7 @@ function toSettingsForm(venue: OwnerVenue): SettingsForm {
   return {
     name: venue.name,
     location: venue.location,
+    phoneNumber: venue.phoneNumber,
     description: venue.description,
     imageUrl: venue.imageUrl || "",
     slotPrice: venue.slotPrice,
@@ -481,6 +483,10 @@ function SettingsTab({
             <Label>{t("owner.manage.fields.location")}</Label>
             <Input value={form.location} onChange={(e) => onChange((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
           </div>
+          <div className="space-y-1.5">
+            <Label>{t("owner.manage.fields.phone")}</Label>
+            <Input value={form.phoneNumber} onChange={(e) => onChange((prev) => ({ ...prev, phoneNumber: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
           <div className="space-y-1.5 md:col-span-2">
             <Label>{t("owner.manage.fields.image")}</Label>
             <div className="grid gap-3 lg:grid-cols-[180px_1fr]">
@@ -762,6 +768,7 @@ export default function VenueManagePage() {
       const payload: UpdateVenuePayload = {
         name: settingsForm.name,
         location: settingsForm.location,
+        phone_number: settingsForm.phoneNumber,
         description: settingsForm.description,
         image_url: imageUrl,
       };
@@ -867,6 +874,9 @@ export default function VenueManagePage() {
           <div className="mt-2 flex flex-wrap items-center gap-4">
             <span style={{ color: "rgba(255,255,255,0.85)", fontFamily: "Inter, sans-serif", fontSize: "13px" }} className="inline-flex items-center gap-1">
               <MapPin size={12} /> {venue.location}
+            </span>
+            <span style={{ color: "rgba(255,255,255,0.85)", fontFamily: "Inter, sans-serif", fontSize: "13px" }}>
+              {venue.phoneNumber}
             </span>
             <span style={{ color: "rgba(255,255,255,0.85)", fontFamily: "Inter, sans-serif", fontSize: "13px" }} className="inline-flex items-center gap-1">
               <Users size={12} /> {t("owner.manage.rangesPerWeek", { count: venue.weeklySchedule.length })}

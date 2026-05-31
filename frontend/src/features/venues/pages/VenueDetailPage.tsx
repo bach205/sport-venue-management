@@ -5,6 +5,7 @@ import {
   Star,
   MapPin,
   Clock,
+  Phone,
   Users,
   Loader2,
   CalendarDays,
@@ -285,6 +286,10 @@ export default function VenueDetailPage() {
               {
                 icon: <MapPin size={16} style={{ color: '#8b7266' }} />,
                 label: venue.shortAddress,
+              },
+              {
+                icon: <Phone size={16} style={{ color: '#8b7266' }} />,
+                label: venue.phoneNumber,
               },
               { icon: <Clock size={16} style={{ color: '#8b7266' }} />, label: venue.openHours },
               {

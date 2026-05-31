@@ -103,6 +103,7 @@
       "fields": {
         "name": "Tên sân",
         "location": "Địa chỉ",
+        "phone": "Số điện thoại",
         "image": "Ảnh sân",
         "slotPrice": "Giá mỗi slot",
         "slotDuration": "Thời lượng slot (phút)",
@@ -150,6 +151,7 @@
       "fields": {
         "name": "Tên sân",
         "location": "Địa chỉ",
+        "phone": "Số điện thoại",
         "image": "Ảnh sân",
         "slotPrice": "Giá mỗi slot",
         "slotDuration": "Thời lượng slot",
@@ -862,6 +864,7 @@
     "fields": {
       "venue": "Sân",
       "date": "Ngày",
+      "phone": "Số điện thoại",
       "slots": "Khung giờ",
       "bookingId": "Mã đặt sân",
       "paid": "Đã thanh toán",

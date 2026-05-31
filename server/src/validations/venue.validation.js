@@ -6,6 +6,7 @@ const MAX_LIMIT = 100;
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const HTTP_URL_PATTERN = /^https?:\/\/\S+$/i;
+const PHONE_PATTERN = /^[0-9+\-\s()]{8,20}$/;
 
 const normalizeOptionalString = (value) =>
   value === undefined || value === null ? undefined : String(value).trim();
@@ -188,6 +189,22 @@ const validateOptionalImageUrl = (value, errors, fieldLabel = "Image url") => {
   return normalized;
 };
 
+const validatePhoneNumber = (value, errors, fieldLabel = "Phone number") => {
+  const normalized = value === undefined || value === null ? "" : String(value).trim();
+
+  if (!normalized) {
+    errors.push(`${fieldLabel} is required.`);
+    return "";
+  }
+
+  if (!PHONE_PATTERN.test(normalized)) {
+    errors.push(`${fieldLabel} is invalid.`);
+    return "";
+  }
+
+  return normalized;
+};
+
 const validateTime = (value, fieldLabel, errors) => {
   if (!value) {
     errors.push(`${fieldLabel} is required.`);
@@ -346,6 +363,10 @@ const validateVenueUpdatePayload = (payload = {}) => {
     }
   }
 
+  if (payload.phone_number !== undefined) {
+    value.phone_number = validatePhoneNumber(payload.phone_number, errors);
+  }
+
   if (payload.description !== undefined) {
     value.description = String(payload.description).trim();
   }
@@ -369,6 +390,7 @@ const validateCreateVenuePayload = (payload = {}) => {
   const errors = [];
   const name = normalizeOptionalString(payload.name);
   const location = normalizeOptionalString(payload.location);
+  const phoneNumber = validatePhoneNumber(payload.phone_number, errors);
   const description = normalizeOptionalString(payload.description) || "";
   const imageUrl = validateOptionalImageUrl(payload.image_url, errors) || "";
   const slotPrice = Number(payload.slot_price);
@@ -399,6 +421,7 @@ const validateCreateVenuePayload = (payload = {}) => {
     value: {
       name,
       location,
+      phone_number: phoneNumber,
       description,
       image_url: imageUrl,
       slot_price: Number.isFinite(slotPrice) ? slotPrice : undefined,

@@ -103,6 +103,7 @@
       "fields": {
         "name": "Venue name",
         "location": "Location",
+        "phone": "Phone number",
         "image": "Venue image",
         "slotPrice": "Price per slot",
         "slotDuration": "Slot duration (minutes)",
@@ -150,6 +151,7 @@
       "fields": {
         "name": "Venue name",
         "location": "Location",
+        "phone": "Phone number",
         "image": "Venue image",
         "slotPrice": "Price per slot",
         "slotDuration": "Slot duration",
@@ -862,6 +864,7 @@
     "fields": {
       "venue": "Venue",
       "date": "Date",
+      "phone": "Phone number",
       "slots": "Time slots",
       "bookingId": "Booking ID",
       "paid": "Paid",

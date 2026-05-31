@@ -167,6 +167,11 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: 600, color: '#241914' }}>
                       {booking.venueName}
                     </p>
+                    {booking.venuePhone && (
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#a04100', marginTop: 4 }}>
+                        {t('venues.fields.phone')}: <strong>{booking.venuePhone}</strong>
+                      </p>
+                    )}
                     <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238', marginTop: 2 }}>
                       {t('venues.refund.contactIfRejected')}
                     </p>
@@ -239,6 +244,7 @@ export function RefundModal({ booking, onClose, onRefunded }: Props) {
                 </p>
                 <Row label={t('venues.fields.venue')} value={booking.venueName} />
                 <Row label={t('venues.fields.date')} value={new Date(booking.date).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })} />
+                {booking.venuePhone ? <Row label={t('venues.fields.phone')} value={booking.venuePhone} /> : null}
                 <Row label={t('venues.fields.slots')} value={formatSlotRange(booking)} />
                 <Row label={t('venues.refund.amount')} value={formatPrice(booking.totalPrice, locale)} highlight />
               </div>

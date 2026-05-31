@@ -49,6 +49,7 @@ const createVenue = async (ownerId) =>
     owner_id: ownerId,
     name: "Central Court",
     location: "District 1",
+    phone_number: "0900000000",
     description: "Indoor court",
     slot_price: 250000,
     slot_duration_minutes: 60,
@@ -138,6 +139,7 @@ describe("Venue booking module", () => {
       .send({
         name: "Fresh Arena",
         location: "Thu Duc",
+        phone_number: "0911222333",
         description: "Newly opened venue",
         slot_price: 300000,
         slot_duration_minutes: 90,

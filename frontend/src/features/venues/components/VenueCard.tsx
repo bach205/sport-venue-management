@@ -1,4 +1,4 @@
-import { Star, MapPin, Clock, Users } from 'lucide-react';
+import { Star, MapPin, Clock, Users, Phone } from 'lucide-react';
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback';
 import type { Venue } from '../types/venues.types';
 import { useTranslation } from 'react-i18next';
@@ -130,6 +130,13 @@ export function VenueCard({ venue, onClick }: Props) {
           <MapPin size={13} style={{ color: '#8b7266', flexShrink: 0 }} />
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
             {venue.shortAddress}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <Phone size={13} style={{ color: '#8b7266', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>
+            {venue.phoneNumber}
           </span>
         </div>
 
