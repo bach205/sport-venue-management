@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router';
-import { Bell, LogIn, ChevronDown, LogOut, User, Building2, ShieldCheck, Wallet } from 'lucide-react';
+import { Bell, LogIn, ChevronDown, LogOut, User, Building2, ShieldCheck, Wallet, MessageSquare } from 'lucide-react';
 import { MatchingFAB } from '../../features/matching/components/MatchingFAB';
 import { logout } from '../../features/auth/store/authSlice';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { key: 'nav.venues',     to: '/venues' },
   { key: 'nav.bookings',   to: '/bookings' },
   { key: 'nav.messages',   to: '/messages' },
+  { key: 'nav.feedback',   to: '/feedback' },
 ];
 
 const ROLE_BADGE = {
@@ -114,6 +115,10 @@ export default function AppLayout() {
                         <Link to="/wallet" onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline">
                           <Wallet size={16} className="text-brand-orange" /> {t('layout.wallet')}
+                        </Link>
+                        <Link to="/feedback" onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline">
+                          <MessageSquare size={16} className="text-brand-orange" /> {t('nav.feedback')}
                         </Link>
                         {user.role === 'owner' && (
                           <Link to="/owner/venues" onClick={() => setUserMenuOpen(false)}

@@ -1,41 +1,95 @@
-﻿{
-    "title":  "Feedback",
-    "list":  {
-                 "title":  "Feedback List",
-                 "empty":  "No Feedback data available"
-             },
-    "detail":  {
-                   "title":  "Feedback Detail"
-               },
-    "form":  {
-                 "createTitle":  "Create Feedback",
-                 "editTitle":  "Edit Feedback"
-             },
-    "table":  {
-                  "title":  "Feedback Table"
-              },
-    "filter":  {
-                   "title":  "Filter Feedback",
-                   "searchPlaceholder":  "Search Feedback"
-               },
-    "actions":  {
-                    "create":  "Create",
-                    "update":  "Update",
-                    "view":  "View",
-                    "delete":  "Delete"
-                },
-    "messages":  {
-                     "createSuccess":  "Created successfully",
-                     "updateSuccess":  "Updated successfully",
-                     "deleteSuccess":  "Deleted successfully",
-                     "loadError":  "Failed to load data"
-                 },
-    "fields":  {
-                   "id":  "ID",
-                   "name":  "Name",
-                   "code":  "Code",
-                   "status":  "Status",
-                   "createdAt":  "Created at",
-                   "updatedAt":  "Updated at"
-               }
+{
+  "page": {
+    "badge": "Player feedback",
+    "title": "Send feedback to Matchill",
+    "subtitle": "Share bugs, feature ideas, or experience notes so the team can respond faster.",
+    "helper": "Your feedback is saved instantly and shown in the admin panel.",
+    "loading": "Loading feedback...",
+    "stats": {
+      "total": "Total feedback",
+      "mine": "Your feedback",
+      "averageRating": "Average rating",
+      "latestHint": "The newest feedback will appear right in your list."
+    },
+    "history": {
+      "title": "Your feedback",
+      "hint": "New submissions will appear here right after sending them.",
+      "empty": "You have not sent any feedback yet.",
+      "noRating": "No rating"
+    },
+    "profileTitle": "Sender profile",
+    "profileHint": "Feedback is saved with your account information so admins can trace and follow up."
+  },
+  "form": {
+    "title": "Create new feedback",
+    "subtitle": "Describe the issue, the context, and what you'd like us to improve.",
+    "ratingHelp": "Optional, but helpful for prioritizing the review.",
+    "messageHint": "The more specific you are, the faster the team can act on it.",
+    "submitting": "Sending...",
+    "submit": "Send feedback"
+  },
+  "fields": {
+    "category": "Topic",
+    "subject": "Subject",
+    "rating": "Satisfaction",
+    "message": "Message"
+  },
+  "placeholders": {
+    "subject": "Example: Bug when opening bookings page",
+    "message": "Describe the experience, bug, or improvement you want..."
+  },
+  "categories": {
+    "bug": "App bug",
+    "feature_request": "Feature request",
+    "billing": "Billing",
+    "support": "Support & experience",
+    "other": "Other"
+  },
+  "statuses": {
+    "new": "New",
+    "reviewing": "In progress",
+    "resolved": "Resolved"
+  },
+  "validation": {
+    "subjectRequired": "Please enter a short subject.",
+    "subjectTooLong": "Subject is too long.",
+    "messageTooShort": "Please enter at least 1 character.",
+    "messageTooLong": "Message is too long."
+  },
+  "admin": {
+    "badge": "Feedback management",
+    "title": "User feedback inbox",
+    "subtitle": "Track every submission, filter by status, and review issues that need priority handling.",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search by name, email, subject, or message...",
+    "empty": "No feedback yet",
+    "emptyHint": "When users submit new feedback, it will show up here immediately.",
+    "filters": {
+      "all": "All",
+      "new": "New",
+      "reviewing": "In progress",
+      "resolved": "Resolved"
+    },
+    "stats": {
+      "total": "Total feedback",
+      "new": "{{count}} new submissions",
+      "resolved": "{{count}} resolved",
+      "averageRating": "Average rating {{rating}}/5"
+    },
+    "card": {
+      "user": "Sender",
+      "rating": "Rating",
+      "noRating": "No rating yet",
+      "submittedAt": "Submitted at",
+      "contact": "Contact",
+      "feedbackId": "Feedback ID"
+    }
+  },
+  "api": {
+    "loaded": "Feedback loaded successfully.",
+    "loadError": "Could not load feedback list.",
+    "created": "Feedback sent successfully.",
+    "createError": "Could not send feedback.",
+    "unauthorized": "You are not logged in or your session has expired."
+  }
 }

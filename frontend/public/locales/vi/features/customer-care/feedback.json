@@ -1,41 +1,95 @@
-﻿{
-    "title":  "Phản hồi",
-    "list":  {
-                 "title":  "Danh sách Phản hồi",
-                 "empty":  "Chưa có dữ liệu Phản hồi"
-             },
-    "detail":  {
-                   "title":  "Chi tiết Phản hồi"
-               },
-    "form":  {
-                 "createTitle":  "Tạo Phản hồi",
-                 "editTitle":  "Cập nhật Phản hồi"
-             },
-    "table":  {
-                  "title":  "Bảng Phản hồi"
-              },
-    "filter":  {
-                   "title":  "Lọc Phản hồi",
-                   "searchPlaceholder":  "Tìm kiếm Phản hồi"
-               },
-    "actions":  {
-                    "create":  "Tạo mới",
-                    "update":  "Cập nhật",
-                    "view":  "Xem",
-                    "delete":  "Xóa"
-                },
-    "messages":  {
-                     "createSuccess":  "Tạo mới thành công",
-                     "updateSuccess":  "Cập nhật thành công",
-                     "deleteSuccess":  "Xóa thành công",
-                     "loadError":  "Không tải được dữ liệu"
-                 },
-    "fields":  {
-                   "id":  "ID",
-                   "name":  "Tên",
-                   "code":  "Mã",
-                   "status":  "Trạng thái",
-                   "createdAt":  "Ngày tạo",
-                   "updatedAt":  "Ngày cập nhật"
-               }
+{
+  "page": {
+    "badge": "Góp ý từ người chơi",
+    "title": "Gửi phản hồi cho Matchill",
+    "subtitle": "Chia sẻ lỗi gặp phải, đề xuất tính năng hoặc nhận xét về trải nghiệm để đội ngũ xử lý nhanh hơn.",
+    "helper": "Phản hồi của bạn được lưu ngay lập tức và hiển thị trong tab quản trị.",
+    "loading": "Đang tải phản hồi...",
+    "stats": {
+      "total": "Tổng phản hồi",
+      "mine": "Phản hồi của bạn",
+      "averageRating": "Điểm trung bình",
+      "latestHint": "Phản hồi mới nhất sẽ xuất hiện ngay trong danh sách của bạn."
+    },
+    "history": {
+      "title": "Phản hồi của bạn",
+      "hint": "Các phản hồi mới sẽ xuất hiện ở đây ngay sau khi gửi.",
+      "empty": "Bạn chưa gửi phản hồi nào.",
+      "noRating": "Chưa chấm"
+    },
+    "profileTitle": "Thông tin người gửi",
+    "profileHint": "Phản hồi được lưu cùng thông tin tài khoản để admin có thể đối chiếu và theo dõi."
+  },
+  "form": {
+    "title": "Tạo phản hồi mới",
+    "subtitle": "Nêu rõ vấn đề, bối cảnh và điều bạn muốn chúng tôi cải thiện.",
+    "ratingHelp": "Không bắt buộc, nhưng rất hữu ích để ưu tiên xử lý.",
+    "messageHint": "Hãy mô tả càng cụ thể càng tốt để đội ngũ xử lý nhanh hơn.",
+    "submitting": "Đang gửi...",
+    "submit": "Gửi phản hồi"
+  },
+  "fields": {
+    "category": "Chủ đề",
+    "subject": "Tiêu đề",
+    "rating": "Mức hài lòng",
+    "message": "Nội dung"
+  },
+  "placeholders": {
+    "subject": "Ví dụ: Lỗi khi mở trang lịch đặt",
+    "message": "Mô tả trải nghiệm, lỗi gặp phải hoặc đề xuất cải thiện..."
+  },
+  "categories": {
+    "bug": "Lỗi ứng dụng",
+    "feature_request": "Đề xuất tính năng",
+    "billing": "Thanh toán",
+    "support": "Hỗ trợ & trải nghiệm",
+    "other": "Khác"
+  },
+  "statuses": {
+    "new": "Mới",
+    "reviewing": "Đang xử lý",
+    "resolved": "Đã xử lý"
+  },
+  "validation": {
+    "subjectRequired": "Vui lòng nhập tiêu đề ngắn gọn.",
+    "subjectTooLong": "Tiêu đề quá dài.",
+    "messageTooShort": "Vui lòng nhập ít nhất 1 ký tự.",
+    "messageTooLong": "Nội dung quá dài."
+  },
+  "admin": {
+    "badge": "Quản lý phản hồi",
+    "title": "Hộp thư phản hồi của người dùng",
+    "subtitle": "Theo dõi mọi góp ý, lọc theo trạng thái và rà soát các vấn đề cần ưu tiên xử lý.",
+    "refresh": "Tải lại",
+    "searchPlaceholder": "Tìm theo tên, email, tiêu đề hoặc nội dung...",
+    "empty": "Chưa có phản hồi nào",
+    "emptyHint": "Khi người dùng gửi phản hồi mới, dữ liệu sẽ xuất hiện ngay ở đây.",
+    "filters": {
+      "all": "Tất cả",
+      "new": "Mới",
+      "reviewing": "Đang xử lý",
+      "resolved": "Đã xử lý"
+    },
+    "stats": {
+      "total": "Tổng phản hồi",
+      "new": "{{count}} phản hồi mới",
+      "resolved": "{{count}} đã xử lý",
+      "averageRating": "Điểm trung bình {{rating}}/5"
+    },
+    "card": {
+      "user": "Người gửi",
+      "rating": "Đánh giá",
+      "noRating": "Chưa có đánh giá",
+      "submittedAt": "Thời gian gửi",
+      "contact": "Liên hệ",
+      "feedbackId": "Mã phản hồi"
+    }
+  },
+  "api": {
+    "loaded": "Đã tải phản hồi thành công.",
+    "loadError": "Không tải được danh sách phản hồi.",
+    "created": "Đã gửi phản hồi thành công.",
+    "createError": "Không gửi được phản hồi.",
+    "unauthorized": "Bạn chưa đăng nhập hoặc phiên đã hết hạn."
+  }
 }

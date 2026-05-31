@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
   Wallet,
+  MessageSquare,
   LogOut,
   Bell,
   Menu,
@@ -19,6 +20,7 @@ import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
 const NAV = [
   { to: "/admin", exact: true, icon: <LayoutDashboard size={18} />, key: "admin.nav.overview" },
   { to: "/admin/wallet", exact: false, icon: <Wallet size={18} />, key: "admin.nav.wallet" },
+  { to: "/admin/feedback", exact: false, icon: <MessageSquare size={18} />, key: "admin.nav.feedback" },
 ];
 
 export default function AdminLayout() {
@@ -189,6 +191,13 @@ export default function AdminLayout() {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline"
                       >
                         <Wallet size={16} className="text-brand-red" /> {t("admin.nav.wallet")}
+                      </Link>
+                      <Link
+                        to="/admin/feedback"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline"
+                      >
+                        <MessageSquare size={16} className="text-brand-red" /> {t("admin.nav.feedback")}
                       </Link>
                       <Link
                         to="/discover"

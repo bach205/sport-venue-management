@@ -20,6 +20,8 @@ import ProfilePage from "../features/profile/pages/ProfilePage";
 import AdminDashboard from "../features/admin/pages/AdminDashboard";
 import FeedPage from "../features/feed/pages/FeedPage";
 import FeedPostDetailPage from "../features/feed/pages/FeedPostDetailPage";
+import FeedbackPage from "../features/feedback/pages/FeedbackPage";
+import AdminFeedbackPage from "../features/feedback/pages/AdminFeedbackPage";
 import WalletPage from "../features/wallet/pages/WalletPage";
 import AdminWalletPage from "../features/wallet/pages/AdminWalletPage";
 import AppLayout from "@/shared/components/AppLayout";
@@ -52,6 +54,7 @@ export const router = createBrowserRouter([
           { path: "profile", element: <ProfilePage /> },
           { path: "feed", element: <FeedPage /> },
           { path: "feed/:postId", element: <FeedPostDetailPage /> },
+          { path: "feedback", element: <FeedbackPage /> },
         ],
       },
 
@@ -83,6 +86,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <AdminDashboard /> },
               { path: "wallet", element: <AdminWalletPage /> },
+              { path: "feedback", element: <AdminFeedbackPage /> },
             ],
           },
         ],

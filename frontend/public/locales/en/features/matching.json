@@ -4,7 +4,8 @@
     "feed": "Feed",
     "venues": "Venues",
     "bookings": "My Bookings",
-    "messages": "Messages"
+    "messages": "Messages",
+    "feedback": "Feedback"
   },
   "layout": {
     "login": "Log in",
@@ -256,6 +257,7 @@
     "nav": {
       "overview": "Overview",
       "wallet": "Withdrawals",
+      "feedback": "Feedback",
       "users": "Users",
       "reports": "Reports",
       "analytics": "Analytics",
