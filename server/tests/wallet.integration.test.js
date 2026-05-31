@@ -50,6 +50,7 @@ const createVenue = async (ownerId) =>
     name: "Settlement Court",
     location: "District 7",
     description: "Indoor court",
+    phone_number: "0900000000",
     slot_price: 250000,
     slot_duration_minutes: 60,
     weekly_schedule: [
@@ -347,7 +348,7 @@ describe("Wallet module", () => {
       venue._id,
       "09:00",
       "10:00",
-      new Date(Date.now() - (6 * 60 * 1000))
+      new Date(Date.now() - (16 * 60 * 1000))
     );
 
     const manualRefundResponse = await request(app)
@@ -376,7 +377,7 @@ describe("Wallet module", () => {
       venue._id,
       "10:00",
       "11:00",
-      new Date(Date.now() - (10 * 60 * 1000))
+      new Date(Date.now() - (16 * 60 * 1000))
     );
 
     const firstRun = await walletService.runDueOwnerSettlements();
@@ -391,6 +392,126 @@ describe("Wallet module", () => {
     expect(
       await OwnerSettlement.countDocuments({ owner_id: owner.user._id })
     ).toBe(1);
+    expect(
+      await WalletTransaction.countDocuments({
+        user_id: owner.user._id,
+        type: "owner_settlement_credit",
+      })
+    ).toBe(1);
+  });
+
+  test("settlement dashboard shows paid bookings in hold before they are settlement eligible", async () => {
+    const owner = await createUser("owner", "wallet-pending-owner@example.com");
+    const user = await createUser("user", "wallet-pending-user@example.com");
+    const admin = await createUser("admin", "wallet-pending-admin@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    await createConfirmedBooking(
+      user.token,
+      venue._id,
+      "10:00",
+      "11:00",
+      new Date()
+    );
+
+    const dashboardResponse = await request(app)
+      .get("/api/v1/admin/wallet/settlement-dashboard")
+      .set(authHeader(admin.token));
+
+    expect(dashboardResponse.status).toBe(200);
+    expect(dashboardResponse.body.data.summary.platformHoldGrossAmount).toBe(250000);
+    expect(dashboardResponse.body.data.summary.ownerPendingNetAmount).toBe(225000);
+    expect(dashboardResponse.body.data.summary.settledGrossAmount).toBe(0);
+    expect(dashboardResponse.body.data.summary.paidToOwnersAmount).toBe(0);
+    expect(dashboardResponse.body.data.ownerHolds).toHaveLength(1);
+  });
+
+  test("settlement job repairs an existing settlement that was not credited to owner wallet", async () => {
+    const owner = await createUser("owner", "wallet-repair-owner@example.com");
+    const user = await createUser("user", "wallet-repair-user@example.com");
+    const venue = await createVenue(owner.user._id);
+    const paidAt = new Date(Date.now() - (16 * 60 * 1000));
+
+    const { bookingId, paymentId } = await createConfirmedBooking(
+      user.token,
+      venue._id,
+      "10:00",
+      "11:00",
+      paidAt
+    );
+
+    const booking = await Booking.findById(bookingId);
+    await OwnerSettlement.create({
+      booking_id: booking._id,
+      payment_id: paymentId,
+      owner_id: owner.user._id,
+      venue_id: venue._id,
+      gross_amount: 250000,
+      commission_rate: 0.1,
+      commission_amount: 25000,
+      net_amount: 225000,
+      eligible_at: paidAt,
+      settled_at: new Date(),
+    });
+
+    const firstRun = await walletService.runDueOwnerSettlements();
+    const secondRun = await walletService.runDueOwnerSettlements();
+
+    expect(firstRun.processed).toBe(0);
+    expect(secondRun.processed).toBe(0);
+
+    const ownerWallet = await Wallet.findOne({ user_id: owner.user._id });
+    expect(ownerWallet.available_balance).toBe(225000);
+
+    expect(
+      await WalletTransaction.countDocuments({
+        user_id: owner.user._id,
+        type: "owner_settlement_credit",
+      })
+    ).toBe(1);
+    expect(
+      await WalletTransaction.countDocuments({
+        type: "platform_commission",
+        reference_type: "owner_settlement",
+      })
+    ).toBe(1);
+  });
+
+  test("settlement job credits owner wallet even when legacy payout profile is invalid", async () => {
+    const owner = await createUser("owner", "wallet-legacy-profile-owner@example.com");
+    const user = await createUser("user", "wallet-legacy-profile-user@example.com");
+    const venue = await createVenue(owner.user._id);
+    const ownerWallet = await walletService.getOrCreateWallet(owner.user._id);
+
+    await Wallet.collection.updateOne(
+      { _id: ownerWallet._id },
+      {
+        $push: {
+          payout_profiles: {
+            bank_name: "Legacy Bank",
+            account_number: "1234567890",
+            account_name: "Legacy Owner",
+            is_default: true,
+            note: "legacy invalid profile",
+          },
+        },
+      }
+    );
+
+    await createConfirmedBooking(
+      user.token,
+      venue._id,
+      "10:00",
+      "11:00",
+      new Date(Date.now() - (16 * 60 * 1000))
+    );
+
+    const result = await walletService.runDueOwnerSettlements();
+
+    expect(result.processed).toBe(1);
+
+    const updatedOwnerWallet = await Wallet.findOne({ user_id: owner.user._id });
+    expect(updatedOwnerWallet.available_balance).toBe(225000);
     expect(
       await WalletTransaction.countDocuments({
         user_id: owner.user._id,

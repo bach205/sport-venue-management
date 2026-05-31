@@ -273,7 +273,7 @@
       "title": "Settlement control center",
       "subtitle": "Track platform-held booking cash, owner settlement payouts, commission earned, and owner-level hold exposure by venue.",
       "refresh": "Refresh financial data",
-      "holdRule": "Hold only includes paid bookings that passed the automatic refund window and have not been settled to owners yet.",
+      "holdRule": "Hold includes paid bookings that have not been settled to owners yet. Settlement runs after the automatic refund window ends.",
       "gross": "Gross",
       "commission": "Commission",
       "bookings": "Bookings",

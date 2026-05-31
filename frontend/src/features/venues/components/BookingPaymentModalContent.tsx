@@ -26,7 +26,7 @@ const PAYMENT_OPTIONS: { id: PaymentMethod; labelKey: string; icon: React.ReactN
 ];
 
 function formatPrice(n: number, locale: string) {
-  return new Intl.NumberFormat(locale).format(n) + 'â‚«';
+  return new Intl.NumberFormat(locale).format(n) + 'VNĐ';
 }
 
 interface BookingPaymentModalContentProps {

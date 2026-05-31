@@ -273,7 +273,7 @@
       "title": "Trung tâm kiểm soát chi trả",
       "subtitle": "Theo dõi tiền booking nền tảng đang giữ, khoản đã chuyển cho chủ sân, hoa hồng đã thu và tiền đang hold theo từng chủ sân/sân.",
       "refresh": "Tải lại dữ liệu tài chính",
-      "holdRule": "Hold chỉ tính các booking đã thanh toán, đã hết thời gian hoàn tiền tự động và chưa settle cho chủ sân.",
+      "holdRule": "Hold tính các booking đã thanh toán và chưa settle cho chủ sân. Settlement sẽ chạy sau khi hết thời gian hoàn tiền tự động.",
       "gross": "Tổng tiền",
       "commission": "Hoa hồng",
       "bookings": "Booking",

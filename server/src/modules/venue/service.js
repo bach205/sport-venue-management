@@ -11,8 +11,8 @@ const {
 const { Profile } = require("../user/model");
 const walletService = require("../wallet/service");
 
-const HOLD_TTL_MS = 5 * 60 * 1000;
-const AUTO_REFUND_WINDOW_MS = 5 * 60 * 1000;
+const HOLD_TTL_MS = 15 * 60 * 1000;
+const AUTO_REFUND_WINDOW_MS = 15 * 60 * 1000;
 const EXPIRED_BOOKING_STATUSES = ["hold", "payment_pending"];
 const ACTIVE_BOOKING_QUERY_STATUSES = ["hold", "payment_pending", "confirmed", "refund_processing"];
 const BOOKING_STATUS_TO_SLOT_STATUS = {
@@ -1349,9 +1349,9 @@ class VenueService {
         ...this.formatRefund(refund),
         booking: booking
           ? this.formatBooking(booking, {
-              venue,
-              bookingItems: bookingItemsMap.get(String(booking._id)) || [],
-            })
+            venue,
+            bookingItems: bookingItemsMap.get(String(booking._id)) || [],
+          })
           : null,
         payment: paymentMap.has(String(refund.payment_id))
           ? this.formatPayment(paymentMap.get(String(refund.payment_id)))

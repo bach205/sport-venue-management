@@ -11,8 +11,8 @@ const {
   OwnerSettlement,
 } = require("./model");
 
-const AUTO_REFUND_WINDOW_MS = 5 * 60 * 1000;
-const DEFAULT_COMMISSION_RATE = 0.1;
+const AUTO_REFUND_WINDOW_MS = 15 * 60 * 1000;
+const DEFAULT_COMMISSION_RATE = 0.05;
 const DEFAULT_SETTLEMENT_INTERVAL_MS = 60 * 1000;
 const SEPAY_PROVIDER = "sepay";
 const WALLET_TOPUP_REFERENCE_PREFIX = "WALLET";
@@ -564,6 +564,7 @@ class WalletService {
         });
 
         if (existingSettlement) {
+          await this.ensureSettlementTransactions(existingSettlement);
           continue;
         }
 
@@ -573,7 +574,11 @@ class WalletService {
         }
 
         const latestRefund = await Refund.findOne({ booking_id: booking._id }).sort({ createdAt: -1 });
-        if (latestRefund && latestRefund.type === "manual") {
+        if (
+          latestRefund &&
+          latestRefund.type === "manual" &&
+          latestRefund.status !== "rejected"
+        ) {
           continue;
         }
 
@@ -612,21 +617,19 @@ class WalletService {
       settled_at: new Date(),
     });
 
-    const balanceBefore = ownerWallet.available_balance;
-    ownerWallet.available_balance += netAmount;
-    ownerWallet.last_transaction_at = new Date();
-    await ownerWallet.save();
+    const { wallet: updatedOwnerWallet, balanceBefore } =
+      await this.incrementWalletAvailableBalance(ownerWallet, netAmount);
 
     await WalletTransaction.create({
-      wallet_id: ownerWallet._id,
-      user_id: ownerWallet.user_id,
+      wallet_id: updatedOwnerWallet._id,
+      user_id: updatedOwnerWallet.user_id,
       type: "owner_settlement_credit",
       direction: "credit",
       amount: netAmount,
       balance_before: balanceBefore,
-      balance_after: ownerWallet.available_balance,
-      pending_before: ownerWallet.pending_withdraw_balance,
-      pending_after: ownerWallet.pending_withdraw_balance,
+      balance_after: updatedOwnerWallet.available_balance,
+      pending_before: updatedOwnerWallet.pending_withdraw_balance,
+      pending_after: updatedOwnerWallet.pending_withdraw_balance,
       status: "completed",
       reference_type: "owner_settlement",
       reference_id: String(settlement._id),
@@ -660,11 +663,108 @@ class WalletService {
     });
   }
 
+  async ensureSettlementTransactions(settlement) {
+    const credited = await this.ensureOwnerSettlementCredit(settlement);
+    await this.ensurePlatformCommissionTransaction(settlement);
+    return credited;
+  }
+
+  async ensureOwnerSettlementCredit(settlement) {
+    const existingCredit = await WalletTransaction.findOne({
+      type: "owner_settlement_credit",
+      reference_type: "owner_settlement",
+      reference_id: String(settlement._id),
+    });
+
+    if (existingCredit) {
+      return false;
+    }
+
+    const ownerWallet = await this.getOrCreateWallet(settlement.owner_id);
+    const { wallet: updatedOwnerWallet, balanceBefore } =
+      await this.incrementWalletAvailableBalance(ownerWallet, settlement.net_amount);
+
+    await WalletTransaction.create({
+      wallet_id: updatedOwnerWallet._id,
+      user_id: updatedOwnerWallet.user_id,
+      type: "owner_settlement_credit",
+      direction: "credit",
+      amount: settlement.net_amount,
+      balance_before: balanceBefore,
+      balance_after: updatedOwnerWallet.available_balance,
+      pending_before: updatedOwnerWallet.pending_withdraw_balance,
+      pending_after: updatedOwnerWallet.pending_withdraw_balance,
+      status: "completed",
+      reference_type: "owner_settlement",
+      reference_id: String(settlement._id),
+      metadata: {
+        booking_id: String(settlement.booking_id),
+        payment_id: String(settlement.payment_id),
+        gross_amount: settlement.gross_amount,
+      },
+      completed_at: new Date(),
+    });
+
+    return true;
+  }
+
+  async incrementWalletAvailableBalance(wallet, amount) {
+    const balanceBefore = wallet.available_balance;
+    const updatedWallet = await Wallet.findByIdAndUpdate(
+      wallet._id,
+      {
+        $inc: { available_balance: amount },
+        $set: { last_transaction_at: new Date() },
+      },
+      { new: true, runValidators: false }
+    );
+
+    if (!updatedWallet) {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Wallet not found.");
+    }
+
+    return { wallet: updatedWallet, balanceBefore };
+  }
+
+  async ensurePlatformCommissionTransaction(settlement) {
+    const existingCommission = await WalletTransaction.findOne({
+      type: "platform_commission",
+      reference_type: "owner_settlement",
+      reference_id: String(settlement._id),
+    });
+
+    if (existingCommission) {
+      return false;
+    }
+
+    await WalletTransaction.create({
+      wallet_id: null,
+      user_id: null,
+      type: "platform_commission",
+      direction: "credit",
+      amount: settlement.commission_amount,
+      balance_before: 0,
+      balance_after: settlement.commission_amount,
+      pending_before: 0,
+      pending_after: 0,
+      status: "completed",
+      reference_type: "owner_settlement",
+      reference_id: String(settlement._id),
+      metadata: {
+        booking_id: String(settlement.booking_id),
+        owner_id: String(settlement.owner_id),
+        venue_id: String(settlement.venue_id),
+      },
+      completed_at: new Date(),
+    });
+
+    return true;
+  }
+
   async getPendingSettlementItems() {
-    const threshold = new Date(Date.now() - AUTO_REFUND_WINDOW_MS);
     const payments = await Payment.find({
       status: "paid",
-      paid_at: { $ne: null, $lte: threshold },
+      paid_at: { $ne: null },
     }).sort({ paid_at: 1 });
 
     if (payments.length === 0) {
@@ -688,7 +788,11 @@ class WalletService {
       }
 
       const latestRefund = await Refund.findOne({ booking_id: booking._id }).sort({ createdAt: -1 });
-      if (latestRefund && latestRefund.type === "manual") {
+      if (
+        latestRefund &&
+        latestRefund.type === "manual" &&
+        latestRefund.status !== "rejected"
+      ) {
         continue;
       }
 
