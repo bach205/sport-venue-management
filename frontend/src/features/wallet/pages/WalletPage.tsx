@@ -233,9 +233,6 @@ export default function WalletPage() {
                   {t("wallet.topup.create")}
                 </button>
               </div>
-              <p className="mt-3 text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
-                {t("wallet.topup.note")}
-              </p>
             </div>
 
             <div className="rounded-[28px] border bg-white p-6" style={{ borderColor: "#dfc0b3" }}>

@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, CalendarDays, MapPin, Clock, RotateCcw, Phone, CheckCircle2, Loader2 } from 'lucide-react';
-import { fetchMyBookings } from '../api/venuesApi';
+import { ArrowLeft, CalendarDays, MapPin, Clock, RotateCcw, Phone, CheckCircle2, Loader2, CreditCard } from 'lucide-react';
+import { createBookingPayment, fetchMyBookings, fetchPaymentStatus } from '../api/venuesApi';
+import { BookingPaymentModalContent } from '../components/BookingPaymentModalContent';
 import { RefundModal } from '../components/RefundModal';
-import type { Booking, BookingStatus } from '../types/venues.types';
+import type { Booking, BookingStatus, PaymentMethod, VenuePayment } from '../types/venues.types';
 import { useTranslation } from 'react-i18next';
 
 const REFUND_WINDOW_MS = 5 * 60 * 1000;
@@ -99,12 +100,21 @@ function RefundCountdown({ booking }: { booking: Booking }) {
   );
 }
 
-function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Booking) => void }) {
+function BookingCard({
+  booking,
+  onRefund,
+  onContinuePayment,
+}: {
+  booking: Booking;
+  onRefund: (b: Booking) => void;
+  onContinuePayment: (b: Booking) => void;
+}) {
   const { t, i18n } = useTranslation('matching');
   const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const remaining = getRefundWindowRemaining(booking);
   const canRefund = booking.status === 'confirmed';
   const canContactOwner = booking.status === 'confirmed';
+  const canContinuePayment = booking.status === 'payment_pending' || booking.status === 'hold';
 
   return (
     <div
@@ -213,6 +223,23 @@ function BookingCard({ booking, onRefund }: { booking: Booking; onRefund: (b: Bo
         )}
 
         <div className="flex gap-2 pt-1">
+          {canContinuePayment && (
+            <button
+              onClick={() => onContinuePayment(booking)}
+              className="flex-1 h-10 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+              style={{
+                background: 'linear-gradient(90deg,#a04100,#ff7e36)',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#fff',
+                border: 'none',
+              }}
+            >
+              <CreditCard size={14} />
+              {t('venues.detail.continuePayment')}
+            </button>
+          )}
           {canRefund && (
             <button
               onClick={() => onRefund(booking)}
@@ -258,6 +285,11 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('all');
   const [refundTarget, setRefundTarget] = useState<Booking | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<Booking | null>(null);
+  const [payment, setPayment] = useState<VenuePayment | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank');
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
@@ -283,6 +315,79 @@ export default function BookingsPage() {
   const handleRefunded = useCallback(async () => {
     await loadBookings();
   }, [loadBookings]);
+
+  const handleOpenPayment = useCallback(async (booking: Booking) => {
+    setPaymentTarget(booking);
+    setPaymentMethod('bank');
+    setPaymentError(null);
+    setPaymentLoading(true);
+
+    try {
+      if (booking.payment?.provider === 'sepay' && booking.payment.id) {
+        setPayment(booking.payment);
+        return;
+      }
+
+      const paymentResult = await createBookingPayment(booking.id, {
+        provider: 'sepay',
+        return_url: window.location.href,
+      });
+
+      setPaymentTarget(paymentResult.booking);
+      setPayment(paymentResult.payment);
+      setBookings((current) => current.map((item) => (item.id === paymentResult.booking.id ? paymentResult.booking : item)));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('venues.booking.errors.createPayment');
+      setPaymentError(message);
+      setPayment(null);
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, [t]);
+
+  const handleClosePayment = useCallback(() => {
+    setPaymentTarget(null);
+    setPayment(null);
+    setPaymentMethod('bank');
+    setPaymentError(null);
+    setPaymentLoading(false);
+  }, []);
+
+  const handleCheckPayment = useCallback(async () => {
+    if (!payment?.id) {
+      setPaymentError(t('venues.booking.errors.notInitialized'));
+      return;
+    }
+
+    setPaymentLoading(true);
+    setPaymentError(null);
+
+    try {
+      const statusResult = await fetchPaymentStatus(payment.id);
+      setPayment(statusResult.payment);
+      setPaymentTarget(statusResult.booking);
+      setBookings((current) => current.map((item) => (item.id === statusResult.booking.id ? statusResult.booking : item)));
+
+      if (statusResult.payment?.status === 'paid' && statusResult.booking.status === 'confirmed') {
+        await loadBookings();
+        handleClosePayment();
+        return;
+      }
+
+      if (statusResult.payment?.status === 'failed' || statusResult.booking.status === 'expired') {
+        await loadBookings();
+        setPaymentError(t('venues.booking.errors.expired'));
+        return;
+      }
+
+      setPaymentError(t('venues.booking.errors.processing'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('venues.booking.errors.checkPayment');
+      setPaymentError(message);
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, [handleClosePayment, loadBookings, payment?.id, t]);
 
   const TABS: { id: Tab; label: string }[] = [
     { id: 'all', label: t('venues.bookings.tabs.all', { count: bookings.length }) },
@@ -369,7 +474,7 @@ export default function BookingsPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {filtered.map(b => (
-              <BookingCard key={b.id} booking={b} onRefund={setRefundTarget} />
+              <BookingCard key={b.id} booking={b} onRefund={setRefundTarget} onContinuePayment={handleOpenPayment} />
             ))}
           </div>
         )}
@@ -384,6 +489,32 @@ export default function BookingsPage() {
             setRefundTarget(null);
           }}
         />
+      )}
+
+      {paymentTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center p-2 sm:items-center sm:p-4"
+          style={{ background: 'rgba(36,25,20,0.5)' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleClosePayment();
+          }}
+        >
+          <div
+            className="relative flex h-[min(100dvh-1rem,46rem)] w-full max-w-[38rem] flex-col overflow-hidden rounded-[24px] bg-white sm:h-auto sm:max-h-[92vh]"
+            style={{ boxShadow: '0 24px 64px rgba(36,25,20,0.3)' }}
+          >
+            <BookingPaymentModalContent
+              total={paymentTarget.totalPrice}
+              payment={payment}
+              paymentMethod={paymentMethod}
+              onMethodChange={setPaymentMethod}
+              onCheckPayment={handleCheckPayment}
+              loading={paymentLoading}
+              error={paymentError}
+              onClose={handleClosePayment}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
