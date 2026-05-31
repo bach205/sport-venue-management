@@ -9,6 +9,7 @@ const {
   Refund,
 } = require("./model");
 const { Profile } = require("../user/model");
+const walletService = require("../wallet/service");
 
 const HOLD_TTL_MS = 5 * 60 * 1000;
 const AUTO_REFUND_WINDOW_MS = 5 * 60 * 1000;
@@ -355,6 +356,23 @@ class VenueService {
       throw createHttpError(HTTP_STATUS.NOT_FOUND, "Payment not found.");
     }
 
+    if (payment.provider !== "stub") {
+      throw createHttpError(
+        HTTP_STATUS.BAD_REQUEST,
+        "This payment provider must be confirmed by its webhook."
+      );
+    }
+
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.ENABLE_STUB_PAYMENT_CONFIRM !== "true"
+    ) {
+      throw createHttpError(
+        HTTP_STATUS.FORBIDDEN,
+        "Stub payment confirmation is disabled in production."
+      );
+    }
+
     const booking = await this.getBookingOrThrow(payment.booking_id);
     this.assertOwnership(booking.user_id, userId, "You can only confirm your own payment.");
 
@@ -618,12 +636,18 @@ class VenueService {
 
       await Promise.all([payment.save(), booking.save(), refund.save()]);
       await this.syncBookingItemsStatus([booking._id], booking.status);
+      const wallet = await walletService.applyAutoRefundCredit({
+        booking,
+        payment,
+        refund,
+      });
 
       return {
         mode: "auto",
         booking: this.formatBooking(booking, { venue, bookingItems }),
         payment: this.formatPayment(payment),
         refund: this.formatRefund(refund),
+        wallet,
       };
     }
 
@@ -641,6 +665,7 @@ class VenueService {
       booking: this.formatBooking(booking, { venue, bookingItems }),
       payment: this.formatPayment(payment),
       refund: this.formatRefund(refund),
+      wallet: null,
     };
   }
 

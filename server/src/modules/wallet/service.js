@@ -319,6 +319,91 @@ class WalletService {
     });
   }
 
+  async getAdminSettlementDashboard() {
+    const pendingItems = await this.getPendingSettlementItems();
+    const [settledTotals, recentSettlements] = await Promise.all([
+      this.getSettledTotals(),
+      this.listAdminOwnerSettlements({ page: 1, limit: 8 }),
+    ]);
+
+    const ownerHoldMap = new Map();
+    pendingItems.forEach((item) => {
+      const key = item.owner.id;
+      const current = ownerHoldMap.get(key) || {
+        owner: item.owner,
+        grossAmount: 0,
+        commissionAmount: 0,
+        netAmount: 0,
+        bookingCount: 0,
+        venues: new Map(),
+      };
+
+      current.grossAmount += item.grossAmount;
+      current.commissionAmount += item.commissionAmount;
+      current.netAmount += item.netAmount;
+      current.bookingCount += 1;
+
+      const venueKey = item.venue.id;
+      const venue = current.venues.get(venueKey) || {
+        venue: item.venue,
+        grossAmount: 0,
+        commissionAmount: 0,
+        netAmount: 0,
+        bookingCount: 0,
+      };
+      venue.grossAmount += item.grossAmount;
+      venue.commissionAmount += item.commissionAmount;
+      venue.netAmount += item.netAmount;
+      venue.bookingCount += 1;
+      current.venues.set(venueKey, venue);
+      ownerHoldMap.set(key, current);
+    });
+
+    const pendingGrossAmount = pendingItems.reduce((sum, item) => sum + item.grossAmount, 0);
+    const pendingCommissionAmount = pendingItems.reduce((sum, item) => sum + item.commissionAmount, 0);
+    const pendingNetAmount = pendingItems.reduce((sum, item) => sum + item.netAmount, 0);
+
+    return {
+      summary: {
+        platformHoldGrossAmount: pendingGrossAmount,
+        ownerPendingNetAmount: pendingNetAmount,
+        pendingCommissionAmount,
+        pendingBookingCount: pendingItems.length,
+        settledGrossAmount: settledTotals.grossAmount,
+        paidToOwnersAmount: settledTotals.netAmount,
+        platformCommissionEarnedAmount: settledTotals.commissionAmount,
+        settledCount: settledTotals.count,
+      },
+      ownerHolds: [...ownerHoldMap.values()]
+        .map((item) => ({
+          owner: item.owner,
+          grossAmount: item.grossAmount,
+          commissionAmount: item.commissionAmount,
+          netAmount: item.netAmount,
+          bookingCount: item.bookingCount,
+          venues: [...item.venues.values()],
+        }))
+        .sort((a, b) => b.netAmount - a.netAmount),
+      recentSettlements: recentSettlements.items,
+    };
+  }
+
+  async listAdminOwnerSettlements(options = {}) {
+    const page = options.page || 1;
+    const limit = options.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      OwnerSettlement.find({}).sort({ settled_at: -1, createdAt: -1 }).skip(skip).limit(limit),
+      OwnerSettlement.countDocuments({}),
+    ]);
+
+    return {
+      items: await this.formatOwnerSettlements(items),
+      pagination: this.buildPagination(page, limit, total),
+    };
+  }
+
   async reviewWithdrawRequest(adminUserId, withdrawRequestId, payload) {
     const withdrawRequest = await WithdrawRequest.findById(withdrawRequestId);
 
@@ -575,6 +660,108 @@ class WalletService {
     });
   }
 
+  async getPendingSettlementItems() {
+    const threshold = new Date(Date.now() - AUTO_REFUND_WINDOW_MS);
+    const payments = await Payment.find({
+      status: "paid",
+      paid_at: { $ne: null, $lte: threshold },
+    }).sort({ paid_at: 1 });
+
+    if (payments.length === 0) {
+      return [];
+    }
+
+    const bookingIds = payments.map((payment) => payment.booking_id);
+    const existingSettlements = await OwnerSettlement.find({ booking_id: { $in: bookingIds } }).select("booking_id");
+    const settledBookingIds = new Set(existingSettlements.map((item) => String(item.booking_id)));
+    const commissionRate = this.getCommissionRate();
+    const items = [];
+
+    for (const payment of payments) {
+      if (settledBookingIds.has(String(payment.booking_id))) {
+        continue;
+      }
+
+      const booking = await Booking.findById(payment.booking_id);
+      if (!booking || booking.status !== "confirmed") {
+        continue;
+      }
+
+      const latestRefund = await Refund.findOne({ booking_id: booking._id }).sort({ createdAt: -1 });
+      if (latestRefund && latestRefund.type === "manual") {
+        continue;
+      }
+
+      const venue = await Venue.findById(booking.venue_id);
+      if (!venue) {
+        continue;
+      }
+
+      const ownerMap = await this.getUserSummaries([venue.owner_id]);
+      const owner = ownerMap.get(String(venue.owner_id)) || {
+        id: String(venue.owner_id),
+        email: null,
+        name: "Unknown owner",
+      };
+      const grossAmount = payment.amount;
+      const commissionAmount = Math.round(grossAmount * commissionRate);
+      const netAmount = grossAmount - commissionAmount;
+
+      items.push({
+        bookingId: String(booking._id),
+        paymentId: String(payment._id),
+        owner,
+        venue: this.formatVenueSummary(venue),
+        grossAmount,
+        commissionRate,
+        commissionAmount,
+        netAmount,
+        paidAt: payment.paid_at,
+        eligibleAt: new Date(payment.paid_at.getTime() + AUTO_REFUND_WINDOW_MS),
+      });
+    }
+
+    return items;
+  }
+
+  async getSettledTotals() {
+    const [totals] = await OwnerSettlement.aggregate([
+      {
+        $group: {
+          _id: null,
+          grossAmount: { $sum: "$gross_amount" },
+          commissionAmount: { $sum: "$commission_amount" },
+          netAmount: { $sum: "$net_amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return {
+      grossAmount: totals?.grossAmount || 0,
+      commissionAmount: totals?.commissionAmount || 0,
+      netAmount: totals?.netAmount || 0,
+      count: totals?.count || 0,
+    };
+  }
+
+  async formatOwnerSettlements(settlements = []) {
+    if (settlements.length === 0) {
+      return [];
+    }
+
+    const ownerMap = await this.getUserSummaries(settlements.map((item) => item.owner_id));
+    const venues = await Venue.find({ _id: { $in: settlements.map((item) => item.venue_id) } });
+    const venueMap = new Map(venues.map((venue) => [String(venue._id), venue]));
+
+    return settlements.map((settlement) => this.formatOwnerSettlement(settlement, {
+      owner: ownerMap.get(String(settlement.owner_id)) || null,
+      venue: venueMap.has(String(settlement.venue_id))
+        ? this.formatVenueSummary(venueMap.get(String(settlement.venue_id)))
+        : null,
+    }));
+  }
+
   async getOrCreateWallet(userId) {
     let wallet = await Wallet.findOne({ user_id: userId });
 
@@ -818,6 +1005,43 @@ class WalletService {
       rejectionReason: withdrawRequest.rejection_reason || "",
       createdAt: withdrawRequest.createdAt,
       updatedAt: withdrawRequest.updatedAt,
+    };
+  }
+
+  formatVenueSummary(venue) {
+    if (!venue) {
+      return null;
+    }
+
+    return {
+      id: String(venue._id),
+      ownerId: String(venue.owner_id),
+      name: venue.name,
+      location: venue.location,
+    };
+  }
+
+  formatOwnerSettlement(settlement, relations = {}) {
+    if (!settlement) {
+      return null;
+    }
+
+    return {
+      id: String(settlement._id),
+      bookingId: String(settlement.booking_id),
+      paymentId: String(settlement.payment_id),
+      ownerId: String(settlement.owner_id),
+      venueId: String(settlement.venue_id),
+      grossAmount: settlement.gross_amount,
+      commissionRate: settlement.commission_rate,
+      commissionAmount: settlement.commission_amount,
+      netAmount: settlement.net_amount,
+      eligibleAt: settlement.eligible_at,
+      settledAt: settlement.settled_at,
+      createdAt: settlement.createdAt,
+      updatedAt: settlement.updatedAt,
+      owner: relations.owner || null,
+      venue: relations.venue || null,
     };
   }
 }

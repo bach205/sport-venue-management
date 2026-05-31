@@ -1,512 +1,335 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  Search, Users, ShieldCheck, ShieldX,
-  MoreVertical, Trash2, UserCog, Shield,
-  AlertTriangle, CheckCircle2, Clock,
-  Loader2, Building2, DollarSign, XCircle,
-  Flag, RefreshCw, Filter
-} from 'lucide-react';
-import {
-  getAdminUsers, getAdminStats, updateUserRole, updateUserStatus,
-  deleteUser, subscribeAdmin, type AdminUser, type UserStatus
-} from '../store/adminStore';
-import type { UserRole } from '../../auth/store/authStore';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
+  Banknote,
+  Building2,
+  CircleDollarSign,
+  Clock3,
+  Loader2,
+  ReceiptText,
+  RefreshCw,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react";
+import { toast } from "sonner";
 
-function formatPrice(n: number) { return new Intl.NumberFormat('vi-VN').format(n) + '₫'; }
-function formatDate(d: string) { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
-function timeAgo(d: string) {
-  const diff = Date.now() - new Date(d).getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days}d ago`;
-  return formatDate(d);
+import { fetchAdminSettlementDashboard } from "@/features/wallet/api/walletApi";
+import type { AdminSettlementDashboard, OwnerSettlement } from "@/features/wallet/types/wallet.types";
+
+function formatMoney(value: number, locale: string) {
+  return `${new Intl.NumberFormat(locale).format(value)} VND`;
 }
 
-const ROLE_STYLE: Record<UserRole, { bg: string; color: string; labelKey: string }> = {
-  user:  { bg: '#d0f5ee', color: '#00785e', labelKey: 'roles.user' },
-  owner: { bg: '#ddeeff', color: '#1a5fb4', labelKey: 'roles.owner' },
-  admin: { bg: '#ffd6d6', color: '#c0392b', labelKey: 'roles.admin' },
-};
+function formatDate(value: string | null | undefined, locale: string, emptyLabel: string) {
+  if (!value) return emptyLabel;
+  return new Date(value).toLocaleString(locale);
+}
 
-const STATUS_STYLE: Record<UserStatus, { bg: string; color: string; label: string; icon: React.ReactNode }> = {
-  active:               { bg: '#e7f8f7', color: '#006a65', label: 'Active', icon: <CheckCircle2 size={11} /> },
-  suspended:            { bg: '#ffd6d6', color: '#c0392b', label: 'Suspended', icon: <XCircle size={11} /> },
-  pending_verification: { bg: '#fff3cd', color: '#856404', label: 'Pending', icon: <Clock size={11} /> },
-};
-
-const SPORT_EMOJI: Record<string, string> = {
-  tennis: '🎾', basketball: '🏀', badminton: '🏸',
-  football: '⚽', pickleball: '🏓', volleyball: '🏐',
-};
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ icon, label, value, sub, color, bg }: {
-  icon: React.ReactNode; label: string; value: string | number;
-  sub?: string; color: string; bg: string;
+function StatCard({
+  icon,
+  label,
+  value,
+  helper,
+  color,
+  bg,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  helper?: string;
+  color: string;
+  bg: string;
 }) {
   return (
-    <div className="rounded-2xl p-5" style={{ background: bg, border: `1px solid ${color}22` }}>
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: color + '22', color }}>
+    <div className="rounded-[24px] border p-5" style={{ background: bg, borderColor: `${color}25` }}>
+      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl" style={{ background: `${color}18`, color }}>
         {icon}
       </div>
-      <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '26px', fontWeight: 800, color: '#241914', lineHeight: 1.1 }}>
-        {value}
+      <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+        {label}
       </p>
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238', marginTop: 3 }}>{label}</p>
-      {sub && <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color, marginTop: 2, fontWeight: 500 }}>{sub}</p>}
+      <h3 className="mt-2 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "24px", fontWeight: 800 }}>
+        {value}
+      </h3>
+      {helper ? (
+        <p className="mt-2" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color }}>
+          {helper}
+        </p>
+      ) : null}
     </div>
   );
 }
 
-// ─── Action Dropdown ──────────────────────────────────────────────────────────
-function ActionMenu({ user, onClose, onAction }: {
-  user: AdminUser;
-  onClose: () => void;
-  onAction: (action: string, user: AdminUser) => void;
+function SettlementRow({
+  settlement,
+  locale,
+  t,
+}: {
+  settlement: OwnerSettlement;
+  locale: string;
+  t: ReturnType<typeof useTranslation<"matching">>["t"];
 }) {
-  const { t } = useTranslation('matching');
   return (
-    <>
-      <div className="fixed inset-0 z-30" onClick={onClose} />
-      <div
-        className="absolute right-0 top-8 z-40 rounded-xl overflow-hidden shadow-xl"
-        style={{ background: '#fff', border: '1.5px solid #dfc0b3', width: 210, boxShadow: '0 8px 24px rgba(36,25,20,0.2)' }}
-      >
-        <div className="px-4 py-2.5 border-b border-[#f4ded5]">
-          <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '13px', fontWeight: 700, color: '#241914' }}>
-            {user.name}
+    <tr className="border-b border-[#f4ded5] last:border-0">
+      <td className="px-4 py-4">
+        <div>
+          <p className="text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "14px", fontWeight: 800 }}>
+            {settlement.owner?.name || settlement.ownerId}
+          </p>
+          <p className="mt-1 text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
+            {settlement.owner?.email || t("wallet.na")}
           </p>
         </div>
-        {/* Role change */}
-        <div className="px-3 py-2 border-b border-[#f4ded5]">
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 4, paddingLeft: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Change Role</p>
-          {(['user', 'owner', 'admin'] as UserRole[]).filter(r => r !== user.role).map(role => (
-            <button
-              key={role}
-              onClick={() => { onAction(`role:${role}`, user); onClose(); }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#fff1eb] transition-colors text-left"
-              style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: ROLE_STYLE[role].color }}
-            >
-              <UserCog size={14} /> Set as {t(ROLE_STYLE[role].labelKey)}
-            </button>
-          ))}
-        </div>
-        {/* Status change */}
-        <div className="px-3 py-2 border-b border-[#f4ded5]">
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8b7266', marginBottom: 4, paddingLeft: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</p>
-          {user.status !== 'active' && (
-            <button
-              onClick={() => { onAction('status:active', user); onClose(); }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#e7f8f7] transition-colors text-left"
-              style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#006a65' }}
-            >
-              <ShieldCheck size={14} /> Activate
-            </button>
-          )}
-          {user.status !== 'suspended' && (
-            <button
-              onClick={() => { onAction('status:suspended', user); onClose(); }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#ffeeee] transition-colors text-left"
-              style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#c0392b' }}
-            >
-              <ShieldX size={14} /> Suspend
-            </button>
-          )}
-        </div>
-        {/* Delete */}
-        {user.role !== 'admin' && (
-          <div className="px-3 py-2">
-            <button
-              onClick={() => { onAction('delete', user); onClose(); }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#ffeeee] transition-colors text-left"
-              style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#c0392b', fontWeight: 600 }}
-            >
-              <Trash2 size={14} /> Delete User
-            </button>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-// ─── User Row ─────────────────────────────────────────────────────────────────
-function UserRow({ user, onAction }: { user: AdminUser; onAction: (action: string, user: AdminUser) => void }) {
-  const { t } = useTranslation('matching');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const rs = ROLE_STYLE[user.role];
-  const ss = STATUS_STYLE[user.status];
-
-  return (
-    <tr className="border-b border-[#f4ded5] hover:bg-[#fffaf8] transition-colors">
-      {/* User */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="relative shrink-0">
-            <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-xl object-cover" style={{ background: '#f4ded5' }} />
-            {user.isFlagged && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: '#c0392b' }}>
-                <Flag size={8} color="#fff" />
-              </div>
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, color: '#241914' }}>
-                {user.name}
-              </p>
-              {user.role === 'admin' && <Shield size={13} style={{ color: '#c0392b' }} />}
-            </div>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>{user.email}</p>
-          </div>
-        </div>
       </td>
-      {/* Role */}
-      <td className="px-4 py-3">
-        <span
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
-          style={{ background: rs.bg, color: rs.color, fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 700 }}
-        >
-          {t(rs.labelKey)}
+      <td className="px-4 py-4">
+        <p className="text-[#241914]" style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", fontWeight: 700 }}>
+          {settlement.venue?.name || settlement.venueId}
+        </p>
+        <p className="mt-1 text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
+          {settlement.venue?.location || t("wallet.na")}
+        </p>
+      </td>
+      <td className="px-4 py-4 text-right text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "13px", fontWeight: 800 }}>
+        {formatMoney(settlement.grossAmount, locale)}
+      </td>
+      <td className="px-4 py-4 text-right text-[#a04100]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "13px", fontWeight: 800 }}>
+        {formatMoney(settlement.commissionAmount, locale)}
+        <span className="ml-1 text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 600 }}>
+          ({Math.round(settlement.commissionRate * 100)}%)
         </span>
       </td>
-      {/* Status */}
-      <td className="px-4 py-3">
-        <span
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full"
-          style={{ background: ss.bg, color: ss.color, fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 700 }}
-        >
-          {ss.icon} {ss.label}
-        </span>
+      <td className="px-4 py-4 text-right text-[#006a65]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "13px", fontWeight: 800 }}>
+        {formatMoney(settlement.netAmount, locale)}
       </td>
-      {/* City */}
-      <td className="px-4 py-3 hidden md:table-cell">
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#584238' }}>{user.city}</span>
-      </td>
-      {/* Sports */}
-      <td className="px-4 py-3 hidden lg:table-cell">
-        <div className="flex gap-1 flex-wrap">
-          {user.sportPreferences.slice(0, 3).map(s => (
-            <span key={s} title={s}>{SPORT_EMOJI[s] ?? '🏅'}</span>
-          ))}
-          {user.sportPreferences.length === 0 && <span style={{ color: '#8b7266', fontSize: '12px' }}>–</span>}
-        </div>
-      </td>
-      {/* Joined */}
-      <td className="px-4 py-3 hidden xl:table-cell">
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>{formatDate(user.joinedAt)}</span>
-      </td>
-      {/* Last active */}
-      <td className="px-4 py-3 hidden xl:table-cell">
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8b7266' }}>{timeAgo(user.lastActiveAt)}</span>
-      </td>
-      {/* Bookings */}
-      <td className="px-4 py-3 hidden md:table-cell text-right">
-        <span style={{ fontFamily: 'Lexend, sans-serif', fontSize: '13px', fontWeight: 700, color: '#241914' }}>
-          {user.totalBookings}
-        </span>
-      </td>
-      {/* Actions */}
-      <td className="px-4 py-3">
-        <div className="relative flex justify-end">
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#fff1eb] transition-colors"
-            style={{ color: '#584238' }}
-          >
-            <MoreVertical size={16} />
-          </button>
-          {menuOpen && <ActionMenu user={user} onClose={() => setMenuOpen(false)} onAction={onAction} />}
-        </div>
+      <td className="px-4 py-4 text-right text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
+        {formatDate(settlement.settledAt, locale, t("wallet.na"))}
       </td>
     </tr>
   );
 }
 
-// ─── Delete Confirm Modal ─────────────────────────────────────────────────────
-function DeleteConfirmModal({ user, onConfirm, onCancel }: {
-  user: AdminUser;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const [loading, setLoading] = useState(false);
-  const handleConfirm = async () => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 700));
-    onConfirm();
-    setLoading(false);
-  };
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(36,25,20,0.5)' }}>
-      <div className="bg-white rounded-2xl p-6 max-w-sm w-full" style={{ boxShadow: '0 24px 64px rgba(36,25,20,0.3)' }}>
-        <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: '#ffd6d6' }}>
-          <Trash2 size={22} style={{ color: '#c0392b' }} />
-        </div>
-        <h3 className="text-center" style={{ fontFamily: 'Lexend, sans-serif', fontSize: '18px', fontWeight: 700, color: '#241914', marginBottom: 8 }}>
-          Delete User?
-        </h3>
-        <p className="text-center" style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginBottom: 20 }}>
-          Are you sure you want to permanently delete <strong>{user.name}</strong>? This action cannot be undone.
-        </p>
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 h-11 rounded-xl hover:bg-[#fff1eb] transition-colors"
-            style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', border: '1.5px solid #dfc0b3' }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={loading}
-            className="flex-1 h-11 rounded-xl flex items-center justify-center gap-2"
-            style={{ background: '#c0392b', fontFamily: 'Lexend, sans-serif', fontSize: '14px', fontWeight: 700, color: '#fff', border: 'none' }}
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={15} />}
-            {loading ? 'Deleting…' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main AdminDashboard ──────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { t } = useTranslation('matching');
-  const [users, setUsers] = useState<AdminUser[]>(() => getAdminUsers());
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
-  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
-  const stats = getAdminStats();
+  const { t, i18n } = useTranslation("matching");
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
+  const [data, setData] = useState<AdminSettlementDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(() => setUsers(getAdminUsers()), []);
-  useEffect(() => { refresh(); return subscribeAdmin(refresh); }, [refresh]);
-
-  const filtered = users.filter(u => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.city.toLowerCase().includes(q);
-    const matchRole = roleFilter === 'all' || u.role === roleFilter;
-    const matchStatus = statusFilter === 'all' || u.status === statusFilter;
-    return matchSearch && matchRole && matchStatus;
-  });
-
-  const flaggedUsers = users.filter(u => u.isFlagged);
-
-  const handleAction = async (action: string, user: AdminUser) => {
-    if (action === 'delete') { setDeleteTarget(user); return; }
-
-    await new Promise(r => setTimeout(r, 500));
-
-    if (action.startsWith('role:')) {
-      const role = action.split(':')[1] as UserRole;
-      updateUserRole(user.id, role);
-      toast.success(`${user.name} → ${t(ROLE_STYLE[role].labelKey)}`);
-    } else if (action.startsWith('status:')) {
-      const status = action.split(':')[1] as UserStatus;
-      updateUserStatus(user.id, status);
-      toast.success(`${user.name} → ${STATUS_STYLE[status].label}`);
+  const loadDashboard = async () => {
+    setLoading(true);
+    try {
+      setData(await fetchAdminSettlementDashboard());
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || t("admin.finance.errors.load"));
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteConfirm = () => {
-    if (!deleteTarget) return;
-    deleteUser(deleteTarget.id);
-    toast.success(`${deleteTarget.name} has been deleted`);
-    setDeleteTarget(null);
-  };
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
-  const selectStyle: React.CSSProperties = {
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '13px',
-    color: '#241914',
-    border: '1.5px solid #dfc0b3',
-    borderRadius: '10px',
-    padding: '8px 12px',
-    background: '#fff',
-    outline: 'none',
-    cursor: 'pointer',
-  };
+  const summary = data?.summary;
+  const largestOwnerHold = useMemo(() => {
+    if (!data?.ownerHolds.length) return null;
+    return data.ownerHolds[0];
+  }, [data]);
 
   return (
-    <div className="px-6 py-8 max-w-screen-2xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '28px', fontWeight: 700, color: '#241914' }}>
-          Administration Panel
-        </h1>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#584238', marginTop: 4 }}>
-          Manage users, roles, and platform health
-        </p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <StatCard icon={<Users size={20} />} label="Total Users" value={stats.totalUsers} color="#241914" bg="#fff" sub={`+3 this week`} />
-        <StatCard icon={<CheckCircle2 size={20} />} label="Active" value={stats.activeUsers} color="#006a65" bg="#e7f8f7" />
-        <StatCard icon={<XCircle size={20} />} label="Suspended" value={stats.suspendedUsers} color="#c0392b" bg="#ffd6d6" />
-        <StatCard icon={<Clock size={20} />} label="Pending" value={stats.pendingVerification} color="#856404" bg="#fff3cd" />
-        <StatCard icon={<Building2 size={20} />} label="Owners" value={stats.totalOwners} color="#1a5fb4" bg="#ddeeff" sub={`${stats.totalOwners} venues`} />
-        <StatCard icon={<DollarSign size={20} />} label="Revenue" value={formatPrice(stats.totalRevenue).replace('₫', '')} color="#a04100" bg="#fff1eb" sub="₫ total platform" />
-      </div>
-
-      {/* Flagged users alert */}
-      {flaggedUsers.length > 0 && (
-        <div className="flex items-start gap-4 p-4 rounded-2xl mb-6" style={{ background: '#ffd6d6', border: '1.5px solid rgba(192,57,43,0.25)' }}>
-          <AlertTriangle size={20} style={{ color: '#c0392b', flexShrink: 0, marginTop: 2 }} />
-          <div className="flex-1">
-            <p style={{ fontFamily: 'Lexend, sans-serif', fontSize: '15px', fontWeight: 700, color: '#c0392b' }}>
-              {flaggedUsers.length} Flagged User{flaggedUsers.length > 1 ? 's' : ''} Require Attention
-            </p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {flaggedUsers.map(u => (
-                <span
-                  key={u.id}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.6)', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#c0392b' }}
-                >
-                  <Flag size={11} />
-                  {u.name}
-                  <span style={{ color: '#8b7266', fontSize: '11px' }}>— {u.flagReason}</span>
+    <div className="min-h-screen bg-[#fff8f6] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="overflow-hidden rounded-[30px] border bg-white" style={{ borderColor: "#dfc0b3", boxShadow: "0 18px 40px rgba(36,25,20,0.08)" }}>
+          <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
+            <div className="p-6 lg:p-8">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1" style={{ borderColor: "#dfc0b3", background: "#fff1eb" }}>
+                <CircleDollarSign size={14} className="text-[#a04100]" />
+                <span className="uppercase tracking-[0.18em] text-[#a04100]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 800 }}>
+                  {t("admin.finance.badge")}
                 </span>
-              ))}
+              </div>
+              <h1 className="text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "34px", fontWeight: 800, lineHeight: 1.1 }}>
+                {t("admin.finance.title")}
+              </h1>
+              <p className="mt-3 max-w-2xl text-[#584238]" style={{ fontFamily: "Inter, sans-serif", fontSize: "14px", lineHeight: 1.7 }}>
+                {t("admin.finance.subtitle")}
+              </p>
+            </div>
+            <div className="border-t p-6 lg:border-l lg:border-t-0 lg:p-8" style={{ borderColor: "#f4ded5", background: "linear-gradient(180deg, #fffaf7 0%, #fff 100%)" }}>
+              <button
+                type="button"
+                onClick={loadDashboard}
+                disabled={loading}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-[#584238] hover:bg-white disabled:opacity-50"
+                style={{ borderColor: "#dfc0b3", fontFamily: "Inter, sans-serif", fontWeight: 800 }}
+              >
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                {t("admin.finance.refresh")}
+              </button>
+              <p className="mt-4 text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", lineHeight: 1.7 }}>
+                {t("admin.finance.holdRule")}
+              </p>
             </div>
           </div>
-        </div>
-      )}
+        </section>
 
-      {/* User Management Table */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #dfc0b3', boxShadow: '0 2px 8px rgba(36,25,20,0.07)' }}>
-        {/* Table header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#dfc0b3] flex-wrap">
-          <div className="flex items-center gap-2">
-            <Users size={18} style={{ color: '#a04100' }} />
-            <h2 style={{ fontFamily: 'Lexend, sans-serif', fontSize: '16px', fontWeight: 700, color: '#241914' }}>
-              User Management
-            </h2>
-            <span
-              className="px-2 py-0.5 rounded-full"
-              style={{ background: '#fff1eb', fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: 700, color: '#a04100' }}
-            >
-              {filtered.length}
-            </span>
+        {loading && !data ? (
+          <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border bg-white" style={{ borderColor: "#dfc0b3" }}>
+            <Loader2 className="mr-2 animate-spin text-[#a04100]" size={22} />
+            <span className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}>{t("wallet.loading")}</span>
           </div>
-
-          <div className="flex-1 flex items-center gap-3 flex-wrap ml-auto justify-end">
-            {/* Search */}
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#8b7266' }} />
-              <input
-                type="text"
-                placeholder="Search name, email, city..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ ...selectStyle, paddingLeft: '32px', width: 220 }}
-                onFocus={e => { e.target.style.borderColor = '#006a65'; }}
-                onBlur={e => { e.target.style.borderColor = '#dfc0b3'; }}
+        ) : (
+          <>
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                icon={<WalletCards size={21} />}
+                label={t("admin.finance.stats.platformHold")}
+                value={formatMoney(summary?.platformHoldGrossAmount || 0, locale)}
+                helper={t("admin.finance.stats.pendingBookings", { count: summary?.pendingBookingCount || 0 })}
+                color="#856404"
+                bg="#fff3cd"
               />
-            </div>
+              <StatCard
+                icon={<Banknote size={21} />}
+                label={t("admin.finance.stats.ownerPending")}
+                value={formatMoney(summary?.ownerPendingNetAmount || 0, locale)}
+                helper={largestOwnerHold ? t("admin.finance.stats.largestOwnerHold", { owner: largestOwnerHold.owner.name }) : undefined}
+                color="#1a5fb4"
+                bg="#f3f7ff"
+              />
+              <StatCard
+                icon={<TrendingUp size={21} />}
+                label={t("admin.finance.stats.commissionEarned")}
+                value={formatMoney(summary?.platformCommissionEarnedAmount || 0, locale)}
+                helper={t("admin.finance.stats.pendingCommission", { amount: formatMoney(summary?.pendingCommissionAmount || 0, locale) })}
+                color="#a04100"
+                bg="#fff1eb"
+              />
+              <StatCard
+                icon={<Building2 size={21} />}
+                label={t("admin.finance.stats.paidOwners")}
+                value={formatMoney(summary?.paidToOwnersAmount || 0, locale)}
+                helper={t("admin.finance.stats.settledCount", { count: summary?.settledCount || 0 })}
+                color="#006a65"
+                bg="#eefbf7"
+              />
+            </section>
 
-            <Filter size={14} style={{ color: '#8b7266' }} />
-            {/* Role filter */}
-            <select value={roleFilter} onChange={e => setRoleFilter(e.target.value as any)} style={selectStyle}>
-              <option value="all">All Roles</option>
-              <option value="user">{t('roles.user')}</option>
-              <option value="owner">{t('roles.owner')}</option>
-              <option value="admin">Admin</option>
-            </select>
+            <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+              <div className="rounded-[28px] border bg-white p-5" style={{ borderColor: "#dfc0b3" }}>
+                <div className="mb-4 flex items-center gap-2">
+                  <Clock3 size={18} className="text-[#856404]" />
+                  <h2 className="text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "20px", fontWeight: 800 }}>
+                    {t("admin.finance.ownerHoldTitle")}
+                  </h2>
+                </div>
 
-            {/* Status filter */}
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} style={selectStyle}>
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-              <option value="pending_verification">Pending</option>
-            </select>
+                {!data?.ownerHolds.length ? (
+                  <div className="rounded-2xl border border-dashed p-8 text-center" style={{ borderColor: "#dfc0b3" }}>
+                    <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}>{t("admin.finance.emptyOwnerHold")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {data.ownerHolds.map((hold) => (
+                      <article key={hold.owner.id} className="rounded-2xl border bg-[#fffaf7] p-4" style={{ borderColor: "#f4ded5" }}>
+                        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "17px", fontWeight: 800 }}>
+                              {hold.owner.name}
+                            </h3>
+                            <p className="mt-1 text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "12px" }}>
+                              {hold.owner.email || t("wallet.na")}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[#006a65]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "17px", fontWeight: 800 }}>
+                              {formatMoney(hold.netAmount, locale)}
+                            </p>
+                            <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px" }}>
+                              {t("admin.finance.netForOwner")}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          <div className="rounded-xl bg-white p-3">
+                            <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px" }}>{t("admin.finance.gross")}</p>
+                            <p className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "13px", fontWeight: 800 }}>{formatMoney(hold.grossAmount, locale)}</p>
+                          </div>
+                          <div className="rounded-xl bg-white p-3">
+                            <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px" }}>{t("admin.finance.commission")}</p>
+                            <p className="mt-1 text-[#a04100]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "13px", fontWeight: 800 }}>{formatMoney(hold.commissionAmount, locale)}</p>
+                          </div>
+                          <div className="rounded-xl bg-white p-3">
+                            <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px" }}>{t("admin.finance.bookings")}</p>
+                            <p className="mt-1 text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "13px", fontWeight: 800 }}>{hold.bookingCount}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {hold.venues.map((venueHold) => (
+                            <div key={venueHold.venue.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-3 py-2">
+                              <div>
+                                <p className="text-[#241914]" style={{ fontFamily: "Inter, sans-serif", fontSize: "13px", fontWeight: 800 }}>{venueHold.venue.name}</p>
+                                <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "11px" }}>{venueHold.venue.location}</p>
+                              </div>
+                              <p className="text-[#006a65]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "13px", fontWeight: 800 }}>
+                                {formatMoney(venueHold.netAmount, locale)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            <button
-              onClick={refresh}
-              className="p-2 rounded-lg hover:bg-[#fff1eb] transition-colors"
-              style={{ color: '#584238' }}
-            >
-              <RefreshCw size={15} />
-            </button>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ background: '#fffaf8' }}>
-                {[
-                  { label: 'User', cl: 'px-4 py-3' },
-                  { label: 'Role', cl: 'px-4 py-3' },
-                  { label: 'Status', cl: 'px-4 py-3' },
-                  { label: 'City', cl: 'px-4 py-3 hidden md:table-cell' },
-                  { label: 'Sports', cl: 'px-4 py-3 hidden lg:table-cell' },
-                  { label: 'Joined', cl: 'px-4 py-3 hidden xl:table-cell' },
-                  { label: 'Last Active', cl: 'px-4 py-3 hidden xl:table-cell' },
-                  { label: 'Bookings', cl: 'px-4 py-3 hidden md:table-cell text-right' },
-                  { label: '', cl: 'px-4 py-3' },
-                ].map((h, i) => (
-                  <th
-                    key={i}
-                    className={h.cl}
-                    style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: 700, color: '#8b7266', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}
-                  >
-                    {h.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-16 text-center">
-                    <Users size={40} style={{ color: '#dfc0b3', margin: '0 auto 12px' }} />
-                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8b7266' }}>No users found</p>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map(user => (
-                  <UserRow key={user.id} user={user} onAction={handleAction} />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Table footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-[#f4ded5]">
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8b7266' }}>
-            Showing {filtered.length} of {users.length} users
-          </span>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              {(['user', 'owner', 'admin'] as UserRole[]).map(role => (
-                <span key={role} className="flex items-center gap-1.5" style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#584238' }}>
-                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: ROLE_STYLE[role].color }} />
-                  {t(ROLE_STYLE[role].labelKey)}: {users.filter(u => u.role === role).length}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+              <div className="overflow-hidden rounded-[28px] border bg-white" style={{ borderColor: "#dfc0b3" }}>
+                <div className="flex items-center gap-2 border-b px-5 py-4" style={{ borderColor: "#f4ded5" }}>
+                  <ReceiptText size={18} className="text-[#a04100]" />
+                  <h2 className="text-[#241914]" style={{ fontFamily: "Lexend, sans-serif", fontSize: "20px", fontWeight: 800 }}>
+                    {t("admin.finance.settlementHistoryTitle")}
+                  </h2>
+                </div>
+                {!data?.recentSettlements.length ? (
+                  <div className="p-10 text-center">
+                    <p className="text-[#8b7266]" style={{ fontFamily: "Inter, sans-serif", fontSize: "14px" }}>{t("admin.finance.emptySettlements")}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[860px]">
+                      <thead>
+                        <tr style={{ background: "#fffaf7" }}>
+                          {[
+                            t("admin.finance.table.owner"),
+                            t("admin.finance.table.venue"),
+                            t("admin.finance.table.gross"),
+                            t("admin.finance.table.commission"),
+                            t("admin.finance.table.net"),
+                            t("admin.finance.table.settledAt"),
+                          ].map((label, index) => (
+                            <th
+                              key={label}
+                              className={`px-4 py-3 ${index >= 2 ? "text-right" : "text-left"}`}
+                              style={{ fontFamily: "Inter, sans-serif", fontSize: "11px", fontWeight: 800, color: "#8b7266", letterSpacing: "0.08em", textTransform: "uppercase" }}
+                            >
+                              {label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.recentSettlements.map((settlement) => (
+                          <SettlementRow key={settlement.id} settlement={settlement} locale={locale} t={t} />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </section>
+          </>
+        )}
       </div>
-
-      {/* Delete confirm */}
-      {deleteTarget && (
-        <DeleteConfirmModal
-          user={deleteTarget}
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
     </div>
   );
 }

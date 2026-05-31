@@ -7,6 +7,7 @@ const connectDb = require("./src/configs/db");
 const { connectRedis } = require("./src/configs/redis");
 const createSocketServer = require("./src/configs/socket");
 const registerSocketHandlers = require("./src/sockets");
+const walletService = require("./src/modules/wallet/service");
 
 const PORT = process.env.PORT || 5000;
 
@@ -19,6 +20,7 @@ const bootstrap = async () => {
   app.set("io", io);
 
   registerSocketHandlers(io);
+  walletService.startSettlementScheduler();
 
   server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

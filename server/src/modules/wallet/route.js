@@ -59,6 +59,18 @@ router.get(
   requireRole("admin"),
   asyncHandler((req, res) => walletController.listAdminTransactions(req, res))
 );
+router.get(
+  "/admin/wallet/settlement-dashboard",
+  authMiddleware,
+  requireRole("admin"),
+  asyncHandler((req, res) => walletController.getAdminSettlementDashboard(req, res))
+);
+router.get(
+  "/admin/wallet/owner-settlements",
+  authMiddleware,
+  requireRole("admin"),
+  asyncHandler((req, res) => walletController.listAdminOwnerSettlements(req, res))
+);
 router.patch(
   "/admin/wallet/withdraw-requests/:withdrawRequestId",
   authMiddleware,

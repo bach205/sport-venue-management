@@ -11,6 +11,7 @@
     "logout": "Log out",
     "logoutSuccess": "Logged out",
     "profile": "My Profile",
+    "wallet": "My Wallet",
     "ownerDashboard": "Owner Dashboard",
     "adminPanel": "Admin Panel"
   },
@@ -59,11 +60,15 @@
   "owner": {
     "nav": {
       "venues": "My Venues",
+      "wallet": "Wallet",
       "bookings": "All Bookings",
       "analytics": "Analytics",
       "settings": "Settings"
     },
     "playerView": "Player View",
+    "layout": {
+      "notifications": "Notifications"
+    },
     "days": {
       "0": "Sun",
       "1": "Mon",
@@ -75,6 +80,10 @@
     },
     "dashboard": {
       "loadError": "Could not load venues.",
+      "heroBadge": "Owner Control Center",
+      "apiBadge": "API",
+      "createBadge": "Create Venue",
+      "libraryBadge": "Venue Library",
       "totalVenues": "Total venues",
       "activeRanges": "Active ranges",
       "averagePrice": "Average price",
@@ -114,11 +123,18 @@
       "rangesPerWeek": "ranges / week",
       "sampleSchedule": "Sample schedule",
       "noSchedule": "No schedule",
+      "scheduleListTitle": "Weekly Schedule List",
+      "addRange": "Add Range",
+      "remove": "Remove",
+      "rangeLabel": "Range {{count}}",
+      "noScheduleDraft": "No schedule ranges yet. You can create the venue first or add weekly schedule rows now.",
+      "venuePreviewAlt": "Venue preview",
       "manageVenue": "Manage venue"
     },
     "manage": {
       "player": "Player",
       "noEmail": "No email",
+      "noPayment": "No payment",
       "heroBadge": "Owner Venue Studio",
       "clearFilter": "Clear filter",
       "manualRefundRequest": "Manual refund request",
@@ -223,6 +239,10 @@
       "today": "Today",
       "blockAllSuccess": "Blocked all available slots",
       "openAllSuccess": "Reopened all unavailable slots",
+      "noBookingsForDate": "No bookings found for the selected date.",
+      "settingsBadge": "Venue Settings",
+      "noScheduleDraft": "No schedule ranges yet. Add weekly schedule rows here.",
+      "venuePreviewAlt": "Venue preview",
       "preview": "Preview",
       "scheduleListTitle": "Weekly Schedule List",
       "addRange": "Add Range",
@@ -233,13 +253,179 @@
   "admin": {
     "nav": {
       "overview": "Overview",
+      "wallet": "Withdrawals",
       "users": "Users",
       "reports": "Reports",
       "analytics": "Analytics",
       "system": "System"
     },
     "playerView": "Player View",
-    "suspendedUsers": "{{count}} suspended"
+    "suspendedUsers": "{{count}} suspended",
+    "layout": {
+      "notifications": "Notifications"
+    },
+    "finance": {
+      "badge": "Platform Finance",
+      "title": "Settlement control center",
+      "subtitle": "Track platform-held booking cash, owner settlement payouts, commission earned, and owner-level hold exposure by venue.",
+      "refresh": "Refresh financial data",
+      "holdRule": "Hold only includes paid bookings that passed the automatic refund window and have not been settled to owners yet.",
+      "gross": "Gross",
+      "commission": "Commission",
+      "bookings": "Bookings",
+      "netForOwner": "Net for owner",
+      "ownerHoldTitle": "Owner money currently on hold",
+      "settlementHistoryTitle": "Recent owner settlements",
+      "emptyOwnerHold": "No owner hold is currently eligible for settlement.",
+      "emptySettlements": "No owner settlements have been recorded yet.",
+      "stats": {
+        "platformHold": "Platform hold",
+        "ownerPending": "Owner pending net",
+        "commissionEarned": "Commission earned",
+        "paidOwners": "Paid to owners",
+        "pendingBookings": "{{count}} eligible bookings",
+        "largestOwnerHold": "Largest hold: {{owner}}",
+        "pendingCommission": "{{amount}} pending commission",
+        "settledCount": "{{count}} settled bookings"
+      },
+      "table": {
+        "owner": "Owner",
+        "venue": "Venue",
+        "gross": "Gross",
+        "commission": "Commission",
+        "net": "Owner net",
+        "settledAt": "Settled at"
+      },
+      "errors": {
+        "load": "Could not load settlement dashboard."
+      }
+    }
+  },
+  "wallet": {
+    "badge": "Internal Wallet",
+    "title": "Your wallet",
+    "subtitle": "Track available balance, pending withdrawals, top-ups, withdrawals, refunds, and owner settlements.",
+    "latestTopupReference": "Latest top-up content",
+    "loading": "Loading...",
+    "na": "N/A",
+    "cards": {
+      "available": "Available balance",
+      "pending": "Pending withdraw",
+      "requests": "Withdraw requests"
+    },
+    "empty": {
+      "withdrawRequests": "No withdraw requests yet."
+    },
+    "topup": {
+      "title": "Top up wallet",
+      "amount": "Top-up amount",
+      "create": "Create top-up code",
+      "note": "Wallet balance is credited only after the Sepay webhook confirms the incoming transfer."
+    },
+    "payout": {
+      "title": "Payout accounts",
+      "bankCode": "Bank code",
+      "bankName": "Bank name",
+      "accountNumber": "Account number",
+      "accountName": "Account name",
+      "save": "Save account",
+      "default": "Default"
+    },
+    "withdraw": {
+      "title": "Withdraw",
+      "selectProfile": "Select payout account",
+      "amount": "Withdraw amount",
+      "create": "Create withdraw request",
+      "selectedHint": "Funds will be sent to {{accountName}} · {{accountNumber}} after admin approval.",
+      "recent": "Recent withdraw requests"
+    },
+    "withdrawStatuses": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "paid": "Paid"
+    },
+    "transactions": {
+      "title": "Transaction history"
+    },
+    "table": {
+      "type": "Type",
+      "amount": "Amount",
+      "available": "Available",
+      "pending": "Pending",
+      "status": "Status",
+      "time": "Time"
+    },
+    "transactionTypes": {
+      "topup": "Top-up",
+      "withdraw_hold": "Withdraw hold",
+      "withdraw_approved": "Withdraw approved",
+      "withdraw_rejected": "Withdraw rejected",
+      "refund_auto_credit": "Auto refund",
+      "owner_settlement_credit": "Owner settlement",
+      "platform_commission": "Platform commission",
+      "adjustment": "Adjustment"
+    },
+    "transactionStatuses": {
+      "pending": "Pending",
+      "completed": "Completed",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "errors": {
+      "load": "Could not load wallet data.",
+      "topup": "Could not create top-up request.",
+      "profile": "Could not save payout account.",
+      "selectPayout": "Select or create a payout account first.",
+      "withdraw": "Could not create withdraw request."
+    },
+    "toasts": {
+      "topupCreated": "Top-up request created. Transfer with the exact content.",
+      "profileSaved": "Payout account saved.",
+      "withdrawCreated": "Withdraw request created."
+    },
+    "admin": {
+      "badge": "Wallet Operations",
+      "title": "Withdrawal approvals",
+      "subtitle": "Approving decreases pending withdraw balance only. Rejecting releases the held funds back to available balance.",
+      "empty": "No withdraw requests found.",
+      "emptyHint": "Try another status filter or refresh the list.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "cancel": "Cancel",
+      "confirmApprove": "Confirm approval",
+      "confirmReject": "Confirm rejection",
+      "refresh": "Refresh",
+      "searchPlaceholder": "Search user, bank, account, request id...",
+      "userNote": "User note",
+      "payoutAccount": "Payout account",
+      "currentBalances": "Current balances",
+      "afterAction": "After action: {{available}} available · {{pending}} pending",
+      "reviewTitle": "Review {{amount}} withdrawal",
+      "approveHelp": "Approving means the platform has paid this withdrawal externally. Available balance is not deducted again; only pending withdraw balance is reduced.",
+      "rejectHelp": "Rejecting releases the held withdrawal amount back to the user's available balance and reduces pending withdraw balance.",
+      "notePlaceholder": "Add an internal note or rejection reason...",
+      "reviewedAt": "Reviewed at {{date}}",
+      "rejectedReason": "Rejected reason: {{reason}}",
+      "createdAt": "Created: {{date}}",
+      "balances": "Available: {{available}} · Pending: {{pending}}",
+      "filters": {
+        "all": "All"
+      },
+      "stats": {
+        "total": "Requests",
+        "pending": "Pending",
+        "pendingAmount": "Pending amount"
+      },
+      "errors": {
+        "load": "Could not load withdraw requests.",
+        "review": "Could not process withdraw request."
+      },
+      "toasts": {
+        "approved": "Withdraw request approved and pending balance reduced.",
+        "rejected": "Withdraw request rejected and available balance restored."
+      }
+    }
   },
   "fab": {
     "title": "Find a Match Now",

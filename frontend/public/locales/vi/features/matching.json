@@ -11,6 +11,7 @@
     "logout": "Đăng xuất",
     "logoutSuccess": "Đã đăng xuất",
     "profile": "Hồ sơ của tôi",
+    "wallet": "Ví của tôi",
     "ownerDashboard": "Quản lý sân",
     "adminPanel": "Quản trị"
   },
@@ -59,11 +60,15 @@
   "owner": {
     "nav": {
       "venues": "Sân của tôi",
+      "wallet": "Ví",
       "bookings": "Tất cả lịch đặt",
       "analytics": "Phân tích",
       "settings": "Cài đặt"
     },
     "playerView": "Giao diện người chơi",
+    "layout": {
+      "notifications": "Thông báo"
+    },
     "days": {
       "0": "CN",
       "1": "T2",
@@ -75,6 +80,10 @@
     },
     "dashboard": {
       "loadError": "Không thể tải danh sách sân.",
+      "heroBadge": "Trung tâm quản lý chủ sân",
+      "apiBadge": "API",
+      "createBadge": "Tạo sân",
+      "libraryBadge": "Thư viện sân",
       "totalVenues": "Tổng sân",
       "activeRanges": "Ca hoạt động",
       "averagePrice": "Giá trung bình",
@@ -114,6 +123,12 @@
       "rangesPerWeek": "ca / tuần",
       "sampleSchedule": "Lịch mẫu",
       "noSchedule": "Chưa có lịch",
+      "scheduleListTitle": "Danh sách lịch hàng tuần",
+      "addRange": "Thêm khung giờ",
+      "remove": "Xóa",
+      "rangeLabel": "Khung giờ {{count}}",
+      "noScheduleDraft": "Chưa có khung lịch nào. Bạn có thể tạo sân trước hoặc thêm lịch hàng tuần ngay.",
+      "venuePreviewAlt": "Xem trước ảnh sân",
       "manageVenue": "Quản lý sân"
     },
     "manage": {
@@ -127,6 +142,7 @@
       },
       "player": "Người chơi",
       "noEmail": "Không có email",
+      "noPayment": "Chưa có thanh toán",
       "manualRefundRequest": "Yêu cầu hoàn tiền thủ công",
       "reject": "Từ chối",
       "approveRefund": "Duyệt hoàn tiền",
@@ -223,6 +239,10 @@
       "today": "Hôm nay",
       "blockAllSuccess": "Đã chặn tất cả slot trống",
       "openAllSuccess": "Đã mở lại toàn bộ slot unavailable",
+      "noBookingsForDate": "Không có booking nào cho ngày đã chọn.",
+      "settingsBadge": "Cài đặt sân",
+      "noScheduleDraft": "Chưa có khung lịch nào. Hãy thêm các khung lịch hàng tuần tại đây.",
+      "venuePreviewAlt": "Xem trước ảnh sân",
       "preview": "Xem trước",
       "scheduleListTitle": "Danh sách lịch hàng tuần",
       "addRange": "Thêm khung giờ",
@@ -233,13 +253,179 @@
   "admin": {
     "nav": {
       "overview": "Tổng quan",
+      "wallet": "Rút tiền",
       "users": "Người dùng",
       "reports": "Báo cáo",
       "analytics": "Phân tích",
       "system": "Hệ thống"
     },
     "playerView": "Giao diện người chơi",
-    "suspendedUsers": "{{count}} người dùng bị tạm khóa"
+    "suspendedUsers": "{{count}} người dùng bị tạm khóa",
+    "layout": {
+      "notifications": "Thông báo"
+    },
+    "finance": {
+      "badge": "Tài chính nền tảng",
+      "title": "Trung tâm kiểm soát chi trả",
+      "subtitle": "Theo dõi tiền booking nền tảng đang giữ, khoản đã chuyển cho chủ sân, hoa hồng đã thu và tiền đang hold theo từng chủ sân/sân.",
+      "refresh": "Tải lại dữ liệu tài chính",
+      "holdRule": "Hold chỉ tính các booking đã thanh toán, đã hết thời gian hoàn tiền tự động và chưa settle cho chủ sân.",
+      "gross": "Tổng tiền",
+      "commission": "Hoa hồng",
+      "bookings": "Booking",
+      "netForOwner": "Net cho chủ sân",
+      "ownerHoldTitle": "Tiền chủ sân đang được hold",
+      "settlementHistoryTitle": "Lịch sử chi trả gần đây",
+      "emptyOwnerHold": "Hiện chưa có khoản hold nào đủ điều kiện settle.",
+      "emptySettlements": "Chưa có chi trả nào được ghi nhận.",
+      "stats": {
+        "platformHold": "Nền tảng đang hold",
+        "ownerPending": "Net chờ trả chủ sân",
+        "commissionEarned": "Hoa hồng đã thu",
+        "paidOwners": "Đã chuyển chủ sân",
+        "pendingBookings": "{{count}} booking đủ điều kiện",
+        "largestOwnerHold": "Hold lớn nhất: {{owner}}",
+        "pendingCommission": "{{amount}} hoa hồng chờ settle",
+        "settledCount": "{{count}} booking đã settle"
+      },
+      "table": {
+        "owner": "Chủ sân",
+        "venue": "Sân",
+        "gross": "Tổng tiền",
+        "commission": "Hoa hồng",
+        "net": "Net chủ sân",
+        "settledAt": "Settle lúc"
+      },
+      "errors": {
+        "load": "Không thể tải dashboard chi trả."
+      }
+    }
+  },
+  "wallet": {
+    "badge": "Ví nội bộ",
+    "title": "Ví của bạn",
+    "subtitle": "Theo dõi số dư khả dụng, tiền đang chờ rút, nạp rút, hoàn tiền và doanh thu chủ sân.",
+    "latestTopupReference": "Nội dung nạp gần nhất",
+    "loading": "Đang tải...",
+    "na": "N/A",
+    "cards": {
+      "available": "Số dư khả dụng",
+      "pending": "Đang chờ rút",
+      "requests": "Yêu cầu rút"
+    },
+    "empty": {
+      "withdrawRequests": "Chưa có yêu cầu rút nào."
+    },
+    "topup": {
+      "title": "Nạp ví",
+      "amount": "Số tiền nạp",
+      "create": "Tạo mã nạp",
+      "note": "Số dư ví chỉ được cộng khi webhook Sepay xác nhận tiền đã vào."
+    },
+    "payout": {
+      "title": "Tài khoản nhận tiền",
+      "bankCode": "Mã ngân hàng",
+      "bankName": "Tên ngân hàng",
+      "accountNumber": "Số tài khoản",
+      "accountName": "Tên tài khoản",
+      "save": "Lưu tài khoản",
+      "default": "Mặc định"
+    },
+    "withdraw": {
+      "title": "Rút tiền",
+      "selectProfile": "Chọn tài khoản nhận tiền",
+      "amount": "Số tiền rút",
+      "create": "Tạo yêu cầu rút",
+      "selectedHint": "Tiền sẽ được chuyển tới {{accountName}} · {{accountNumber}} sau khi admin duyệt.",
+      "recent": "Yêu cầu rút gần đây"
+    },
+    "withdrawStatuses": {
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "paid": "Đã chi"
+    },
+    "transactions": {
+      "title": "Lịch sử giao dịch"
+    },
+    "table": {
+      "type": "Loại",
+      "amount": "Số tiền",
+      "available": "Khả dụng",
+      "pending": "Chờ rút",
+      "status": "Trạng thái",
+      "time": "Thời gian"
+    },
+    "transactionTypes": {
+      "topup": "Nạp ví",
+      "withdraw_hold": "Giữ tiền rút",
+      "withdraw_approved": "Duyệt rút",
+      "withdraw_rejected": "Từ chối rút",
+      "refund_auto_credit": "Hoàn tiền tự động",
+      "owner_settlement_credit": "Doanh thu chủ sân",
+      "platform_commission": "Hoa hồng nền tảng",
+      "adjustment": "Điều chỉnh"
+    },
+    "transactionStatuses": {
+      "pending": "Chờ xử lý",
+      "completed": "Hoàn tất",
+      "failed": "Thất bại",
+      "canceled": "Đã hủy"
+    },
+    "errors": {
+      "load": "Không thể tải dữ liệu ví.",
+      "topup": "Không thể tạo yêu cầu nạp ví.",
+      "profile": "Không thể lưu tài khoản nhận tiền.",
+      "selectPayout": "Hãy chọn hoặc tạo tài khoản nhận tiền trước.",
+      "withdraw": "Không thể tạo yêu cầu rút tiền."
+    },
+    "toasts": {
+      "topupCreated": "Đã tạo yêu cầu nạp ví. Hãy chuyển khoản với đúng nội dung.",
+      "profileSaved": "Đã lưu tài khoản nhận tiền.",
+      "withdrawCreated": "Đã tạo yêu cầu rút tiền."
+    },
+    "admin": {
+      "badge": "Vận hành ví",
+      "title": "Duyệt rút tiền",
+      "subtitle": "Duyệt sẽ chỉ giảm số dư chờ rút. Từ chối sẽ trả tiền đã giữ về số dư khả dụng.",
+      "empty": "Không có yêu cầu rút tiền nào.",
+      "emptyHint": "Hãy thử bộ lọc trạng thái khác hoặc tải lại danh sách.",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "cancel": "Hủy",
+      "confirmApprove": "Xác nhận duyệt",
+      "confirmReject": "Xác nhận từ chối",
+      "refresh": "Tải lại",
+      "searchPlaceholder": "Tìm user, ngân hàng, tài khoản, mã request...",
+      "userNote": "Ghi chú người dùng",
+      "payoutAccount": "Tài khoản nhận tiền",
+      "currentBalances": "Số dư hiện tại",
+      "afterAction": "Sau thao tác: {{available}} khả dụng · {{pending}} chờ rút",
+      "reviewTitle": "Xử lý yêu cầu rút {{amount}}",
+      "approveHelp": "Duyệt nghĩa là nền tảng đã chi tiền rút ở bên ngoài. Số dư khả dụng không bị trừ thêm; chỉ giảm số dư chờ rút.",
+      "rejectHelp": "Từ chối sẽ hoàn số tiền đang giữ về số dư khả dụng của người dùng và giảm số dư chờ rút.",
+      "notePlaceholder": "Thêm ghi chú nội bộ hoặc lý do từ chối...",
+      "reviewedAt": "Đã xử lý lúc {{date}}",
+      "rejectedReason": "Lý do từ chối: {{reason}}",
+      "createdAt": "Tạo lúc: {{date}}",
+      "balances": "Khả dụng: {{available}} · Chờ rút: {{pending}}",
+      "filters": {
+        "all": "Tất cả"
+      },
+      "stats": {
+        "total": "Yêu cầu",
+        "pending": "Chờ duyệt",
+        "pendingAmount": "Tiền chờ rút"
+      },
+      "errors": {
+        "load": "Không thể tải danh sách rút tiền.",
+        "review": "Không thể xử lý yêu cầu rút tiền."
+      },
+      "toasts": {
+        "approved": "Đã duyệt yêu cầu rút và giảm số dư chờ rút.",
+        "rejected": "Đã từ chối yêu cầu rút và hoàn lại số dư khả dụng."
+      }
+    }
   },
   "fab": {
     "title": "Tìm trận ngay",

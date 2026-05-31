@@ -81,3 +81,69 @@ export interface WithdrawRequest {
     name: string;
   } | null;
 }
+
+export interface OwnerSettlement {
+  id: string;
+  bookingId: string;
+  paymentId: string;
+  ownerId: string;
+  venueId: string;
+  grossAmount: number;
+  commissionRate: number;
+  commissionAmount: number;
+  netAmount: number;
+  eligibleAt: string;
+  settledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  owner: {
+    id: string;
+    email: string | null;
+    name: string;
+  } | null;
+  venue: {
+    id: string;
+    ownerId: string;
+    name: string;
+    location: string;
+  } | null;
+}
+
+export interface OwnerHold {
+  owner: {
+    id: string;
+    email: string | null;
+    name: string;
+  };
+  grossAmount: number;
+  commissionAmount: number;
+  netAmount: number;
+  bookingCount: number;
+  venues: Array<{
+    venue: {
+      id: string;
+      ownerId: string;
+      name: string;
+      location: string;
+    };
+    grossAmount: number;
+    commissionAmount: number;
+    netAmount: number;
+    bookingCount: number;
+  }>;
+}
+
+export interface AdminSettlementDashboard {
+  summary: {
+    platformHoldGrossAmount: number;
+    ownerPendingNetAmount: number;
+    pendingCommissionAmount: number;
+    pendingBookingCount: number;
+    settledGrossAmount: number;
+    paidToOwnersAmount: number;
+    platformCommissionEarnedAmount: number;
+    settledCount: number;
+  };
+  ownerHolds: OwnerHold[];
+  recentSettlements: OwnerSettlement[];
+}

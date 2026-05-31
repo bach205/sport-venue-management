@@ -20,6 +20,8 @@ import ProfilePage from "../features/profile/pages/ProfilePage";
 import AdminDashboard from "../features/admin/pages/AdminDashboard";
 import FeedPage from "../features/feed/pages/FeedPage";
 import FeedPostDetailPage from "../features/feed/pages/FeedPostDetailPage";
+import WalletPage from "../features/wallet/pages/WalletPage";
+import AdminWalletPage from "../features/wallet/pages/AdminWalletPage";
 import AppLayout from "@/shared/components/AppLayout";
 import AdminLayout from "@/shared/components/AdminLayout";
 import OwnerLayout from "@/shared/components/OwnerLayout";
@@ -46,6 +48,7 @@ export const router = createBrowserRouter([
           { path: "venues", element: <VenuesPage /> },
           { path: "venues/:venueId", element: <VenueDetailPage /> },
           { path: "bookings", element: <BookingsPage /> },
+          { path: "wallet", element: <WalletPage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "feed", element: <FeedPage /> },
           { path: "feed/:postId", element: <FeedPostDetailPage /> },
@@ -62,6 +65,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="/owner/venues" replace /> },
               { path: "venues", element: <VenueOwnerDashboard /> },
               { path: "venues/:venueId", element: <VenueManagePage /> },
+              { path: "wallet", element: <WalletPage /> },
               { path: "bookings", element: <VenueOwnerDashboard /> },
               { path: "analytics", element: <VenueOwnerDashboard /> },
               { path: "settings", element: <VenueOwnerDashboard /> },
@@ -78,10 +82,7 @@ export const router = createBrowserRouter([
             element: <AdminLayout />,
             children: [
               { index: true, element: <AdminDashboard /> },
-              { path: "users", element: <AdminDashboard /> },
-              { path: "reports", element: <AdminDashboard /> },
-              { path: "analytics", element: <AdminDashboard /> },
-              { path: "settings", element: <AdminDashboard /> },
+              { path: "wallet", element: <AdminWalletPage /> },
             ],
           },
         ],

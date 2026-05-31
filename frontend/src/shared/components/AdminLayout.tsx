@@ -2,28 +2,23 @@ import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
-  Users,
-  ShieldAlert,
-  BarChart3,
+  Wallet,
   LogOut,
   Bell,
-  Settings,
   Menu,
   ChevronRight,
-  Flag,
+  ChevronDown,
+  User,
 } from "lucide-react";
 import { logout } from "../../features/auth/store/authSlice";
-import { getAdminStats } from "../../features/admin/store/adminStore";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
 import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
 
 const NAV = [
   { to: "/admin", exact: true, icon: <LayoutDashboard size={18} />, key: "admin.nav.overview" },
-  { to: "/admin/users", exact: false, icon: <Users size={18} />, key: "admin.nav.users" },
-  { to: "/admin/reports", exact: false, icon: <Flag size={18} />, key: "admin.nav.reports" },
-  { to: "/admin/analytics", exact: false, icon: <BarChart3 size={18} />, key: "admin.nav.analytics" },
-  { to: "/admin/settings", exact: false, icon: <Settings size={18} />, key: "admin.nav.system" },
+  { to: "/admin/wallet", exact: false, icon: <Wallet size={18} />, key: "admin.nav.wallet" },
 ];
 
 export default function AdminLayout() {
@@ -33,7 +28,7 @@ export default function AdminLayout() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const stats = getAdminStats();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== "admin") navigate("/login");
@@ -43,6 +38,7 @@ export default function AdminLayout() {
     dispatch(logout());
     toast.success(t("layout.logoutSuccess"));
     navigate("/login");
+    setUserMenuOpen(false);
   };
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to : pathname.startsWith(to);
@@ -84,15 +80,7 @@ export default function AdminLayout() {
             >
               <span className={active ? "opacity-100" : "opacity-70"}>{item.icon}</span>
               {t(item.key)}
-              {item.key === "admin.nav.reports" && stats.pendingVerification > 0 && (
-                <span
-                  className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold
-                  ${active ? "bg-white/30 text-white" : "bg-[#ffd6d6] text-brand-red"}`}
-                >
-                  {stats.pendingVerification}
-                </span>
-              )}
-              {active && item.key !== "admin.nav.reports" && (
+              {active && (
                 <ChevronRight size={14} className="ml-auto" />
               )}
             </Link>
@@ -144,20 +132,93 @@ export default function AdminLayout() {
             <Menu size={20} />
           </button>
           <div className="flex-1" />
-          {stats.suspendedUsers > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ffd6d6]">
-              <ShieldAlert size={14} className="text-brand-red" />
-              <span className="text-xs font-semibold text-brand-red">
-                {t("admin.suspendedUsers", { count: stats.suspendedUsers })}
-              </span>
+          <LanguageSwitcher className="mr-1" />
+          {user && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((value) => !value)}
+                className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-brand-surface-orange transition-colors border-[1.5px] border-brand-border"
+              >
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold text-white gradient-red-diag font-heading">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-lg" />
+                  ) : (
+                    user.name[0]
+                  )}
+                </div>
+                <p className="hidden sm:block text-[13px] font-bold text-brand-dark font-heading leading-tight">
+                  {user.name.split(" ")[0]}
+                </p>
+                <ChevronDown size={13} className="text-brand-muted" />
+              </button>
+
+              {userMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setUserMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-30 w-[230px] overflow-hidden rounded-2xl border-[1.5px] border-brand-border bg-white shadow-2xl">
+                    <div className="px-4 py-4 border-b border-brand-surface-warm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold text-white gradient-red-diag font-heading">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-xl" />
+                          ) : (
+                            user.name[0]
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-brand-dark font-heading">{user.name}</p>
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#ffd6d6] text-brand-red">
+                            {t("roles.admin")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-2 py-2">
+                      <Link
+                        to="/profile"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline"
+                      >
+                        <User size={16} className="text-brand-red" /> {t("layout.profile")}
+                      </Link>
+                      <Link
+                        to="/admin/wallet"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline"
+                      >
+                        <Wallet size={16} className="text-brand-red" /> {t("admin.nav.wallet")}
+                      </Link>
+                      <Link
+                        to="/discover"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-brand-surface-orange transition-colors text-sm text-brand-dark no-underline"
+                      >
+                        <LayoutDashboard size={16} className="text-brand-red" /> {t("admin.playerView")}
+                      </Link>
+                    </div>
+
+                    <div className="px-2 pb-2 border-t border-brand-surface-warm pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#ffeeee] transition-colors text-sm text-[#ba1a1a] font-medium"
+                      >
+                        <LogOut size={16} /> {t("layout.logout")}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
-          <button className="p-2 rounded-full hover:bg-brand-surface-orange text-brand-body">
+          <button
+            type="button"
+            title={t("admin.layout.notifications")}
+            className="p-2 rounded-full hover:bg-brand-surface-orange transition-colors text-brand-body"
+          >
             <Bell size={18} />
           </button>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center gradient-red-diag text-[13px] font-bold text-white font-heading">
-            {user?.name?.[0] ?? "A"}
-          </div>
         </header>
         <main className="flex-1">
           <Outlet />

@@ -332,6 +332,31 @@ describe("Venue booking module", () => {
     expect(response.body.data.payment.status).toBe("paid");
   });
 
+  test("rejects direct confirmation for Sepay payments", async () => {
+    const owner = await createUser("owner", "owner-sepay-confirm@example.com");
+    const user = await createUser("user", "sepay-confirm-user@example.com");
+    const venue = await createVenue(owner.user._id);
+
+    const holdResponse = await createHold(user.token, venue._id, "11:00", "12:00");
+    const bookingId = holdResponse.body.data.booking.id;
+    const paymentResponse = await createPayment(user.token, bookingId, {
+      provider: "sepay",
+    });
+    const paymentId = paymentResponse.body.data.payment.id;
+
+    const response = await confirmPayment(user.token, paymentId, {
+      status: "paid",
+      provider_reference: `direct-${paymentId}`,
+    });
+
+    expect(response.status).toBe(400);
+
+    const payment = await Payment.findById(paymentId);
+    const booking = await Booking.findById(bookingId);
+    expect(payment.status).toBe("pending");
+    expect(booking.status).toBe("payment_pending");
+  });
+
   test("fails payment through webhook and reopens the slot", async () => {
     const owner = await createUser("owner", "owner-failed@example.com");
     const user = await createUser("user", "failed-user@example.com");

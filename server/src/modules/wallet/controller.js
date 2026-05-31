@@ -223,6 +223,40 @@ class WalletController {
     }
   }
 
+  async getAdminSettlementDashboard(req, res) {
+    try {
+      const data = await walletService.getAdminSettlementDashboard();
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Admin settlement dashboard fetched successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
+  async listAdminOwnerSettlements(req, res) {
+    const { isValid, errors, value } = validateWithdrawRequestsQuery(req.query);
+
+    if (!isValid) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+    }
+
+    try {
+      const data = await walletService.listAdminOwnerSettlements(value);
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Admin owner settlements fetched successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
   async reviewWithdrawRequest(req, res) {
     const idValidation = validateObjectIdParam(req.params.withdrawRequestId, "Withdraw request");
     const payloadValidation = validateWithdrawReviewPayload(req.body);

@@ -1,6 +1,8 @@
 import { createAxiosInstance } from "@/shared/api/axiosBase";
 import { API_BASE_URL } from "@/shared/constants/api";
 import type {
+  AdminSettlementDashboard,
+  OwnerSettlement,
   PayoutProfile,
   Wallet,
   WalletTransaction,
@@ -118,6 +120,24 @@ export async function reviewAdminWithdrawRequest(
     message: string;
     data: { wallet: Wallet; withdrawRequest: WithdrawRequest; transaction: WalletTransaction };
   }>(`/admin/wallet/withdraw-requests/${withdrawRequestId}`, payload);
+
+  return res.data.data;
+}
+
+export async function fetchAdminSettlementDashboard() {
+  const res = await api.get<{
+    message: string;
+    data: AdminSettlementDashboard;
+  }>("/admin/wallet/settlement-dashboard");
+
+  return res.data.data;
+}
+
+export async function fetchAdminOwnerSettlements(params?: { page?: number; limit?: number }) {
+  const res = await api.get<{
+    message: string;
+    data: { items: OwnerSettlement[]; pagination: Pagination };
+  }>("/admin/wallet/owner-settlements", { params });
 
   return res.data.data;
 }

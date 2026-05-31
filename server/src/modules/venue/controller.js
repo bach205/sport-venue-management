@@ -107,6 +107,21 @@ class VenueController {
       }
     }
 
+    const expectedApiKey = this.normalizeApiKey(process.env.PAYMENT_WEBHOOK_API_KEY);
+    const providedApiKey = this.normalizeApiKey(req.headers.authorization);
+
+    if (expectedApiKey) {
+      if (!providedApiKey || providedApiKey !== expectedApiKey) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          message: "Invalid payment webhook authorization.",
+        });
+      }
+    } else if (process.env.NODE_ENV === "production") {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
+        message: "Payment webhook authorization is not configured.",
+      });
+    }
+
     const payloadValidation = validatePaymentWebhookPayload(req.body);
 
     if (!payloadValidation.isValid) {
