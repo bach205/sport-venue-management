@@ -4,7 +4,7 @@ import type { Booking } from '../types/venues.types';
 import { requestBookingRefund } from '../api/venuesApi';
 import { useTranslation } from 'react-i18next';
 
-const REFUND_WINDOW_MS = 5 * 60 * 1000;
+const REFUND_WINDOW_MS = 15 * 60 * 1000;
 
 function formatPrice(n: number, locale: string) {
   return new Intl.NumberFormat(locale).format(n) + '₫';

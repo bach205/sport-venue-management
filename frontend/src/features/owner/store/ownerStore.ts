@@ -1,7 +1,7 @@
 /**
  * Owner Store
  * - Manages slot overrides (locked / unavailable) per venue
- * - Owner-side refund approval (manual, > 5 min)
+ * - Owner-side refund approval (manual, > 15 min)
  *
  * Real API Routes:
  *   GET  /api/owner/venues                             → { data: Venue[] }

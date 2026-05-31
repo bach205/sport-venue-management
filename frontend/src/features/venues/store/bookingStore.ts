@@ -2,7 +2,7 @@
  * Booking In-Memory Store
  * - Manages booked slots per venue per date (anti-double-booking)
  * - Stores booking history for the session
- * - Refund window: 5 minutes from paidAt
+ * - Refund window: 15 minutes from paidAt
  *
  * Real API Routes:
  *   GET  /api/venues/:venueId/slots?date=YYYY-MM-DD   → { data: VenueSlot[] }
@@ -20,8 +20,8 @@ const bookedSlots = new Map<string, string>();
 // ─── booking list ─────────────────────────────────────────────────────────────
 let bookings: Booking[] = [];
 
-// Refund window in ms (5 minutes)
-export const REFUND_WINDOW_MS = 5 * 60 * 1000;
+// Refund window in ms (15 minutes)
+export const REFUND_WINDOW_MS = 15 * 60 * 1000;
 
 function makeSlotKey(venueId: string, date: string, startTime: string) {
   return `${venueId}|${date}|${startTime}`;

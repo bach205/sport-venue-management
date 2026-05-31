@@ -488,7 +488,7 @@ describe("Venue booking module", () => {
     );
   });
 
-  test("processes refunds automatically within five minutes and reopens the slot", async () => {
+  test("processes refunds automatically within fifteen minutes and reopens the slot", async () => {
     const owner = await createUser("owner", "owner6@example.com");
     const user = await createUser("user", "refund-auto@example.com");
     const venue = await createVenue(owner.user._id);
@@ -523,7 +523,7 @@ describe("Venue booking module", () => {
     );
   });
 
-  test("creates a manual refund request after five minutes and marks the booking as refund processing", async () => {
+  test("creates a manual refund request after fifteen minutes and marks the booking as refund processing", async () => {
     const owner = await createUser("owner", "owner7@example.com");
     const user = await createUser("user", "refund-manual@example.com");
     const venue = await createVenue(owner.user._id);
@@ -533,7 +533,7 @@ describe("Venue booking module", () => {
       venue._id,
       "09:00",
       "10:00",
-      new Date(Date.now() - (6 * 60 * 1000))
+      new Date(Date.now() - (16 * 60 * 1000))
     );
 
     const refundResponse = await request(app)
@@ -569,7 +569,7 @@ describe("Venue booking module", () => {
       venue._id,
       "09:00",
       "10:00",
-      new Date(Date.now() - (6 * 60 * 1000))
+      new Date(Date.now() - (16 * 60 * 1000))
     );
     await request(app)
       .post(`/api/v1/bookings/${firstBooking.bookingId}/refund`)
@@ -599,7 +599,7 @@ describe("Venue booking module", () => {
       venue._id,
       "10:00",
       "11:00",
-      new Date(Date.now() - (6 * 60 * 1000))
+      new Date(Date.now() - (16 * 60 * 1000))
     );
     await request(app)
       .post(`/api/v1/bookings/${secondBooking.bookingId}/refund`)

@@ -30,7 +30,7 @@ Tạo refund tự động hoặc refund thủ công cho booking đã thanh toán
 
 ## Response
 ### Success - 200
-Refund tự động trong 5 phút.
+Refund tự động trong 15 phút.
 ```json
 {
   "message": "Refund processed successfully.",
@@ -53,7 +53,7 @@ Refund tự động trong 5 phút.
 }
 ```
 
-Refund thủ công sau 5 phút.
+Refund thủ công sau 15 phút.
 ```json
 {
   "message": "Manual refund request created successfully.",
@@ -87,11 +87,11 @@ Không tìm thấy booking hoặc payment.
 3. Service lấy booking, kiểm tra quyền sở hữu, và chỉ cho refund khi booking đang `confirmed`.
 4. Service lấy payment của booking và kiểm tra `status=paid`.
 5. Service kiểm tra xem booking đã có refund đang chờ hoặc đã xử lý hay chưa.
-6. Nếu thời gian từ `paid_at` đến hiện tại không quá 5 phút:
+6. Nếu thời gian từ `paid_at` đến hiện tại không quá 15 phút:
 7. Service chuyển booking sang `refund_processing`, payment sang `refund_pending`.
 8. Service tạo `refund` type `auto`, status `pending_auto`.
 9. Service hoàn tất refund ngay trong flow hiện tại bằng cách cập nhật payment `refunded`, booking `refunded`, refund `completed`.
-10. Nếu đã quá 5 phút, service tạo `refund` type `manual`, status `pending_manual`, và giữ booking ở trạng thái `confirmed`.
+10. Nếu đã quá 15 phút, service tạo `refund` type `manual`, status `pending_manual`, và giữ booking ở trạng thái `confirmed`.
 
 ## Ghi chú
 - Khi refund hoàn tất, slot sẽ tự mở lại vì slot availability chỉ dựa trên booking active.

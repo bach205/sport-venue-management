@@ -7,7 +7,7 @@ import { RefundModal } from '../components/RefundModal';
 import type { Booking, BookingStatus, PaymentMethod, VenuePayment } from '../types/venues.types';
 import { useTranslation } from 'react-i18next';
 
-const REFUND_WINDOW_MS = 5 * 60 * 1000;
+const REFUND_WINDOW_MS = 15 * 60 * 1000;
 
 type Tab = 'all' | 'confirmed' | 'payment_pending' | 'refund_processing' | 'refunded' | 'expired';
 

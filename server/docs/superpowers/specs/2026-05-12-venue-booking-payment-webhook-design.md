@@ -17,7 +17,7 @@ This design covers:
 - payment confirmation by external provider webhook
 - double-booking prevention
 - booking history APIs for end users
-- automatic refunds within 5 minutes from successful payment
+- automatic refunds within 15 minutes from successful payment
 - manual refund requests after the automatic refund window expires
 - slot reopening after completed refunds
 
@@ -275,7 +275,7 @@ Behavior:
 - reject unavailable slots
 - reject slots already occupied by active bookings
 - create booking with status `hold`
-- set `hold_expires_at = now + 5 minutes`
+- set `hold_expires_at = now + 10 minutes`
 
 Response includes:
 
@@ -388,7 +388,7 @@ Rules:
 
 Automatic refund path:
 
-If the request is within 5 minutes of `payment.paid_at`:
+If the request is within 15 minutes of `payment.paid_at`:
 
 - create refund with type `auto`
 - move booking to `refund_processing`
@@ -401,7 +401,7 @@ If the request is within 5 minutes of `payment.paid_at`:
 
 Manual refund path:
 
-If the request is after 5 minutes of `payment.paid_at`:
+If the request is after 15 minutes of `payment.paid_at`:
 
 - create refund with type `manual`
 - set refund status to `pending_manual`
@@ -518,7 +518,7 @@ If concurrent requests target the same slot:
 
 ## Hold Expiry Rules
 
-Hold TTL is 5 minutes.
+Hold TTL is 10 minutes.
 
 Rules:
 
@@ -533,7 +533,7 @@ Rules:
 
 A refund is eligible for automatic processing only when:
 
-`now - payment.paid_at <= 5 minutes`
+`now - payment.paid_at <= 15 minutes`
 
 ### Slot reopening rule
 
@@ -547,7 +547,7 @@ That means:
 
 ### Manual refund responsibility
 
-After the 5-minute automatic window expires, the refund becomes a manual workflow.
+After the 15-minute automatic window expires, the refund becomes a manual workflow.
 
 The request is recorded and remains pending until an owner/admin reviewer resolves it.
 
@@ -605,7 +605,7 @@ Example hold response:
       "start_time": "18:00",
       "end_time": "19:00",
       "amount": 250000,
-      "hold_expires_at": "2026-05-20T11:05:00.000Z"
+      "hold_expires_at": "2026-05-20T11:10:00.000Z"
     }
   }
 }
@@ -642,8 +642,8 @@ Required scenarios:
 
 ### Refund
 
-- automatic refund succeeds within 5 minutes from `payment.paid_at`
-- manual refund request is created after the 5-minute window
+- automatic refund succeeds within 15 minutes from `payment.paid_at`
+- manual refund request is created after the 15-minute window
 - approved manual refund reopens the slot
 - rejected manual refund keeps the slot occupied
 - refunded slots become available again in slot listing

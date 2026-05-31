@@ -11,7 +11,7 @@ const {
 const { Profile } = require("../user/model");
 const walletService = require("../wallet/service");
 
-const HOLD_TTL_MS = 15 * 60 * 1000;
+const HOLD_TTL_MS = 10 * 60 * 1000;
 const AUTO_REFUND_WINDOW_MS = 15 * 60 * 1000;
 const EXPIRED_BOOKING_STATUSES = ["hold", "payment_pending"];
 const ACTIVE_BOOKING_QUERY_STATUSES = ["hold", "payment_pending", "confirmed", "refund_processing"];

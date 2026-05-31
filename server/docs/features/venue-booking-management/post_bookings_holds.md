@@ -44,7 +44,7 @@ Giữ chỗ tạm thời cho một khoảng thời gian trước khi thanh toán
       "status": "hold",
       "amount": 500000,
       "slotCount": 2,
-      "holdExpiresAt": "2026-05-11T08:05:00.000Z",
+      "holdExpiresAt": "2026-05-11T08:10:00.000Z",
       "slot": {
         "date": "2026-05-11",
         "startTime": "08:00",

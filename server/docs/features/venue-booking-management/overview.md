@@ -20,7 +20,7 @@ Triển khai `venue` thành một backend module hoàn chỉnh theo hướng `te
 ## API và luồng nghiệp vụ
 - Public/user APIs:
   - `GET /venues` và `GET /venues/:venueId/slots?date=YYYY-MM-DD` để duyệt sân và xem slot theo ngày.
-- `POST /bookings/holds` để giữ chỗ tạm thời trước thanh toán. Hold TTL mặc định 5 phút.
+- `POST /bookings/holds` để giữ chỗ tạm thời trước thanh toán. Hold TTL mặc định 10 phút.
 - `POST /bookings/:bookingId/payments` để tạo payment theo contract gateway-ready.
 - `GET /payments/:paymentId` để client kiểm tra trạng thái thanh toán hiện tại.
 - `POST /payments/:paymentId/confirm` dùng cho adapter nội bộ/stub ở phase đầu; sau này thay bằng webhook/provider callback mà không đổi flow chính.
@@ -41,8 +41,8 @@ Triển khai `venue` thành một backend module hoàn chỉnh theo hướng `te
   - Thanh toán thành công -> booking sang `confirmed`, payment sang `paid`.
   - Hold hết hạn hoặc payment fail -> booking sang `expired`, slot tự mở lại do không còn booking active.
 - Quy tắc refund:
-  - Trong 5 phút từ `payment.paid_at`: tạo `refund` kiểu auto, booking sang `refund_processing`, payment sang `refund_pending`; khi hoàn tất thì booking `refunded`, payment `refunded`, slot mở lại.
-  - Sau 5 phút: không auto refund; tạo `refund` kiểu `pending_manual` để owner xử lý trong `/my-venues`.
+  - Trong 15 phút từ `payment.paid_at`: tạo `refund` kiểu auto, booking sang `refund_processing`, payment sang `refund_pending`; khi hoàn tất thì booking `refunded`, payment `refunded`, slot mở lại.
+  - Sau 15 phút: không auto refund; tạo `refund` kiểu `pending_manual` để owner xử lý trong `/my-venues`.
   - Owner approve -> booking `refunded`, payment `refunded`, slot mở lại.
   - Owner reject -> booking quay về `confirmed`, refund `rejected`.
 
@@ -54,8 +54,8 @@ Triển khai `venue` thành một backend module hoàn chỉnh theo hướng `te
   - Hai request đồng thời vào cùng một slot chỉ có 1 request thành công.
   - Payment confirm chuyển booking từ `hold/payment_pending` sang `confirmed`.
   - Hold hết hạn thì slot xuất hiện lại trong API.
-  - Refund trong 5 phút đi theo nhánh auto và mở lại slot.
-  - Refund sau 5 phút tạo manual request cho owner.
+  - Refund trong 15 phút đi theo nhánh auto và mở lại slot.
+  - Refund sau 15 phút tạo manual request cho owner.
   - Owner approve/reject manual refund cập nhật đúng booking/payment/refund.
   - Toggle `available/unavailable` của owner ảnh hưởng ngay tới kết quả `GET /slots`.
 
