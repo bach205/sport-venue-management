@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router';
-import { Bell, LogIn, ChevronDown, LogOut, User, Building2, ShieldCheck, Wallet, MessageSquare } from 'lucide-react';
+import { Bell, LogIn, ChevronDown, LogOut, User, Building2, ShieldCheck, Wallet, MessageSquare, Menu, X } from 'lucide-react';
 import { MatchingFAB } from '../../features/matching/components/MatchingFAB';
 import { logout } from '../../features/auth/store/authSlice';
 import { toast } from 'sonner';
@@ -29,6 +29,7 @@ export default function AppLayout() {
   const navigate     = useNavigate();
   const dispatch     = useAppDispatch();
   const user         = useAppSelector(state => state.auth.user);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const isActive = (to: string) => {
@@ -47,13 +48,26 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-brand-surface">
       <header className="sticky top-0 z-20 bg-brand-surface border-b border-brand-border shadow-sm">
-        <div className="max-w-screen-xl mx-auto px-6 h-[60px] flex items-center justify-between">
-          <div className="flex items-center gap-10">
+        <div className="max-w-screen-xl mx-auto px-3 sm:px-6 h-[60px] flex items-center justify-between">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3 xl:gap-10">
+            <button
+              type="button"
+              onClick={() => {
+                setUserMenuOpen(false);
+                setMobileNavOpen(true);
+              }}
+              aria-label={t('layout.openMenu')}
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-navigation"
+              className="xl:hidden p-2 rounded-lg hover:bg-brand-surface-orange transition-colors text-brand-body"
+            >
+              <Menu size={20} />
+            </button>
             <Link to="/discover" className="font-heading text-md font-extrabold text-brand-orange no-underline">
               <img src="/logo.png" alt="Logo" className="w-14 h-14 inline-block object-contain" />
-              Matchill
+              <span className="hidden sm:inline">Matchill</span>
             </Link>
-            <nav className="hidden md:flex items-center gap-5 lg:gap-7">
+            <nav className="hidden xl:flex items-center gap-7">
               {NAV_LINKS.map(link => (
                 <Link key={link.to} to={link.to}
                   className={`relative pb-1.5 transition-colors no-underline font-heading text-[15px]
@@ -153,6 +167,57 @@ export default function AppLayout() {
           </div>
         </div>
       </header>
+
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-40 xl:hidden" onClick={() => setMobileNavOpen(false)}>
+          <div className="absolute inset-0 bg-brand-dark/40" />
+          <aside
+            id="mobile-navigation"
+            className="absolute inset-y-0 left-0 flex w-[min(20rem,calc(100vw-3rem))] flex-col overflow-y-auto bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex h-[60px] items-center justify-between border-b border-brand-border px-4">
+              <Link
+                to="/discover"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex items-center font-heading text-md font-extrabold text-brand-orange no-underline"
+              >
+                <img src="/logo.png" alt="Logo" className="h-12 w-12 object-contain" />
+                Matchill
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(false)}
+                aria-label={t('layout.closeMenu')}
+                className="rounded-lg p-2 text-brand-body transition-colors hover:bg-brand-surface-orange"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
+              {NAV_LINKS.map(link => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`rounded-xl px-3 py-3 text-sm no-underline transition-colors
+                    ${isActive(link.to) ? 'bg-brand-surface-orange font-bold text-brand-orange' : 'font-medium text-brand-body hover:bg-brand-surface-orange'}`}
+                >
+                  {t(link.key)}
+                </Link>
+              ))}
+              <div className="mt-3 border-t border-brand-border pt-4">
+                <MatchingFAB showLabel onClose={() => setMobileNavOpen(false)} />
+              </div>
+            </nav>
+
+            <div className="border-t border-brand-border px-4 py-4 sm:hidden">
+              <LanguageSwitcher />
+            </div>
+          </aside>
+        </div>
+      )}
 
       <main className="flex-1 flex flex-col">
         <Outlet />

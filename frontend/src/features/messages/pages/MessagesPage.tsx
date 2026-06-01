@@ -36,6 +36,7 @@ export default function MessagesPage() {
     isMockApi ? getConversations() : []
   );
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [showChatOnMobile, setShowChatOnMobile] = useState(false);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | '1-1' | 'group'>('all');
 
@@ -78,6 +79,7 @@ export default function MessagesPage() {
         const conv = createOrOpenConversation(user, intro);
         setConversations(getConversations());
         setActiveId(conv.id);
+        setShowChatOnMobile(true);
         markConversationRead(conv.id);
       } else {
         const res = await createDirectConversation(withUserId);
@@ -87,6 +89,7 @@ export default function MessagesPage() {
             return [res.data, ...filtered];
           });
           setActiveId(res.data.id);
+          setShowChatOnMobile(true);
           await markConversationSeen(res.data.id);
         } else {
           console.error(res.message);
@@ -216,6 +219,7 @@ export default function MessagesPage() {
   const handleSelectConversation = useCallback(
     async (conv: Conversation) => {
       setActiveId(conv.id);
+      setShowChatOnMobile(true);
 
       if (isMockApi) {
         markConversationRead(conv.id);
@@ -276,7 +280,7 @@ export default function MessagesPage() {
       style={{ height: 'calc(100vh - 60px)', background: '#fff8f6' }}
     >
       {/* Left sidebar - Conversation list */}
-      <div className="w-[320px] shrink-0 flex flex-col overflow-hidden">
+      <div className={`${showChatOnMobile ? 'hidden' : 'flex'} w-full shrink-0 flex-col overflow-hidden md:flex md:w-[320px]`}>
         <ConversationList
           conversations={conversations}
           activeId={activeId}
@@ -290,13 +294,14 @@ export default function MessagesPage() {
       </div>
 
       {/* Right panel - Chat window */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`${showChatOnMobile ? 'flex' : 'hidden'} min-w-0 flex-1 flex-col overflow-hidden md:flex`}>
         {activeConversation ? (
           <ChatWindow
             key={activeConversation.id}
             conversation={activeConversation}
             onSendMessage={handleSendMessage}
             currentUserId={currentUserId}
+            onBack={() => setShowChatOnMobile(false)}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center px-8">

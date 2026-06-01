@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Phone, Video, Info, Smile, Mic, Send, Plus, MapPin } from "lucide-react";
+import { ArrowLeft, Phone, Video, Info, Smile, Mic, Send, Plus, MapPin } from "lucide-react";
 import type { Conversation, ChatMessage } from "../types/messages.types";
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
@@ -96,9 +96,10 @@ interface Props {
   conversation: Conversation;
   onSendMessage: (content: string) => void;
   currentUserId: string;
+  onBack?: () => void;
 }
 
-export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props) {
+export function ChatWindow({ conversation, onSendMessage, currentUserId, onBack }: Props) {
   const { t, i18n } = useTranslation("matching");
   const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
   const [input, setInput] = useState("");
@@ -148,16 +149,26 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
     <div className="flex flex-col h-full" style={{ background: "#fff8f6" }}>
       {/* Chat header */}
       <div
-        className="flex items-center gap-3 px-6 py-4 border-b border-[#dfc0b3] shrink-0"
+        className="flex items-center gap-2 border-b border-[#dfc0b3] px-3 py-3 shrink-0 sm:gap-3 sm:px-6 sm:py-4"
         style={{ background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
       >
+        <button
+          type="button"
+          onClick={onBack}
+          title={t("messages.backToList")}
+          aria-label={t("messages.backToList")}
+          className="rounded-full p-2 text-[#584238] transition-colors hover:bg-[#fff1eb] md:hidden"
+        >
+          <ArrowLeft size={19} />
+        </button>
+
         {/* Avatar */}
         {resolveAvatar(other?.avatar) ? (
           <div className="relative shrink-0">
             <ImageWithFallback
               src={resolveAvatar(other?.avatar)}
               alt={other?.name ?? ""}
-              className="w-11 h-11 rounded-full object-cover"
+              className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11"
             />
             {other?.isOnline && (
               <span
@@ -168,7 +179,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
           </div>
         ) : (
           <div
-            className="w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white sm:h-11 sm:w-11"
             style={{
               background: "linear-gradient(135deg, #006a65, #4db6ac)",
               fontFamily: "Lexend, sans-serif",
@@ -183,6 +194,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
         {/* Name & status */}
         <div className="flex-1 min-w-0">
           <p
+            className="truncate"
             style={{
               fontFamily: "Lexend, sans-serif",
               fontSize: "16px",
@@ -205,13 +217,13 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
         <div className="flex items-center gap-1">
           {[
             { icon: <Phone size={18} />, title: t("messages.voiceCall") },
-            { icon: <Video size={18} />, title: t("messages.videoCall") },
+            { icon: <Video size={18} />, title: t("messages.videoCall"), mobileClassName: "hidden sm:block" },
             { icon: <Info size={18} />, title: t("messages.info") },
-          ].map(({ icon, title }) => (
+          ].map(({ icon, title, mobileClassName = "" }) => (
             <button
               key={title}
               title={title}
-              className="p-2 rounded-full hover:bg-[#fff1eb] transition-colors"
+              className={`p-2 rounded-full hover:bg-[#fff1eb] transition-colors ${mobileClassName}`}
               style={{ color: "#584238" }}
             >
               {icon}
@@ -221,7 +233,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6">
         {conversation.messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div
@@ -370,7 +382,7 @@ export function ChatWindow({ conversation, onSendMessage, currentUserId }: Props
       </div>
 
       {/* Input bar */}
-      <div className="px-4 py-3 border-t border-[#dfc0b3] shrink-0" style={{ background: "#fff" }}>
+      <div className="border-t border-[#dfc0b3] px-2 py-3 shrink-0 sm:px-4" style={{ background: "#fff" }}>
         <div
           className="flex items-center gap-2 rounded-2xl border border-[#dfc0b3] px-3 py-2"
           style={{ background: "#fff8f6" }}

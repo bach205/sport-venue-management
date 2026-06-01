@@ -3,7 +3,13 @@ import { Zap } from 'lucide-react';
 import { MatchingModal } from './MatchingModal';
 import { useTranslation } from 'react-i18next';
 
-export function MatchingFAB() {
+export function MatchingFAB({
+  onClose,
+  showLabel = false,
+}: {
+  onClose?: () => void;
+  showLabel?: boolean;
+}) {
   const { t } = useTranslation('matching');
   const [open, setOpen] = useState(false);
 
@@ -25,10 +31,17 @@ export function MatchingFAB() {
         title={t('fab.title')}
       >
         <Zap size={15} fill="#fff" color="#fff" />
-        <span className="hidden xl:inline">{t('fab.label')}</span>
+        <span className={showLabel ? 'inline' : 'hidden xl:inline'}>{t('fab.label')}</span>
       </button>
 
-      {open && <MatchingModal onClose={() => setOpen(false)} />}
+      {open && (
+        <MatchingModal
+          onClose={() => {
+            setOpen(false);
+            onClose?.();
+          }}
+        />
+      )}
     </>
   );
 }
