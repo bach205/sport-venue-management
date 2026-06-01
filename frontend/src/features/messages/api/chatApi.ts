@@ -38,13 +38,13 @@ const buildCurrentUser = (): ChatUser => {
 const buildAvatarUrl = (seed: string) =>
   `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-const buildPeerUser = (peer?: { id?: string; name?: string; email?: string }): ChatUser => {
+const buildPeerUser = (peer?: { id?: string; name?: string; email?: string; isOnline?: boolean }): ChatUser => {
   const label = peer?.name || peer?.email || 'Unknown';
   return {
     id: peer?.id || 'unknown',
     name: label,
     avatar: buildAvatarUrl(label),
-    isOnline: false,
+    isOnline: Boolean(peer?.isOnline),
   };
 };
 

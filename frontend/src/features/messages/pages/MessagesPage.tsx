@@ -216,6 +216,29 @@ export default function MessagesPage() {
     };
   }, [activeId, appendMessage]);
 
+  useEffect(() => {
+    const handlePresence = (payload: { userId?: string; isOnline?: boolean }) => {
+      if (!payload?.userId) return;
+
+      setConversations((prev) =>
+        prev.map((conversation) => ({
+          ...conversation,
+          participants: conversation.participants.map((participant) =>
+            participant.id === payload.userId
+              ? { ...participant, isOnline: Boolean(payload.isOnline) }
+              : participant
+          ),
+        }))
+      );
+    };
+
+    socket.on('user:presence', handlePresence);
+
+    return () => {
+      socket.off('user:presence', handlePresence);
+    };
+  }, []);
+
   const handleSelectConversation = useCallback(
     async (conv: Conversation) => {
       setActiveId(conv.id);

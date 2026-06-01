@@ -1,5 +1,6 @@
 const { HTTP_STATUS } = require("../../constants");
 const createHttpError = require("../../utils/createHttpError");
+const { isUserOnline } = require("../../sockets/presence");
 const { Profile, User } = require("../user/model");
 const {
   Conversation,
@@ -237,6 +238,7 @@ class ChatService {
             id: String(peerUser._id),
             email: peerUser.email,
             name: peerProfile?.name || null,
+            isOnline: isUserOnline(peerUser._id),
           }
         : null,
       lastMessage: conversation.last_message_id

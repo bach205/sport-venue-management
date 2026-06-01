@@ -1,5 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-import { getToken } from "@/features/auth/store/authStore";
+import { getCurrentUser, getToken, subscribeAuth } from "@/features/auth/store/authStore";
 
 const normalizeSocketUrl = (apiBaseUrl?: string) => {
   if (!apiBaseUrl) {
@@ -17,6 +17,18 @@ const socket: Socket = io(socketUrl, {
   transports: ["websocket"],
 });
 
+const identifyCurrentUser = (): void => {
+  const token = getToken();
+  const user = getCurrentUser();
+  if (!token || !user?._id) return;
+
+  socket.auth = { token };
+  socket.emit("user:join", {
+    userId: user._id,
+    token,
+  });
+};
+
 export const connectSocket = (): Socket => {
   if (!socket.connected) {
     const token = getToken();
@@ -28,9 +40,7 @@ export const connectSocket = (): Socket => {
 };
 
 export const disconnectSocket = (): void => {
-  if (socket.connected) {
-    socket.disconnect();
-  }
+  socket.disconnect();
 };
 
 export const joinUserRoom = (userId: string): void => {
@@ -42,5 +52,22 @@ export const joinUserRoom = (userId: string): void => {
     token: getToken(),
   });
 };
+
+socket.on("connect", identifyCurrentUser);
+
+subscribeAuth(() => {
+  const token = getToken();
+  if (!token) {
+    disconnectSocket();
+    return;
+  }
+
+  if (!socket.connected) {
+    connectSocket();
+    return;
+  }
+
+  identifyCurrentUser();
+});
 
 export { socket };

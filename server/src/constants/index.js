@@ -12,6 +12,7 @@ const SOCKET_EVENTS = {
   CONNECTION: "connection",
   DISCONNECT: "disconnect",
   USER_JOIN: "user:join",
+  USER_PRESENCE: "user:presence",
   CHAT_MESSAGE: "chat:message",
   CHAT_JOIN: "chat:join",
   MATCHING_REQUEST_CREATED: "matching:request:created",

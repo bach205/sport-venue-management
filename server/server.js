@@ -13,10 +13,10 @@ const PORT = process.env.PORT || 5000;
 
 const bootstrap = async () => {
   await connectDb();
-  await connectRedis();
+  const redisReady = await connectRedis();
 
   const server = http.createServer(app);
-  const io = createSocketServer(server);
+  const io = createSocketServer(server, { redisReady });
   app.set("io", io);
 
   registerSocketHandlers(io);

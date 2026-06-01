@@ -11,6 +11,9 @@ const redisConfig = {
 const pubClient = new Redis(redisConfig);
 const subClient = new Redis(redisConfig);
 
+pubClient.on("error", () => {});
+subClient.on("error", () => {});
+
 const connectRedis = async () => {
   try {
     await Promise.race([
@@ -20,8 +23,10 @@ const connectRedis = async () => {
       }),
     ]);
     console.log("✅ Redis connected successfully");
+    return true;
   } catch (error) {
     console.error("❌ Redis connection error:", error);
+    return false;
   }
 };
 
