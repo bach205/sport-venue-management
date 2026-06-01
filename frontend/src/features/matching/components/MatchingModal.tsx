@@ -21,7 +21,6 @@ import type { Sport, SkillLevel, PostType } from "../../discover/types/discover.
 import { ImageWithFallback } from "@/shared/components/ImageWithFallback";
 import { resolveAvatar } from "../../../shared/assets/avatarMap";
 import {
-  LOCATION_OPTIONS,
   SKILL_LEVEL_OPTIONS,
   SPORT_ICON_BY_VALUE,
   SPORT_LABEL_BY_VALUE,
@@ -224,7 +223,7 @@ function OpenStreetMapLocationPicker({
     onChange({ ...next, address: result.display_name });
   };
 
-  const handleUseCurrentLocation = () => {
+  const handleUseCurrentLocation = useCallback(() => {
     setLocationError("");
 
     if (!navigator.geolocation) {
@@ -248,9 +247,11 @@ function OpenStreetMapLocationPicker({
         maximumAge: 60000,
       }
     );
-  };
+  }, [t, updateLocation]);
 
   useEffect(() => {
+    handleUseCurrentLocation();
+
     return () => {
       if (reverseGeocodeTimerRef.current) {
         clearTimeout(reverseGeocodeTimerRef.current);
@@ -258,7 +259,7 @@ function OpenStreetMapLocationPicker({
       reverseGeocodeAbortRef.current?.abort();
       addressSearchAbortRef.current?.abort();
     };
-  }, []);
+  }, [handleUseCurrentLocation]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -405,7 +406,7 @@ function RequestForm({
 }) {
   const { t } = useTranslation("matching");
   const [sport, setSport] = useState<Sport>("tennis");
-  const [location, setLocation] = useState(LOCATION_OPTIONS[0]);
+  const [location, setLocation] = useState("");
   const [mapPosition, setMapPosition] = useState(DEFAULT_MAP_CENTER);
   const [searchRadiusKm, setSearchRadiusKm] = useState(5);
   const [time, setTime] = useState("18:00");
@@ -414,6 +415,13 @@ function RequestForm({
   const [error, setError] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
+  const handleLocationChange = useCallback(
+    (next: { lat: number; lng: number; address: string }) => {
+      setMapPosition({ lat: next.lat, lng: next.lng });
+      setLocation(next.address);
+    },
+    []
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -542,10 +550,7 @@ function RequestForm({
           <OpenStreetMapLocationPicker
             position={mapPosition}
             radiusKm={searchRadiusKm}
-            onChange={(next) => {
-              setMapPosition({ lat: next.lat, lng: next.lng });
-              setLocation(next.address);
-            }}
+            onChange={handleLocationChange}
             onRadiusChange={setSearchRadiusKm}
           />
         </div>
