@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { CreatePostModal } from "./CreatePostModal";
+import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
 
 // ── Helpers ──────────────────────────────────────────────────
 function timeAgo(iso: string, t: TFunction<"matching">): string {
@@ -424,6 +425,7 @@ function SellCard({
 }) {
   const { t } = useTranslation("matching");
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
   const user = getCurrentUser();
   const [post, setPost] = useState(initialPost);
   const [showComments, setShowComments] = useState(false);
@@ -437,7 +439,7 @@ function SellCard({
 
   const handleLike = async () => {
     if (!user) {
-      toast.error(t("feed.likeLoginRequired"));
+      requireAuth();
       return;
     }
     if (liking) return;
@@ -474,12 +476,24 @@ function SellCard({
   };
 
   const handleContact = () => {
-    if (!user || user._id === post.author.id) return;
+    if (!user) {
+      requireAuth();
+      return;
+    }
+    if (user._id === post.author.id) return;
     navigate(
       `/messages?with=${post.author.id}&name=${encodeURIComponent(
         post.author.name
       )}&avatar=${encodeURIComponent(post.author.avatarUrl || "")}`
     );
+  };
+
+  const handleToggleComments = () => {
+    if (!user && !showComments) {
+      requireAuth();
+      return;
+    }
+    setShowComments((s) => !s);
   };
 
   const price = formatPrice(post);
@@ -681,7 +695,7 @@ function SellCard({
           )}
           {post.commentCount > 0 && (
             <button
-              onClick={() => setShowComments((s) => !s)}
+              onClick={handleToggleComments}
               className="ml-auto text-[12px] text-brand-body hover:text-brand-orange transition-colors"
             >
               {post.commentCount} hỏi đáp
@@ -695,7 +709,7 @@ function SellCard({
         liking={liking}
         showComments={showComments}
         onLike={handleLike}
-        onToggleComments={() => setShowComments((s) => !s)}
+        onToggleComments={handleToggleComments}
         onShare={handleShare}
       />
       {/* Comments */}

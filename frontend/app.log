@@ -1,11 +1,8 @@
 
-> matchill_fe@0.0.1 dev
-> vite
+> matchill_fe@0.0.1 preview
+> vite preview
 
-Port 5173 is in use, trying another one...
-Port 5174 is in use, trying another one...
-
-  VITE v8.0.13  ready in 119 ms
-
-  ➜  Local:   http://localhost:5175/
+Port 9010 is in use, trying another one...
+Port 9011 is in use, trying another one...
+  ➜  Local:   http://localhost:9012/
   ➜  Network: use --host to expose

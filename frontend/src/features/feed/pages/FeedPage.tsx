@@ -8,6 +8,7 @@ import { getCurrentUser } from "../../auth/store/authStore";
 import { toast } from "sonner";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
+import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
 
 type FeedTab = "all" | "buy" | "sell";
 
@@ -20,14 +21,15 @@ const SPORT_EMOJI: Record<string, string> = {
 };
 
 const SPORT_NAMES: Record<string, string> = {
-  Badminton: "Cầu lông",
+  Badminton: "badminton",
   Tennis: "Tennis",
   Pickleball: "Pickleball",
-  Football: "Bóng đá",
+  Football: "football",
 };
 
 export default function FeedPage() {
   const { t } = useTranslation("matching");
+  const { isAuthenticated, requireAuth } = useAuthGuard();
   const user = getCurrentUser();
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
   const [posts, setPosts] = useState<ApiPost[]>([]);
@@ -42,6 +44,14 @@ export default function FeedPage() {
 
   const loadFeed = useCallback(
     async (page = 1, append = false) => {
+      if (!isAuthenticated) {
+        setPosts([]);
+        setPagination(null);
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+
       if (page === 1) setLoading(true);
       else setLoadingMore(true);
 
@@ -65,7 +75,7 @@ export default function FeedPage() {
       if (page === 1) setLoading(false);
       else setLoadingMore(false);
     },
-    [activeTab, searchQuery, filterSport, sortOrder]
+    [activeTab, isAuthenticated, searchQuery, filterSport, sortOrder]
   );
 
   useEffect(() => {
@@ -103,6 +113,10 @@ export default function FeedPage() {
     setSearchText("");
     setSearchQuery("");
   };
+  const handleOpenCreateModal = () => {
+    if (!requireAuth()) return;
+    setShowCreateModal(true);
+  };
 
   const initials =
     user?.name
@@ -110,6 +124,8 @@ export default function FeedPage() {
       .map((w) => w[0])
       .slice(-2)
       .join("") ?? "U";
+  const sportLabel = (sport: string) =>
+    SPORT_NAMES[sport] ? t(`sports.${SPORT_NAMES[sport].toLowerCase()}`, sport) : sport;
 
   return (
     <div className="min-h-screen bg-[#f5f0ed]">
@@ -126,7 +142,7 @@ export default function FeedPage() {
                   : "text-brand-muted border-transparent hover:text-brand-body"
               }`}
             >
-              <ShoppingBag size={15} /> Tất cả
+              <ShoppingBag size={15} /> {t("feed.page.tabs.all")}
             </button>
             <button
               onClick={() => handleTabChange("buy")}
@@ -136,7 +152,7 @@ export default function FeedPage() {
                   : "text-brand-muted border-transparent hover:text-brand-body"
               }`}
             >
-              <ShoppingCart size={15} /> Cần mua
+              <ShoppingCart size={15} /> {t("feed.page.tabs.buy")}
             </button>
             <button
               onClick={() => handleTabChange("sell")}
@@ -146,7 +162,7 @@ export default function FeedPage() {
                   : "text-brand-muted border-transparent hover:text-brand-body"
               }`}
             >
-              <ShoppingBag size={15} /> Cần bán
+              <ShoppingBag size={15} /> {t("feed.page.tabs.sell")}
             </button>
           </div>
         </div>
@@ -160,7 +176,7 @@ export default function FeedPage() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Tìm vợt, bóng, giày thể thao…"
+              placeholder={t("feed.page.marketSearchPlaceholder")}
               className="flex-1 bg-transparent outline-none text-[13px] text-brand-dark placeholder:text-[#b0a09a]"
             />
             {searchText && (
@@ -175,15 +191,15 @@ export default function FeedPage() {
               onClick={handleSearch}
               className="h-7 px-3 rounded-xl bg-brand-orange text-[12px] font-bold text-white font-heading hover:opacity-90 flex-shrink-0"
             >
-              Tìm
+              {t("feed.page.search")}
             </button>
           </div>
         </div>
         {/* ── Sport filter chips ── */}
         <div className="bg-white border-b border-[#ede5e0] rounded-b-2xl px-4 py-2.5 flex items-center gap-2 overflow-x-auto scrollbar-none">
           {[
-            { key: "", label: "Tất cả" },
-            ...SPORTS.map((s) => ({ key: s, label: `${SPORT_EMOJI[s]} ${SPORT_NAMES[s]}` })),
+            { key: "", label: t("feed.page.filters.all") },
+            ...SPORTS.map((s) => ({ key: s, label: `${SPORT_EMOJI[s]} ${sportLabel(s)}` })),
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -202,15 +218,15 @@ export default function FeedPage() {
             onChange={(e) => setSortOrder(e.target.value as any)}
             className="ml-auto h-7 pl-2 pr-6 rounded-full border border-brand-border text-[11px] bg-white text-brand-body outline-none focus:border-brand-orange flex-shrink-0 appearance-none cursor-pointer"
           >
-            <option value="newest">Mới nhất</option>
-            <option value="price_asc">Giá tăng</option>
-            <option value="price_desc">Giá giảm</option>
+            <option value="newest">{t("feed.page.sort.newest")}</option>
+            <option value="price_asc">{t("feed.page.sort.priceAsc")}</option>
+            <option value="price_desc">{t("feed.page.sort.priceDesc")}</option>
           </select>
         </div>
         <div className="px-3 pt-3 pb-2 flex flex-col gap-3">
           {/* ── Create box ── */}
           <div
-            onClick={() => setShowCreateModal(true)}
+            onClick={handleOpenCreateModal}
             className="flex items-center gap-3 bg-white border border-[#e8e0dc] rounded-2xl px-4 py-3 cursor-pointer hover:border-brand-orange/40 transition-colors"
           >
             {user ? (
@@ -230,21 +246,21 @@ export default function FeedPage() {
                 <ShoppingBag size={16} />
               </div>
             )}
-            <span className="flex-1 text-[13px] text-[#b0a09a]">Bạn đang muốn mua bán gì?</span>
+            <span className="flex-1 text-[13px] text-[#b0a09a]">{t("feed.page.marketPrompt")}</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowCreateModal(true);
+                handleOpenCreateModal();
               }}
               className={`flex items-center gap-1.5 h-8 px-3.5 rounded-xl text-[12px] font-bold text-white font-heading hover:opacity-90 transition-opacity flex-shrink-0 bg-brand-orange`}
             >
               <Tag size={12} />
-              Đăng tin
+              {t("feed.page.createListing")}
             </button>
           </div>
           {searchQuery && (
             <p className="text-[12px] text-brand-muted px-1">
-              Kết quả cho <span className="font-semibold text-brand-dark">"{searchQuery}"</span>
+              {t("feed.page.resultsFor")} <span className="font-semibold text-brand-dark">"{searchQuery}"</span>
             </p>
           )}
           {/* ── Feed ── */}
@@ -272,17 +288,17 @@ export default function FeedPage() {
             <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border-2 border-dashed border-[#e8e0dc]">
               <span className="text-5xl mb-4">🛍️</span>
               <p className="font-heading text-[15px] font-bold text-brand-dark mb-1">
-                Chưa có tin đăng nào
+                {t("feed.page.emptyMarketTitle")}
               </p>
               <p className="text-[12px] text-brand-muted mb-5 text-center max-w-[220px]">
-                Hãy là người đầu tiên đăng mua bán đồ thể thao!
+                {t("feed.page.emptyMarketSubtitle")}
               </p>
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={handleOpenCreateModal}
                 className="flex items-center gap-2 h-9 px-5 rounded-xl text-[13px] font-bold text-white font-heading bg-brand-orange"
               >
                 <Plus size={14} />
-                Đăng tin ngay
+                {t("feed.page.createListingNow")}
               </button>
             </div>
           ) : (
@@ -302,12 +318,14 @@ export default function FeedPage() {
                   className="flex items-center justify-center gap-2 h-11 rounded-2xl border border-[#e8e0dc] bg-white hover:bg-[#f5f0ed] transition-colors text-[13px] text-brand-body disabled:opacity-60"
                 >
                   {loadingMore && <Loader2 size={15} className="animate-spin" />}
-                  {loadingMore ? "Đang tải…" : `Xem thêm ${pagination.total - posts.length} tin`}
+                  {loadingMore
+                    ? t("feed.page.loadingMore")
+                    : t("feed.page.loadMoreListings", { count: pagination.total - posts.length })}
                 </button>
               )}
               {pagination && pagination.page >= pagination.pages && posts.length > 0 && (
                 <p className="text-center py-3 text-[12px] text-brand-muted">
-                  Đã hiển thị tất cả {pagination.total} tin
+                  {t("feed.page.endListings", { count: pagination.total })}
                 </p>
               )}
             </>

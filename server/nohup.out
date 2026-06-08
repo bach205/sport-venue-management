@@ -1,0 +1,453 @@
+
+> matchill_be@1.0.0 start
+> node server.js
+
+✓ MongoDB connected: mongodb://127.0.0.1:27016/matchill
+✅ Redis connected successfully
+Server is running on port 5689
+
+> matchill_be@1.0.0 start
+> node server.js
+
+✓ MongoDB connected: mongodb://127.0.0.1:27016/matchill
+✅ Redis connected successfully
+Server is running on port 5689
+
+> matchill_be@1.0.0 start
+> node server.js
+
+✓ MongoDB connected: mongodb://127.0.0.1:27016/matchill
+✅ Redis connected successfully
+node:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::5689
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at bootstrap (/home/giapphan/sport-venue-management/server/server.js:25:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2044:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '::',
+  port: 5689
+}
+
+Node.js v24.15.0
+Socket connected: xo87DlX7h4gcw5zxAAAB
+Socket disconnected: xo87DlX7h4gcw5zxAAAB
+[0mGET /api/v1/matching/discover-posts [33m401[0m 5.023 ms - 27[0m
+Socket connected: EAyikD24OlzPTHQOAAAD
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.205 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [32m200[0m 36.327 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [32m200[0m 6.100 ms - 10222[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.516 ms - 27[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [33m401[0m 0.930 ms - 27[0m
+Socket disconnected: EAyikD24OlzPTHQOAAAD
+Socket connected: mN9scpi77nvKwnbkAAAF
+Socket disconnected: mN9scpi77nvKwnbkAAAF
+Socket connected: BJ8KmNWzxo0jpgLyAAAH
+[0mGET /api/v1/chat/conversations [33m401[0m 1.025 ms - 27[0m
+Socket connected: rChClqpeB63kuyqNAAAJ
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.691 ms - 27[0m
+[0mPOST /api/v1/auth/login [33m400[0m 58.228 ms - 40[0m
+{
+  _id: new ObjectId("6a0a9c51fe565aff1304ec16"),
+  email: 'tuantucuc@gmail.com',
+  password_hash: '$2a$10$yal0VLHKnuNHIRLNd3Z39ubMieR6Oe9izRtIwtDbV1fAmg71PKQKa',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-18T04:57:53.963Z,
+  updatedAt: 2026-05-20T05:27:57.547Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 73.789 ms - 1071[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 25.760 ms - 2366[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [32m200[0m 2.310 ms - 263410[0m
+Socket disconnected: rChClqpeB63kuyqNAAAJ
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.308 ms - 27[0m
+Socket connected: Ai7Go1QbkGcl-P1AAAAL
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.288 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.362 ms - 27[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.316 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [32m200[0m 25.579 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 1.197 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.288 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.334 ms - 27[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.308 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.318 ms - 27[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.282 ms - 27[0m
+Socket disconnected: Ai7Go1QbkGcl-P1AAAAL
+Socket connected: x41OV-K6Awx842ZpAAAN
+Socket disconnected: x41OV-K6Awx842ZpAAAN
+Socket connected: unXcg6h3IrABx7PNAAAP
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.294 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 25.411 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.375 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 9.253 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.281 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 9.436 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.282 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 9.240 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.310 ms - 27[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [33m401[0m 0.674 ms - 27[0m
+Socket disconnected: BJ8KmNWzxo0jpgLyAAAH
+Socket connected: zLmtiD49ez6Spei2AAAR
+Socket disconnected: zLmtiD49ez6Spei2AAAR
+Socket disconnected: unXcg6h3IrABx7PNAAAP
+Socket connected: I3chnGJaF_hYsOWQAAAT
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.124 ms - 27[0m
+Socket disconnected: I3chnGJaF_hYsOWQAAAT
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.267 ms - 27[0m
+Socket connected: 5pQjtFIgQh6YNExvAAAV
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.302 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [32m200[0m 32.047 ms - 1091[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.371 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.097 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.801 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 19.803 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.445 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 7.876 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.394 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.286 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 10.718 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.342 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.279 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 28.805 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 3.453 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.244 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 9.776 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.309 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.298 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.193 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 8.912 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.323 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.768 ms - -[0m
+Socket disconnected: 5pQjtFIgQh6YNExvAAAV
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.258 ms - 27[0m
+Socket connected: FTOHFLgTzgwJXHprAAAX
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.299 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 5.128 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.239 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 6.434 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.257 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 21.799 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 10.012 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.318 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 10.500 ms - -[0m
+Socket disconnected: FTOHFLgTzgwJXHprAAAX
+Socket connected: rtFN9A9rNsxh0YfxAAAZ
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.403 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 22.026 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.293 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.239 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 9.455 ms - -[0m
+Socket disconnected: rtFN9A9rNsxh0YfxAAAZ
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.274 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.760 ms - -[0m
+Socket connected: 8JuzQ5OmGku6nuGGAAAb
+Socket disconnected: 8JuzQ5OmGku6nuGGAAAb
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.405 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 10.914 ms - -[0m
+Socket connected: PyDa0W5UbdXPRKdQAAAd
+Socket disconnected: PyDa0W5UbdXPRKdQAAAd
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.255 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 22.775 ms - -[0m
+Socket connected: aEzVqZbtaoU6VTaNAAAf
+Socket disconnected: aEzVqZbtaoU6VTaNAAAf
+Socket connected: m5Db5UxivTV3qju0AAAh
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 27.442 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.249 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 11.843 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.321 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.663 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 8.537 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.268 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.819 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 12.881 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.241 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 6.369 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.454 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.273 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 7.968 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.288 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 6.748 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 33.637 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.315 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 519.316 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.299 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 9.204 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 27.599 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.116 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.350 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.865 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.280 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 30.765 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.234 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.731 ms - -[0m
+Socket disconnected: m5Db5UxivTV3qju0AAAh
+Socket connected: R5hMdqXvyAIfpbx5AAAj
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.287 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 22.677 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 6.610 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 1102.204 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 8.548 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 8.184 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.247 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.418 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.399 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.332 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 22.595 ms - -[0m
+Socket disconnected: R5hMdqXvyAIfpbx5AAAj
+Socket connected: -oqE3opS1hC48zlKAAAl
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.220 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 23.200 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.305 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.786 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.289 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.260 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 27.842 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 10.745 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.345 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 9.516 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 21.656 ms - -[0m
+{
+  _id: new ObjectId("6a0a9c51fe565aff1304ec16"),
+  email: 'tuantucuc@gmail.com',
+  password_hash: '$2a$10$yal0VLHKnuNHIRLNd3Z39ubMieR6Oe9izRtIwtDbV1fAmg71PKQKa',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-18T04:57:53.963Z,
+  updatedAt: 2026-05-20T05:27:57.547Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 68.947 ms - 1071[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 26.151 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 27.808 ms - 1827[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 35.959 ms - 3356[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 18.163 ms - 2490[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 9.937 ms - 210[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 36.506 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 34.016 ms - 3840[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 15.161 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [32m200[0m 20.332 ms - 2377[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 21.759 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 21.364 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 8.999 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-08 [32m200[0m 9.208 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-08 [32m200[0m 11.691 ms - 2507[0m
+Socket disconnected: -oqE3opS1hC48zlKAAAl
+Socket connected: gj7aLsou8nsea24nAAAn
+Rejected socket handshake for gj7aLsou8nsea24nAAAn.
+Rejected user room join for socket gj7aLsou8nsea24nAAAn.
+[0mGET /api/v1/matching/discover-posts [33m401[0m 1.210 ms - 39[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [33m401[0m 0.955 ms - 39[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [32m200[0m 9.484 ms - 1091[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [32m200[0m 1.169 ms - 10222[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.251 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 29.394 ms - -[0m
+Socket connected: O-d-LH1jpG6Usf_8AAAp
+[0mGET /api/v1/venues?date=2026-06-08 [32m200[0m 8.839 ms - 1092[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.624 ms - 39[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.862 ms - 39[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.767 ms - 39[0m
+Socket disconnected: gj7aLsou8nsea24nAAAn
+Socket disconnected: O-d-LH1jpG6Usf_8AAAp
+Socket connected: WJgicDz3RwyznUtkAAAr
+Socket disconnected: WJgicDz3RwyznUtkAAAr
+Socket connected: Bprn0jg7a8sJILppAAAt
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.275 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 20.833 ms - -[0m
+Socket connected: z3bp9jvQBpCuftclAAAv
+Socket disconnected: Bprn0jg7a8sJILppAAAt
+Socket connected: CUM4LdiQTOmlrX_EAAAx
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.289 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 25.914 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.404 ms - 27[0m
+Socket connected: E40DFyvpppDBQOZ-AAAz
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.211 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [32m200[0m 6.809 ms - 1091[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.631 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.214 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.126 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 4.846 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.308 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 7.690 ms - -[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-08 [32m200[0m 14.703 ms - 2507[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-08 [32m200[0m 14.005 ms - 1093[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.253 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 8.186 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-09 [32m200[0m 35.355 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-09 [32m200[0m 38.946 ms - 2507[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-08 [36m304[0m 7.272 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-08 [36m304[0m 6.604 ms - -[0m
+{
+  _id: new ObjectId("6a0a9c51fe565aff1304ec16"),
+  email: 'tuantucuc@gmail.com',
+  password_hash: '$2a$10$yal0VLHKnuNHIRLNd3Z39ubMieR6Oe9izRtIwtDbV1fAmg71PKQKa',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-18T04:57:53.963Z,
+  updatedAt: 2026-05-20T05:27:57.547Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 59.402 ms - 1071[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 14.123 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.279 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 7.872 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.227 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 7.522 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 17.361 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 10.537 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 23.902 ms - -[0m
+[0mPOST /api/v1/chat/conversations/direct [33m400[0m 4.768 ms - 44[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 20.819 ms - 3382[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 15.512 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 5.570 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 9.263 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 12.628 ms - -[0m
+Socket disconnected: E40DFyvpppDBQOZ-AAAz
+Socket disconnected: z3bp9jvQBpCuftclAAAv
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.265 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [32m200[0m 13.546 ms - 1091[0m
+Socket connected: 8GBjUQeMG0FvGvGsAAA1
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.219 ms - -[0m
+Socket disconnected: CUM4LdiQTOmlrX_EAAAx
+Socket connected: MNEmmYXmYpTdgMywAAA3
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 40.524 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 38.229 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 37.840 ms - -[0m
+Socket connected: pxJ7k25I5Y_GaswTAAA5
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.209 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [32m200[0m 6.768 ms - 1091[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.674 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 17.191 ms - -[0m
+Socket disconnected: 8GBjUQeMG0FvGvGsAAA1
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 17.438 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 26.334 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 22.879 ms - -[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [36m304[0m 408.837 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 1095.625 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 22.926 ms - -[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 15.237 ms - -[0m
+Socket disconnected: pxJ7k25I5Y_GaswTAAA5
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.204 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 19.261 ms - -[0m
+Socket connected: zo9Vd1UXRsenYL9pAAA7
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [36m304[0m 7.307 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 20.793 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 29.765 ms - -[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 14.510 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 6.646 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 14.182 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 21.379 ms - -[0m
+Socket disconnected: zo9Vd1UXRsenYL9pAAA7
+[0mPOST /api/v1/chat/conversations/direct [33m400[0m 7.616 ms - 44[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 29.001 ms - -[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 12.533 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.273 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 20.681 ms - -[0m
+Socket connected: JW7aNzxb2LFzGQ7LAAA9
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 25.871 ms - 337[0m
+[0mPOST /api/v1/chat/conversations/6a0d68922df77af582656a68/seen [32m200[0m 12.852 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a0d68922df77af582656a68/messages?page=1&limit=50 [32m200[0m 16.890 ms - 790[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 13.809 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 8.031 ms - 2798[0m
+[0mPOST /api/v1/chat/conversations/6a0d68922df77af582656a68/seen [32m200[0m 15.214 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a0d68922df77af582656a68/messages?page=1&limit=50 [36m304[0m 14.509 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [32m200[0m 8.425 ms - 1092[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 13.565 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 8.777 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-08 [32m200[0m 8.530 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-08 [32m200[0m 12.174 ms - 2507[0m
+Socket disconnected: JW7aNzxb2LFzGQ7LAAA9
+[0mPOST /api/v1/chat/conversations/6a14582789875c3f60f58156/seen [32m200[0m 31.921 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a14582789875c3f60f58156/messages?page=1&limit=50 [32m200[0m 28.370 ms - 787[0m
+[0mPOST /api/v1/chat/conversations/6a1a594a1a379e1e7e55d8aa/seen [32m200[0m 12.560 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1a594a1a379e1e7e55d8aa/messages?page=1&limit=50 [32m200[0m 12.420 ms - 119[0m
+[0mPOST /api/v1/chat/conversations/6a0d478cef9d496930bc3055/seen [32m200[0m 12.846 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a0d478cef9d496930bc3055/messages?page=1&limit=50 [32m200[0m 8.241 ms - 3767[0m
+[0mPOST /api/v1/chat/conversations/6a0d68922df77af582656a68/seen [32m200[0m 23.697 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a0d68922df77af582656a68/messages?page=1&limit=50 [36m304[0m 21.665 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 11.520 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 9.970 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.522 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 50.387 ms - 3351[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 13.790 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 14.659 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 26.058 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 23.476 ms - -[0m
+Socket disconnected: MNEmmYXmYpTdgMywAAA3
+Socket connected: pW2wlldKMivSggBDAAA_
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 29.732 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 14.795 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 18.543 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 42.189 ms - -[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 40.345 ms - 645[0m
+[0mPOST /api/v1/chat/conversations/6a168f7989875c3f60f584a4/seen [32m200[0m 12.850 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a168f7989875c3f60f584a4/messages?page=1&limit=50 [32m200[0m 11.880 ms - 3103[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 10.647 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.303 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 18.208 ms - -[0m
+Socket disconnected: pW2wlldKMivSggBDAAA_
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 6.254 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 25.505 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 8.250 ms - -[0m
+Socket connected: A4C0Z-NSOQ6trNjgAABB
+Socket disconnected: A4C0Z-NSOQ6trNjgAABB
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 15.508 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 20.017 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 18.740 ms - -[0m
+Socket connected: 1v_Z_4zqVAk0udtaAABD
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 12.546 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.118 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 7.750 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 6.534 ms - -[0m
+[0mGET /api/v1/users/me [32m200[0m 12.026 ms - 834[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 14.860 ms - -[0m
+[0mGET /api/v1/social/feed?page=1&limit=3 [36m304[0m 18.520 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 19.401 ms - -[0m
+Socket disconnected: 1v_Z_4zqVAk0udtaAABD
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.450 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 12.359 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.271 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 11.388 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.270 ms - 27[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 25.593 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.214 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 9.327 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.252 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 7.319 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.162 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 14.984 ms - -[0m
+Socket connected: eHAK4TJboCqQX8SNAABF
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.277 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.262 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 28.604 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.270 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.190 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 25.492 ms - -[0m
+Socket disconnected: eHAK4TJboCqQX8SNAABF
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.238 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.234 ms - -[0m
+Socket connected: mBHbZ8i2lv7CuUvWAABH
+Socket disconnected: mBHbZ8i2lv7CuUvWAABH
+Socket connected: nXJMKE3nfoLttgqPAABJ
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.259 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 27.415 ms - -[0m
+Socket disconnected: nXJMKE3nfoLttgqPAABJ
+Socket connected: JiQt9RH0gYCFKrETAABL
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.247 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 25.718 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 526.870 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.276 ms - 27[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.202 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 8.196 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-08 [36m304[0m 7.549 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.426 ms - 27[0m
+[0mGET /api/v1/venues?page=1&limit=3&date=2026-06-08 [36m304[0m 7.763 ms - -[0m

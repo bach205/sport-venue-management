@@ -40,6 +40,11 @@ import imgOpponent from "../../../imports/Html→Body-2/781a656a29f4ab3f37bb8c8b
 const SPORTS = SPORT_OPTIONS;
 const SPORT_ICONS = SPORT_ICON_BY_VALUE;
 const SPORT_LABELS = SPORT_LABEL_BY_VALUE;
+const TIER_LABELS: Record<string, string> = {
+  Rookie: "Tập sự",
+  "Semi-Pro": "Bán chuyên",
+  Pro: "Chuyên nghiệp",
+};
 const DEFAULT_MAP_CENTER = { lat: 10.7769, lng: 106.7009 };
 const NOMINATIM_DEBOUNCE_MS = 1100;
 const reverseGeocodeCache = new Map<string, string>();

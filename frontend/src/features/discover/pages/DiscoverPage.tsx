@@ -7,10 +7,12 @@ import { CreatePostModal } from '../components/CreatePostModal';
 import type { DiscoverPost, DiscoverFilters, Sport, SkillLevel, PostType } from '../types/discover.types';
 import { SPORT_OPTIONS as BASE_SPORT_OPTIONS } from '@/shared/constants/matchOptions';
 import { useTranslation } from 'react-i18next';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 
 export default function DiscoverPage() {
   const { t } = useTranslation('matching');
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
   const [posts, setPosts] = useState<DiscoverPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -53,9 +55,16 @@ export default function DiscoverPage() {
   });
 
   const handleContactNow = (post: DiscoverPost) => {
+    if (!requireAuth()) return;
+
     navigate(
       `/messages?with=${post.author.id}&name=${encodeURIComponent(post.author.name)}&avatar=${encodeURIComponent(post.author.avatar)}&sport=${post.sport}`
     );
+  };
+
+  const handleCreatePost = () => {
+    if (!requireAuth()) return;
+    setShowModal(true);
   };
 
   const selectStyle: React.CSSProperties = {
@@ -92,7 +101,7 @@ export default function DiscoverPage() {
               </p>
             </div>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleCreatePost}
               className="flex items-center gap-2 h-11 px-5 rounded-xl transition-opacity hover:opacity-90 active:opacity-80"
               style={{
                 background: 'linear-gradient(90deg, #a04100 0%, #ff7e36 100%)',
@@ -175,7 +184,7 @@ export default function DiscoverPage() {
               {t('discover.emptySubtitle')}
             </p>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleCreatePost}
               className="mt-6 h-11 px-6 rounded-xl flex items-center gap-2 hover:opacity-90 transition-opacity"
               style={{
                 background: 'linear-gradient(90deg, #a04100 0%, #ff7e36 100%)',

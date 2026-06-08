@@ -1,0 +1,744 @@
+
+> matchill_be@1.0.0 dev
+> nodemon server.js
+
+[33m[nodemon] 2.0.22[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,json[39m
+[32m[nodemon] starting `node server.js`[39m
+✓ MongoDB connected: mongodb://127.0.0.1:27016/matchill
+✅ Redis connected successfully
+Server is running on port 5689
+Socket connected: I8ZRQP6jjsyrjFB7AAAB
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 3.937 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 42.289 ms - -[0m
+Socket disconnected: I8ZRQP6jjsyrjFB7AAAB
+[0mGET / [33m404[0m 2.538 ms - 139[0m
+[0mGET / [33m404[0m 0.451 ms - 139[0m
+Socket connected: _7S8wl-mwJ4lkeeZAAAD
+[0mGET /api/v1/matching/discover-posts [32m200[0m 15.390 ms - 1905[0m
+Socket connected: Qz5WcZmpFu9apehsAAAF
+[0mGET /api/v1/matching/discover-posts [32m200[0m 18.718 ms - 1905[0m
+[0mGET /api/v1/matching/discover-posts [33m401[0m 1.229 ms - 39[0m
+Socket connected: AARQiuSqtd1I5A3hAAAH
+Rejected socket handshake for AARQiuSqtd1I5A3hAAAH.
+Rejected user room join for socket AARQiuSqtd1I5A3hAAAH.
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [36m304[0m 12.010 ms - -[0m
+Socket connected: OnPrDR2Z-xkKvvhiAAAJ
+[0mGET /uploads/images/image-1780294905146-cd74551a09edeafa.png [32m200[0m 4.907 ms - 47035[0m
+[0mGET /api/v1/users/me [32m200[0m 22.865 ms - 776[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 14.900 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 1.026 ms - 39[0m
+[0mGET /api/v1/venues?date=2026-06-02 [32m200[0m 54.108 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 1.799 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 37.272 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.706 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-02 [32m200[0m 9.416 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.636 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 32.720 ms - 12603[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 9.643 ms - 69[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 8.346 ms - 210[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 39.773 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 22.795 ms - -[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 43.957 ms - 332[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2cf591611fca8382da/seen [32m200[0m 13.572 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb2cf591611fca8382da/messages?page=1&limit=50 [32m200[0m 11.941 ms - 119[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 14.660 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 16.246 ms - 360[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 14.595 ms - 334[0m
+[0mGET /api/v1/chat/conversations/6a1efb2cf591611fca8382da/messages?page=1&limit=50 [36m304[0m 14.351 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2ff591611fca83830f/seen [32m200[0m 16.135 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb2ff591611fca83830f/messages?page=1&limit=50 [32m200[0m 14.305 ms - 119[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 16.526 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 15.113 ms - 654[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 19.959 ms - 313[0m
+[0mGET /api/v1/chat/conversations/6a1efb2ff591611fca83830f/messages?page=1&limit=50 [36m304[0m 5.464 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 14.851 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 10.341 ms - 119[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 19.539 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 16.421 ms - 927[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 14.521 ms - 312[0m
+[0mPOST /api/v1/chat/conversations/6a1efb34f591611fca83838a/seen [32m200[0m 12.294 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb34f591611fca83838a/messages?page=1&limit=50 [32m200[0m 8.133 ms - 119[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 15.715 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 11.356 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2ff591611fca83830f/seen [32m200[0m 14.705 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb2ff591611fca83830f/messages?page=1&limit=50 [36m304[0m 12.137 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2cf591611fca8382da/seen [32m200[0m 14.484 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb2cf591611fca8382da/messages?page=1&limit=50 [36m304[0m 12.526 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-02 [36m304[0m 24.869 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [36m304[0m 30.753 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-02 [36m304[0m 21.520 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 40.254 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 38.625 ms - 1199[0m
+[0mGET /api/v1/chat/conversations/6a1efb34f591611fca83838a/messages?page=1&limit=50 [36m304[0m 14.614 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 16.210 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-02 [36m304[0m 9.340 ms - -[0m
+Socket disconnected: Qz5WcZmpFu9apehsAAAF
+Socket connected: MO144OdsJdWt19atAAAL
+[0mGET /api/v1/matching/discover-posts [36m304[0m 19.752 ms - -[0m
+Socket disconnected: MO144OdsJdWt19atAAAL
+Socket disconnected: AARQiuSqtd1I5A3hAAAH
+[0mGET /api/v1/matching/discover-posts [36m304[0m 27.344 ms - -[0m
+[0mPOST /api/v1/matching/requests [32m201[0m 31.107 ms - 562[0m
+Socket connected: ELGAWt6lQsHXSmUvAAAN
+[0mGET /api/v1/matching/discover-posts [36m304[0m 27.739 ms - -[0m
+[0mPOST /api/v1/matching/requests [32m201[0m 95.949 ms - 1552[0m
+Socket disconnected: ELGAWt6lQsHXSmUvAAAN
+Socket connected: e1tWYgWfTGAT4O6lAAAP
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [32m200[0m 3.124 ms - 263410[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 29.564 ms - 1904[0m
+[0mPOST /api/v1/matching/requests [32m201[0m 27.108 ms - 681[0m
+Socket disconnected: _7S8wl-mwJ4lkeeZAAAD
+Socket connected: zICJXCZ4Miro9QrDAAAR
+[0mGET /api/v1/matching/discover-posts [36m304[0m 15.944 ms - -[0m
+Socket disconnected: e1tWYgWfTGAT4O6lAAAP
+Socket connected: 9mycuBZ2ggcWY5OkAAAT
+[0mGET /api/v1/matching/discover-posts [36m304[0m 41.044 ms - -[0m
+[0mPOST /api/v1/matching/requests [32m201[0m 20.052 ms - 644[0m
+[0mPOST /api/v1/matching/requests [32m201[0m 68.283 ms - 1556[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 8.324 ms - 1198[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 11.465 ms - 312[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 13.513 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 10.700 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 18.165 ms - 336[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 29.146 ms - 344[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 30.513 ms - 3314[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 15.610 ms - 604[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 7.872 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 5.954 ms - 794[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 37.855 ms - 336[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 13.396 ms - 362[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 521.343 ms - 337[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 13.612 ms - 350[0m
+Socket disconnected: zICJXCZ4Miro9QrDAAAR
+[0mGET /api/v1/chat/conversations/6a0d68922df77af582656a68/messages?page=1&limit=50 [36m304[0m 41.449 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a0d68922df77af582656a68/seen [32m200[0m 11.825 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a0d478cef9d496930bc3055/messages?page=1&limit=50 [36m304[0m 8.951 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a0d478cef9d496930bc3055/seen [32m200[0m 7.710 ms - 64[0m
+[0mPOST /api/v1/chat/conversations/6a0d478cef9d496930bc3055/seen [32m200[0m 11.749 ms - 64[0m
+[0mPOST /api/v1/chat/conversations/6a168f7989875c3f60f584a4/seen [32m200[0m 12.287 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a168f7989875c3f60f584a4/messages?page=1&limit=50 [36m304[0m 12.701 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1a594a1a379e1e7e55d8aa/seen [32m200[0m 12.323 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1a594a1a379e1e7e55d8aa/messages?page=1&limit=50 [36m304[0m 10.816 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a14582789875c3f60f58156/seen [32m200[0m 11.795 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a14582789875c3f60f58156/messages?page=1&limit=50 [36m304[0m 11.259 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 24.142 ms - -[0m
+Socket connected: dTZYT7OccVxbccnoAAAV
+Rejected socket handshake for dTZYT7OccVxbccnoAAAV.
+Rejected user room join for socket dTZYT7OccVxbccnoAAAV.
+Socket disconnected: dTZYT7OccVxbccnoAAAV
+Socket connected: WEZLa8I8vWSrxA4IAAAX
+Rejected socket handshake for WEZLa8I8vWSrxA4IAAAX.
+Rejected user room join for socket WEZLa8I8vWSrxA4IAAAX.
+[0mGET /api/v1/venues?date=2026-06-02 [36m304[0m 24.051 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [33m401[0m 0.826 ms - 39[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [33m401[0m 0.806 ms - 39[0m
+Socket disconnected: WEZLa8I8vWSrxA4IAAAX
+Socket connected: 2J5Nx4iBWJA8v9jMAAAZ
+Rejected socket handshake for 2J5Nx4iBWJA8v9jMAAAZ.
+Rejected user room join for socket 2J5Nx4iBWJA8v9jMAAAZ.
+Socket disconnected: OnPrDR2Z-xkKvvhiAAAJ
+Socket disconnected: 2J5Nx4iBWJA8v9jMAAAZ
+Socket connected: 20afFOk-QF-ptX-cAAAb
+Rejected socket handshake for 20afFOk-QF-ptX-cAAAb.
+Rejected user room join for socket 20afFOk-QF-ptX-cAAAb.
+Socket disconnected: 9mycuBZ2ggcWY5OkAAAT
+Socket disconnected: 20afFOk-QF-ptX-cAAAb
+Socket connected: _DUZMipKcq57EXbgAAAd
+Socket disconnected: _DUZMipKcq57EXbgAAAd
+Socket connected: tFfuWG-q92ol4G9MAAAf
+Rejected socket handshake for tFfuWG-q92ol4G9MAAAf.
+Rejected user room join for socket tFfuWG-q92ol4G9MAAAf.
+[0mPOST /api/v1/auth/login [33m400[0m 7.829 ms - 40[0m
+Socket connected: BSaPBKXy5lNZek3GAAAh
+Socket disconnected: BSaPBKXy5lNZek3GAAAh
+{
+  _id: new ObjectId("6a0d68452df77af582656a46"),
+  email: 'thanhnganguyen2004@gmail.com',
+  password_hash: '$2a$10$K0YzEKI7DNJ6rcG3mU8gaeLIpPlySR3RVvHBhqNhzpDlzRvzM4RKi',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-20T07:52:37.210Z,
+  updatedAt: 2026-05-20T07:52:58.696Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 88.100 ms - 919[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 23.947 ms - 1904[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 43.663 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 4.677 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-03 [32m200[0m 22.210 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.891 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 10.554 ms - 126[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 31.930 ms - 2076[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 8.969 ms - 210[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 14.043 ms - -[0m
+Socket connected: LjO9BCT_a6DvWIQrAAAj
+Socket disconnected: LjO9BCT_a6DvWIQrAAAj
+Socket connected: NEul8_AVdOI80N6uAAAl
+Rejected socket handshake for NEul8_AVdOI80N6uAAAl.
+Rejected user room join for socket NEul8_AVdOI80N6uAAAl.
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.646 ms - 39[0m
+Socket connected: MEe2U0xvPWyr06JJAAAn
+Socket disconnected: NEul8_AVdOI80N6uAAAl
+{
+  _id: new ObjectId("6a0d68452df77af582656a46"),
+  email: 'thanhnganguyen2004@gmail.com',
+  password_hash: '$2a$10$K0YzEKI7DNJ6rcG3mU8gaeLIpPlySR3RVvHBhqNhzpDlzRvzM4RKi',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-20T07:52:37.210Z,
+  updatedAt: 2026-05-20T07:52:58.696Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 70.328 ms - 919[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 23.519 ms - 1904[0m
+Socket disconnected: MEe2U0xvPWyr06JJAAAn
+Socket connected: iexNWfnNKNQNUhYNAAAp
+[0mGET /api/v1/matching/discover-posts [36m304[0m 28.813 ms - -[0m
+Socket disconnected: iexNWfnNKNQNUhYNAAAp
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 28.929 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.581 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-03 [32m200[0m 26.744 ms - 1092[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-03 [32m200[0m 6.799 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [32m200[0m 13.373 ms - 2507[0m
+[0mPOST /api/v1/bookings/holds [32m201[0m 65.946 ms - 1273[0m
+[0mPOST /api/v1/bookings/6a1fa86bf591611fca83a323/payments [32m201[0m 32.752 ms - 1759[0m
+Socket connected: U7_RuzsByDqK3aXuAAAr
+[0mGET /api/v1/matching/discover-posts [36m304[0m 30.359 ms - -[0m
+[0mPOST /api/v1/matching/requests [32m201[0m 36.144 ms - 566[0m
+[0mPATCH /api/v1/matching/requests/6a1faa32f591611fca83a395/cancel [32m200[0m 19.084 ms - 510[0m
+[0mGET /api/v1/venues?date=2026-06-03 [32m200[0m 19.957 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.882 ms - -[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [32m200[0m 11.614 ms - 2526[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-03 [32m200[0m 11.654 ms - 1093[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 39.754 ms - -[0m
+Socket disconnected: U7_RuzsByDqK3aXuAAAr
+Socket disconnected: tFfuWG-q92ol4G9MAAAf
+Socket connected: viddMAXgkzjN3KfcAAAt
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-03 [32m200[0m 37.925 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [32m200[0m 10.880 ms - 2507[0m
+Socket connected: tp3Nn4WmImTbyeCgAAAv
+[0mGET /api/v1/matching/discover-posts [36m304[0m 38.783 ms - -[0m
+Socket connected: Kq-NOHlENFGHQqZoAAAx
+[0mGET /api/v1/matching/discover-posts [36m304[0m 37.170 ms - -[0m
+Socket disconnected: Kq-NOHlENFGHQqZoAAAx
+Socket disconnected: tp3Nn4WmImTbyeCgAAAv
+Socket connected: UjLv0o9s45NBjzF_AAAz
+{
+  _id: new ObjectId("6a1c42ed6faeb5d764d5d823"),
+  email: 'dhbach13@gmail.com',
+  password_hash: '$2a$10$4pxHa4jz44wqdWeHvDwjy.5DvGAUgvKM27.ZF07BXsUGZ3Onbg.qe',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-31T14:17:17.064Z,
+  updatedAt: 2026-05-31T14:17:39.490Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 58.897 ms - 876[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 24.816 ms - -[0m
+Socket connected: h_GMXCjbgBDxFXohAAA1
+{
+  _id: new ObjectId("6a0aaf98ef9d496930bc2fca"),
+  email: 'owner@matchill.com',
+  password_hash: '$2a$10$.wR3hqaOQVSfPYhmFeOwIuRhaOa4Elz0/yQAwddU7R2W6hy/yA9HG',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-18T06:20:08.355Z,
+  updatedAt: 2026-05-18T06:20:23.114Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 55.222 ms - 878[0m
+[0mGET /api/v1/my-venues [32m200[0m 13.450 ms - 912[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.621 ms - -[0m
+[0mGET /api/v1/my-venues [36m304[0m 6.519 ms - -[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [32m200[0m 20.541 ms - 2507[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/bookings [32m200[0m 49.983 ms - 17672[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/refund-requests [32m200[0m 27.703 ms - 2305[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [36m304[0m 10.893 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/refund-requests [36m304[0m 8.050 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/bookings [36m304[0m 11.527 ms - -[0m
+[0mGET /api/v1/my-venues [36m304[0m 6.478 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 42.753 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.486 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-03 [32m200[0m 21.202 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.661 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 23.272 ms - -[0m
+Socket disconnected: UjLv0o9s45NBjzF_AAAz
+[0mGET /api/v1/matching/discover-posts [36m304[0m 12.732 ms - -[0m
+Socket connected: j4ICSCaHRNSDT25yAAA4
+Socket disconnected: h_GMXCjbgBDxFXohAAA1
+Socket connected: HXK15IVfrCx3fgm0AAA6
+[0mGET /api/v1/my-venues [36m304[0m 12.799 ms - -[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [32m200[0m 533.741 ms - 2002[0m
+[0mGET /api/v1/wallet/me [32m200[0m 526.147 ms - 2399[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [32m200[0m 531.303 ms - 128[0m
+[0mGET /api/v1/my-venues [36m304[0m 10.745 ms - -[0m
+Socket disconnected: viddMAXgkzjN3KfcAAAt
+Socket connected: 4dUwRqkERzYaYzZQAAA8
+Socket disconnected: 4dUwRqkERzYaYzZQAAA8
+[0mPOST /api/v1/matching/requests [32m201[0m 32.993 ms - 624[0m
+[0mPATCH /api/v1/matching/requests/6a1fc47ef591611fca83a8ee/cancel [32m200[0m 5.396 ms - 568[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 42.621 ms - 1496[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 13.071 ms - 2043[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 13.637 ms - 64[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 22.091 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.464 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 18.192 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-03 [32m200[0m 21.340 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.538 ms - -[0m
+Socket connected: 8HogvyvfWAmYndv0AAA-
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-03 [32m200[0m 1032.820 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [32m200[0m 1023.430 ms - 2507[0m
+[0mPOST /api/v1/bookings/holds [32m201[0m 29.605 ms - 1273[0m
+[0mPOST /api/v1/bookings/6a1fc4bff591611fca83a94e/payments [32m201[0m 25.144 ms - 1759[0m
+Socket connected: KUmZKkjkaxmOPmRjAABA
+[0mPOST /api/v1/auth/register [32m201[0m 3052.121 ms - 293[0m
+Socket disconnected: KUmZKkjkaxmOPmRjAABA
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 528.148 ms - 14314[0m
+Socket connected: 63-cEBx33Sfsx7zXAABC
+[0mPOST /api/v1/auth/verify-email [32m200[0m 12.549 ms - 252[0m
+Socket connected: j7xgSJlQa5r30vudAABE
+[0mPOST /api/v1/auth/login [33m400[0m 0.873 ms - 40[0m
+{
+  _id: new ObjectId("6a1fc4c8f591611fca83a95e"),
+  email: 'lillynguyen0208@gmail.com',
+  password_hash: '$2a$10$YUdO7fPSvUWiZJoQI./pdua6bUgrg.b8wevZy/0s/HMSDTMAJfn8u',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-06-03T06:08:08.746Z,
+  updatedAt: 2026-06-03T06:08:26.835Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 52.949 ms - 906[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 14.845 ms - 1905[0m
+Socket connected: kmnCn5tR-3OUzreUAABG
+[0mGET /api/v1/my-venues [36m304[0m 10.667 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/bookings [32m200[0m 38.127 ms - 19472[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/refund-requests [36m304[0m 33.212 ms - -[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [32m200[0m 21.041 ms - 2526[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [36m304[0m 3.672 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/refund-requests [36m304[0m 9.224 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/bookings [36m304[0m 12.574 ms - -[0m
+Socket disconnected: kmnCn5tR-3OUzreUAABG
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [36m304[0m 28.923 ms - -[0m
+Socket connected: CUk5dCDmbPXFRq-pAABI
+Socket disconnected: CUk5dCDmbPXFRq-pAABI
+Socket connected: E-6XvztgVPiIiNERAABK
+[0mPOST /api/v1/auth/login [33m400[0m 52.553 ms - 40[0m
+[0mPOST /api/v1/auth/login [33m400[0m 50.663 ms - 40[0m
+{
+  _id: new ObjectId("6a0a9c51fe565aff1304ec16"),
+  email: 'tuantucuc@gmail.com',
+  password_hash: '$2a$10$yal0VLHKnuNHIRLNd3Z39ubMieR6Oe9izRtIwtDbV1fAmg71PKQKa',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-18T04:57:53.963Z,
+  updatedAt: 2026-05-20T05:27:57.547Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 69.863 ms - 1071[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.618 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 23.820 ms - 1904[0m
+Socket disconnected: HXK15IVfrCx3fgm0AAA6
+[0mGET /api/v1/chat/conversations [32m200[0m 13.089 ms - 69[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 46.131 ms - 334[0m
+[0mPOST /api/v1/chat/conversations/6a1fc579f591611fca83aa0d/seen [32m200[0m 12.285 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1fc579f591611fca83aa0d/messages?page=1&limit=50 [32m200[0m 6.303 ms - 119[0m
+Socket connected: _s2rmLRUyqJkz6g8AABM
+[0mPOST /api/v1/chat/conversations/6a1fc579f591611fca83aa0d/messages [32m201[0m 16.690 ms - 339[0m
+[0mPOST /api/v1/chat/conversations/6a1fc579f591611fca83aa0d/messages [32m201[0m 15.385 ms - 339[0m
+Socket disconnected: _s2rmLRUyqJkz6g8AABM
+Socket disconnected: j4ICSCaHRNSDT25yAAA4
+Socket connected: B_wfHJAxw-6MR7YiAABP
+Socket connected: MaJk2HavV0Prrh-PAABQ
+[0mGET /api/v1/my-venues [36m304[0m 10.589 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/refund-requests [36m304[0m 30.898 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/bookings [36m304[0m 16.083 ms - -[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [36m304[0m 14.648 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/refund-requests [36m304[0m 21.081 ms - -[0m
+[0mGET /api/v1/my-venues/6a1c42aa6faeb5d764d5d7d9/bookings [36m304[0m 16.178 ms - -[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [36m304[0m 7.996 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [36m304[0m 15.530 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 12.855 ms - 3319[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 7.236 ms - 637[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 15.202 ms - 2133[0m
+[0mGET /api/v1/chat/conversations/6a0d478cef9d496930bc3055/messages?page=1&limit=50 [32m200[0m 11.484 ms - 3767[0m
+[0mPOST /api/v1/chat/conversations/6a0d478cef9d496930bc3055/seen [32m200[0m 9.162 ms - 64[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 16.312 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 15.035 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.687 ms - -[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 25.737 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 39.499 ms - 64[0m
+[0mGET /api/v1/venues?date=2026-06-03 [32m200[0m 21.600 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.575 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-03 [32m200[0m 9.892 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-03 [32m200[0m 11.305 ms - 2526[0m
+[0mGET /api/v1/venues?date=2026-06-03 [36m304[0m 8.947 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-03 [36m304[0m 27.497 ms - -[0m
+Socket disconnected: E-6XvztgVPiIiNERAABK
+Socket disconnected: j7xgSJlQa5r30vudAABE
+[0mGET /api/v1/matching/discover-posts [36m304[0m 30.615 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 23.948 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 32.713 ms - 649[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 35.653 ms - 332[0m
+[0mPOST /api/v1/chat/conversations/6a1fc86bf591611fca83aba2/seen [32m200[0m 13.067 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1fc86bf591611fca83aba2/messages?page=1&limit=50 [32m200[0m 11.284 ms - 119[0m
+[0mPOST /api/v1/chat/conversations/6a1fc579f591611fca83aa0d/seen [32m200[0m 27.130 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1fc579f591611fca83aa0d/messages?page=1&limit=50 [32m200[0m 25.046 ms - 702[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 27.636 ms - 1540[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 13.406 ms - 2167[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 19.622 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 14.633 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-03 [32m200[0m 47.805 ms - 1092[0m
+[0mGET /api/v1/venues?date=2026-06-03 [36m304[0m 10.845 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 39.793 ms - -[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 11.579 ms - -[0m
+[0mPOST /api/v1/chat/conversations/6a1efb34f591611fca83838a/seen [32m200[0m 42.237 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb34f591611fca83838a/messages?page=1&limit=50 [32m200[0m 8.836 ms - 119[0m
+Socket disconnected: B_wfHJAxw-6MR7YiAABP
+Socket disconnected: 8HogvyvfWAmYndv0AAA-
+Socket disconnected: MaJk2HavV0Prrh-PAABQ
+Socket connected: odNzLdK3htu_IgrlAABT
+[0mGET /api/v1/chat/conversations [32m200[0m 50.612 ms - 1541[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [36m304[0m 13.853 ms - -[0m
+Socket disconnected: odNzLdK3htu_IgrlAABT
+Socket disconnected: 63-cEBx33Sfsx7zXAABC
+Socket connected: shh9AIjbJIvq1ezRAABV
+Socket disconnected: shh9AIjbJIvq1ezRAABV
+Socket connected: v4USUo8Mwa-nu7AeAABX
+Socket disconnected: v4USUo8Mwa-nu7AeAABX
+Socket connected: HIXs7X1hWsofdO-JAABZ
+Socket disconnected: HIXs7X1hWsofdO-JAABZ
+Socket connected: Ld9_BeSVMH9Xkl7MAABb
+Socket disconnected: Ld9_BeSVMH9Xkl7MAABb
+Socket connected: q1V9h2D6fb6YDdmdAABd
+Socket disconnected: q1V9h2D6fb6YDdmdAABd
+Socket connected: 3vS80KFKR4G0Nl03AABf
+Socket disconnected: 3vS80KFKR4G0Nl03AABf
+Socket connected: 0ch6cPHFSH9NzBU4AABh
+Socket disconnected: 0ch6cPHFSH9NzBU4AABh
+Socket connected: BeS3OZOKP2kVaQ8hAABj
+Socket connected: 19ei3Wapm4NdydGnAABl
+Socket disconnected: 19ei3Wapm4NdydGnAABl
+[0mPOST /api/v1/auth/register [32m201[0m 2403.954 ms - 288[0m
+Socket connected: LKAlCs1F06dBZ-rVAABn
+[0mPOST /api/v1/auth/verify-email [32m200[0m 16.318 ms - 247[0m
+{
+  _id: new ObjectId("6a21271bf591611fca83e6d0"),
+  email: 'nblinggg10@gmail.com',
+  password_hash: '$2a$10$2BwKEtJQlxtElHqA3N/5D.2To6cT5WgAuP9MTfG/jIrd7z/EaWznG',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-06-04T07:19:55.830Z,
+  updatedAt: 2026-06-04T07:20:49.946Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 64.282 ms - 885[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 30.522 ms - 1905[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 49.570 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [32m200[0m 4.393 ms - 263410[0m
+[0mPOST /api/v1/matching/requests [32m201[0m 40.685 ms - 619[0m
+[0mPATCH /api/v1/matching/requests/6a2127b5f591611fca83e71c/cancel [32m200[0m 22.254 ms - 563[0m
+[0mGET /api/v1/venues?date=2026-06-04 [32m200[0m 26.153 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [32m200[0m 2.932 ms - 10222[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 14.291 ms - 126[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 4.299 ms - 69[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 8.342 ms - 210[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 34.184 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 30.159 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-04 [36m304[0m 14.641 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 19.997 ms - -[0m
+Socket connected: FvwDAAxu4lxxzK_bAABp
+Socket connected: 5sATAtwNsYmnKCF0AABr
+Socket disconnected: BeS3OZOKP2kVaQ8hAABj
+Socket disconnected: LKAlCs1F06dBZ-rVAABn
+Socket connected: LFsVO7FJK8yt_7cQAABt
+Socket connected: 1HME_lIPEdlrltr7AABv
+Socket disconnected: FvwDAAxu4lxxzK_bAABp
+Socket disconnected: 5sATAtwNsYmnKCF0AABr
+Socket disconnected: LFsVO7FJK8yt_7cQAABt
+Socket connected: n2cxyxnd--Mv4KuIAABx
+[0mGET /api/v1/matching/discover-posts [36m304[0m 42.565 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 15.577 ms - -[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 46.216 ms - 332[0m
+[0mPOST /api/v1/chat/conversations/6a212ffaf591611fca83e8d4/seen [32m200[0m 17.545 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a212ffaf591611fca83e8d4/messages?page=1&limit=50 [32m200[0m 10.864 ms - 119[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 30.253 ms - -[0m
+Socket disconnected: 1HME_lIPEdlrltr7AABv
+Socket disconnected: n2cxyxnd--Mv4KuIAABx
+Socket connected: DG6MmnCaBAi_QsmwAABz
+Socket connected: MOFcNlroKGbIxZsHAAB1
+Socket disconnected: DG6MmnCaBAi_QsmwAABz
+Socket connected: OniTapKO37VZxz1jAAB3
+[0mGET /api/v1/matching/discover-posts [36m304[0m 31.248 ms - -[0m
+Socket disconnected: OniTapKO37VZxz1jAAB3
+Socket disconnected: MOFcNlroKGbIxZsHAAB1
+Socket connected: 6lZoabgj6sRioYLaAAB5
+Socket disconnected: 6lZoabgj6sRioYLaAAB5
+Socket connected: FGg9reZ1OF74gJvXAAB7
+[0mGET /api/v1/matching/discover-posts [36m304[0m 39.102 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 18.664 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [32m200[0m 1.785 ms - 263410[0m
+[0mGET /api/v1/venues?date=2026-06-04 [36m304[0m 19.761 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 9.399 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 27.325 ms - 360[0m
+[0mGET /api/v1/chat/conversations/6a212ffaf591611fca83e8d4/messages?page=1&limit=50 [36m304[0m 11.695 ms - -[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 7.921 ms - 210[0m
+[0mGET /api/v1/users/me [32m200[0m 17.943 ms - 646[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [36m304[0m 8.294 ms - -[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [33m400[0m 18.073 ms - 145[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [33m400[0m 21.676 ms - 145[0m
+[0mGET /api/v1/wallet/me [32m200[0m 18.768 ms - 377[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 27.632 ms - -[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 26.529 ms - -[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 25.357 ms - 334[0m
+[0mPOST /api/v1/chat/conversations/6a2133fff591611fca83ea25/seen [32m200[0m 11.693 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a2133fff591611fca83ea25/messages?page=1&limit=50 [32m200[0m 9.034 ms - 119[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 13.670 ms - -[0m
+Socket disconnected: FGg9reZ1OF74gJvXAAB7
+Socket connected: mQlFNDnNkzoDjROTAAB9
+Socket disconnected: mQlFNDnNkzoDjROTAAB9
+Socket connected: pCZKfh7aLpKuMnmHAAB_
+Socket connected: GfQp5bcQLRiFMmjkAACB
+{
+  _id: new ObjectId("6a1c42ed6faeb5d764d5d823"),
+  email: 'dhbach13@gmail.com',
+  password_hash: '$2a$10$4pxHa4jz44wqdWeHvDwjy.5DvGAUgvKM27.ZF07BXsUGZ3Onbg.qe',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-31T14:17:17.064Z,
+  updatedAt: 2026-05-31T14:17:39.490Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 69.415 ms - 876[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 21.721 ms - 1905[0m
+[0mPOST /api/v1/matching/discover-posts [32m201[0m 35.212 ms - 517[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 20.331 ms - 2366[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 31.558 ms - 334[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 24.662 ms - 1541[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2ff591611fca83830f/seen [32m200[0m 12.395 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb2ff591611fca83830f/messages?page=1&limit=50 [32m200[0m 11.585 ms - 119[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2ff591611fca83830f/messages [32m201[0m 14.369 ms - 345[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2ff591611fca83830f/messages [32m201[0m 31.466 ms - 338[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 19.710 ms - 14305[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [32m200[0m 1.641 ms - 10222[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 36.712 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 22.184 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.610 ms - -[0m
+[0mGET /api/v1/social/posts/6a1d2466036fabfdc09ae893 [32m200[0m 29.096 ms - 862[0m
+[0mPOST /api/v1/social/posts/6a1d2466036fabfdc09ae893/like [32m200[0m 20.189 ms - 859[0m
+[0mGET /api/v1/social/posts/6a1d2466036fabfdc09ae893/comments?page=1&limit=20 [32m200[0m 10.472 ms - 119[0m
+[0mPOST /api/v1/social/posts/6a1d2466036fabfdc09ae893/comments [32m201[0m 20.389 ms - 341[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 25.502 ms - 1827[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 28.601 ms - 655[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/seen [32m200[0m 19.554 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 18.858 ms - 2167[0m
+[0mPOST /api/v1/chat/conversations/6a1efb32f591611fca838346/messages [32m201[0m 546.862 ms - 341[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 23.284 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 15.111 ms - 3841[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 26.676 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 52.717 ms - 1774[0m
+[0mGET /api/v1/chat/conversations/6a1efb32f591611fca838346/messages?page=1&limit=50 [32m200[0m 13.216 ms - 2461[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 3.159 ms - 210[0m
+[0mPOST /api/v1/feedbacks [32m201[0m 24.294 ms - 476[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [36m304[0m 1027.065 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 23.641 ms - -[0m
+Socket disconnected: GfQp5bcQLRiFMmjkAACB
+{
+  _id: new ObjectId("6a1c42ed6faeb5d764d5d823"),
+  email: 'dhbach13@gmail.com',
+  password_hash: '$2a$10$4pxHa4jz44wqdWeHvDwjy.5DvGAUgvKM27.ZF07BXsUGZ3Onbg.qe',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-31T14:17:17.064Z,
+  updatedAt: 2026-05-31T14:17:39.490Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 63.614 ms - 876[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 28.399 ms - -[0m
+Socket connected: EliAlEH_DYDv_qLFAACD
+[0mGET /api/v1/users/me [32m200[0m 9.476 ms - 640[0m
+[0mGET /api/v1/wallet/me [32m200[0m 32.040 ms - 987[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [32m200[0m 13.374 ms - 713[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [32m200[0m 11.146 ms - 128[0m
+[0mPOST /api/v1/wallet/topups [32m201[0m 24.863 ms - 1192[0m
+[0mGET /api/v1/wallet/me [32m200[0m 3.646 ms - 1510[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [36m304[0m 8.598 ms - -[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [32m200[0m 8.789 ms - 1236[0m
+[0mPOST /api/v1/wallet/payout-profiles [33m400[0m 3.907 ms - 120[0m
+[0mPOST /api/v1/wallet/payout-profiles [32m201[0m 28.465 ms - 654[0m
+[0mPOST /api/v1/wallet/payout-profiles [32m201[0m 11.780 ms - 798[0m
+[0mPOST /api/v1/wallet/payout-profiles [33m400[0m 3.268 ms - 120[0m
+[0mPOST /api/v1/wallet/payout-profiles [33m400[0m 3.160 ms - 120[0m
+[0mPOST /api/v1/wallet/payout-profiles [33m400[0m 3.341 ms - 120[0m
+Socket disconnected: EliAlEH_DYDv_qLFAACD
+{
+  _id: new ObjectId("6a0aaf98ef9d496930bc2fca"),
+  email: 'owner@matchill.com',
+  password_hash: '$2a$10$.wR3hqaOQVSfPYhmFeOwIuRhaOa4Elz0/yQAwddU7R2W6hy/yA9HG',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-18T06:20:08.355Z,
+  updatedAt: 2026-05-18T06:20:23.114Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 65.669 ms - 878[0m
+[0mGET /api/v1/my-venues [32m200[0m 10.525 ms - 912[0m
+Socket connected: pcS2m-El7IYW9h2KAACF
+[0mPOST /api/v1/my-venues [33m400[0m 10.764 ms - 39[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [36m304[0m 13.823 ms - -[0m
+[0mGET /api/v1/wallet/me [32m200[0m 16.284 ms - 2399[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [32m200[0m 8.958 ms - 2002[0m
+[0mGET /api/v1/my-venues [36m304[0m 9.513 ms - -[0m
+Socket disconnected: pcS2m-El7IYW9h2KAACF
+{
+  _id: new ObjectId("6a0d67792df77af582656a38"),
+  email: 'admin@matchill.com',
+  password_hash: '$2a$10$BQL1C1Cp62NPlMLWaxa.O.iL8Qzr0hMeDtBK3aWWj2T6BglFySeNW',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-20T07:49:13.311Z,
+  updatedAt: 2026-05-20T07:49:13.311Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 84.506 ms - 878[0m
+[0mGET /api/v1/matching/discover-posts [32m200[0m 25.962 ms - 2367[0m
+Socket connected: UrGGoZ5o8L_78NILAACH
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 22.245 ms - 3842[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 11.416 ms - 126[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 6.328 ms - 69[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [36m304[0m 8.208 ms - -[0m
+[0mGET /api/v1/admin/wallet/settlement-dashboard [32m200[0m 23.317 ms - 2475[0m
+Socket disconnected: UrGGoZ5o8L_78NILAACH
+Socket disconnected: pCZKfh7aLpKuMnmHAAB_
+Socket connected: Gg847u-4pjtqnuT1AACJ
+Socket disconnected: Gg847u-4pjtqnuT1AACJ
+Socket connected: mXQGPE6tpV6C69fxAACM
+[0mGET /api/v1/admin/wallet/settlement-dashboard [36m304[0m 29.770 ms - -[0m
+Socket connected: cLeNXXQaJ3Kd1PRLAACO
+Socket disconnected: cLeNXXQaJ3Kd1PRLAACO
+Socket disconnected: mXQGPE6tpV6C69fxAACM
+Socket connected: w_SqBYk59gtOG33yAACQ
+Socket connected: xJfpkr62xqjUDpmeAACS
+Socket disconnected: xJfpkr62xqjUDpmeAACS
+Socket disconnected: w_SqBYk59gtOG33yAACQ
+Socket connected: HkKLZadtYL85BCMFAACU
+Socket connected: 8vp2nuLaPqmnHOCjAACW
+Socket disconnected: 8vp2nuLaPqmnHOCjAACW
+Socket disconnected: HkKLZadtYL85BCMFAACU
+Socket connected: autuOCXDbPfoqjPZAACY
+Socket connected: 6BULVXYwIia9ZMrrAACa
+Socket connected: -fYG2VRMo4QyWmWRAACc
+Socket disconnected: autuOCXDbPfoqjPZAACY
+Socket disconnected: 6BULVXYwIia9ZMrrAACa
+Socket disconnected: -fYG2VRMo4QyWmWRAACc
+Socket connected: LZJ1GT3CHQmoaPgEAACf
+Socket connected: O_e9hxhXGIHsWr9nAACg
+Socket connected: A5kqM49mNPH9MUEQAACi
+Rejected socket handshake for A5kqM49mNPH9MUEQAACi.
+Rejected user room join for socket A5kqM49mNPH9MUEQAACi.
+[0mGET /api/v1/matching/discover-posts [33m401[0m 0.965 ms - 39[0m
+Socket connected: c_4I95qNrsnng3aBAACk
+[0mGET /api/v1/matching/discover-posts [32m200[0m 30.859 ms - 2366[0m
+[0mPOST /api/v1/chat/conversations/direct [32m200[0m 51.793 ms - 312[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 49.397 ms - 2638[0m
+[0mPOST /api/v1/chat/conversations/6a1efb2cf591611fca8382da/seen [32m200[0m 17.758 ms - 64[0m
+[0mGET /api/v1/chat/conversations/6a1efb2cf591611fca8382da/messages?page=1&limit=50 [32m200[0m 11.352 ms - 119[0m
+Socket disconnected: A5kqM49mNPH9MUEQAACi
+[0mGET /api/v1/matching/discover-posts [36m304[0m 18.825 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 23.323 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.789 ms - -[0m
+[0mGET /api/v1/social/posts/6a1d2466036fabfdc09ae893/comments?page=1&limit=20 [32m200[0m 28.417 ms - 410[0m
+[0mGET /api/v1/social/posts/6a1d2466036fabfdc09ae894/comments?page=1&limit=20 [32m200[0m 9.528 ms - 119[0m
+[0mGET /api/v1/venues?date=2026-06-05 [32m200[0m 7.192 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.594 ms - -[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [33m400[0m 9.250 ms - 145[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [33m400[0m 11.640 ms - 145[0m
+[0mGET /api/v1/wallet/me [32m200[0m 15.644 ms - 377[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 22.601 ms - -[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [32m200[0m 2.272 ms - 130[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [32m200[0m 3.562 ms - 128[0m
+[0mGET /api/v1/wallet/me [36m304[0m 2.397 ms - -[0m
+Socket disconnected: c_4I95qNrsnng3aBAACk
+[0mGET /api/v1/wallet/me [36m304[0m 2.120 ms - -[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [36m304[0m 1.621 ms - -[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [36m304[0m 0.986 ms - -[0m
+Socket connected: IjuAY3fi1P-rv3JYAACm
+Socket disconnected: IjuAY3fi1P-rv3JYAACm
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [36m304[0m 4.264 ms - -[0m
+[0mGET /api/v1/wallet/me [36m304[0m 3.471 ms - -[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [36m304[0m 3.601 ms - -[0m
+Socket connected: iK30bUHshDnsiiofAACo
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 7.402 ms - 210[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [36m304[0m 5.781 ms - -[0m
+[0mGET /api/v1/wallet/me [36m304[0m 7.864 ms - -[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [36m304[0m 4.598 ms - -[0m
+Socket disconnected: iK30bUHshDnsiiofAACo
+{
+  _id: new ObjectId("6a0d68452df77af582656a46"),
+  email: 'thanhnganguyen2004@gmail.com',
+  password_hash: '$2a$10$K0YzEKI7DNJ6rcG3mU8gaeLIpPlySR3RVvHBhqNhzpDlzRvzM4RKi',
+  status: 'active',
+  is_verified: true,
+  createdAt: 2026-05-20T07:52:37.210Z,
+  updatedAt: 2026-05-20T07:52:58.696Z,
+  __v: 0
+}
+[0mPOST /api/v1/auth/login [32m200[0m 69.458 ms - 919[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 23.690 ms - -[0m
+Socket connected: bk-i1WgjBQ8bAKf2AACq
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [36m304[0m 8.194 ms - -[0m
+[0mGET /api/v1/wallet/me [36m304[0m 4.211 ms - -[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [36m304[0m 7.237 ms - -[0m
+[0mPOST /api/v1/wallet/topups [32m201[0m 14.386 ms - 1155[0m
+[0mGET /api/v1/wallet/me [32m200[0m 6.422 ms - 889[0m
+[0mGET /api/v1/wallet/me/transactions?page=1&limit=20 [32m200[0m 4.978 ms - 642[0m
+[0mGET /api/v1/wallet/withdraw-requests?page=1&limit=10 [36m304[0m 1.996 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [36m304[0m 30.541 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-05 [36m304[0m 20.431 ms - -[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-05 [32m200[0m 8.618 ms - 1093[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-05 [32m200[0m 14.798 ms - 2507[0m
+[0mGET /api/v1/venues/6a1c42aa6faeb5d764d5d7d9/slots?date=2026-06-12 [32m200[0m 10.676 ms - 2507[0m
+[0mGET /api/v1/venues?page=1&limit=100&date=2026-06-12 [32m200[0m 9.025 ms - 1093[0m
+[0mGET /api/v1/venues?date=2026-06-05 [36m304[0m 7.553 ms - -[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [36m304[0m 1038.487 ms - -[0m
+Socket disconnected: bk-i1WgjBQ8bAKf2AACq
+Socket connected: HBOwUDaKzcV-gRw7AACs
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [36m304[0m 11.492 ms - -[0m
+Socket disconnected: HBOwUDaKzcV-gRw7AACs
+Socket disconnected: LZJ1GT3CHQmoaPgEAACf
+Socket disconnected: O_e9hxhXGIHsWr9nAACg
+Socket connected: AtOHUZMhNFQZ0LH4AACu
+Socket connected: x5h5N4aPNQ_DhCTIAACw
+Socket disconnected: AtOHUZMhNFQZ0LH4AACu
+Socket disconnected: x5h5N4aPNQ_DhCTIAACw
+Socket connected: -hAfo4JFTzkRsiqEAACz
+Socket connected: j8fRuUkKl6IPlPncAAC0
+Socket disconnected: j8fRuUkKl6IPlPncAAC0
+Socket disconnected: -hAfo4JFTzkRsiqEAACz
+Socket connected: G0jHiEhgsdD5KFmuAAC2
+Socket connected: XbhQTh7KPVfGppsfAAC4
+Socket disconnected: XbhQTh7KPVfGppsfAAC4
+Socket disconnected: G0jHiEhgsdD5KFmuAAC2
+Socket connected: 7p2nsquzUOMB-vZ6AAC6
+[0mGET /api/v1/matching/discover-posts [32m200[0m 8.453 ms - 2366[0m
+[0mGET /api/v1/social/feed?sort=newest&page=1&limit=20 [32m200[0m 30.764 ms - 3842[0m
+[0mGET /uploads/images/image-1780113898545-5ee4ca78c71566b6.jpg [36m304[0m 0.744 ms - -[0m
+[0mGET /api/v1/venues?date=2026-06-05 [32m200[0m 529.244 ms - 1092[0m
+[0mGET /uploads/images/image-1780236970358-1bebd9d411847113.webp [36m304[0m 0.491 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [32m200[0m 26.036 ms - 1827[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 37.486 ms - 2638[0m
+[0mGET /api/v1/chat/conversations/6a212ffaf591611fca83e8d4/messages?page=1&limit=50 [32m200[0m 6.443 ms - 119[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [32m200[0m 7.764 ms - 210[0m
+[0mGET /api/v1/chat/conversations [36m304[0m 20.890 ms - -[0m
+[0mGET /api/v1/chat/conversations/6a212ffaf591611fca83e8d4/messages?page=1&limit=50 [36m304[0m 11.830 ms - -[0m
+[0mGET /api/v1/chat/conversations/6a0d68922df77af582656a68/messages?page=1&limit=50 [32m200[0m 5.469 ms - 772[0m
+[0mPOST /api/v1/chat/conversations/6a0d68922df77af582656a68/seen [32m200[0m 8.075 ms - 64[0m
+[0mGET /api/v1/feedbacks/me?page=1&limit=100 [36m304[0m 25.311 ms - -[0m
+[0mGET /api/v1/chat/conversations [32m200[0m 35.451 ms - 2682[0m
+[0mGET /api/v1/chat/conversations/6a212ffaf591611fca83e8d4/messages?page=1&limit=50 [36m304[0m 11.047 ms - -[0m
+[0mGET /api/v1/bookings/me?page=1&limit=50 [36m304[0m 29.559 ms - -[0m
+[0mGET /api/v1/matching/discover-posts [36m304[0m 9.723 ms - -[0m
+Socket disconnected: 7p2nsquzUOMB-vZ6AAC6

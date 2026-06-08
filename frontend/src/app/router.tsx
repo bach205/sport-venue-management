@@ -8,6 +8,7 @@ import ResetPasswordPage from "../features/auth/pages/ResetPasswordPage";
 
 import DiscoverPage from "../features/discover/pages/DiscoverPage";
 import MessagesPage from "../features/messages/pages/MessagesPage";
+import GuestHomePage from "../features/home/pages/GuestHomePage";
 
 import VenuesPage from "../features/venues/pages/VenuesPage";
 import VenueDetailPage from "../features/venues/pages/VenueDetailPage";
@@ -29,6 +30,7 @@ import AdminLayout from "@/shared/components/AdminLayout";
 import OwnerLayout from "@/shared/components/OwnerLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleGuard from "./RoleGuard";
+import AuthRequiredRoute from "./AuthRequiredRoute";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -44,17 +46,18 @@ export const router = createBrowserRouter([
         path: "/",
         element: <AppLayout />,
         children: [
-          { index: true, element: <Navigate to="/discover" replace /> },
+          { index: true, element: <Navigate to="/home" replace /> },
+          { path: "home", element: <GuestHomePage /> },
           { path: "discover", element: <DiscoverPage /> },
-          { path: "messages", element: <MessagesPage /> },
+          { path: "messages", element: <AuthRequiredRoute><MessagesPage /></AuthRequiredRoute> },
           { path: "venues", element: <VenuesPage /> },
           { path: "venues/:venueId", element: <VenueDetailPage /> },
-          { path: "bookings", element: <BookingsPage /> },
-          { path: "wallet", element: <WalletPage /> },
-          { path: "profile", element: <ProfilePage /> },
+          { path: "bookings", element: <AuthRequiredRoute><BookingsPage /></AuthRequiredRoute> },
+          { path: "wallet", element: <AuthRequiredRoute><WalletPage /></AuthRequiredRoute> },
+          { path: "profile", element: <AuthRequiredRoute><ProfilePage /></AuthRequiredRoute> },
           { path: "feed", element: <FeedPage /> },
           { path: "feed/:postId", element: <FeedPostDetailPage /> },
-          { path: "feedback", element: <FeedbackPage /> },
+          { path: "feedback", element: <AuthRequiredRoute><FeedbackPage /></AuthRequiredRoute> },
         ],
       },
 

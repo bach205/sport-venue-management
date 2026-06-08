@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router';
 import { Bell, LogIn, ChevronDown, LogOut, User, Building2, ShieldCheck, Wallet, MessageSquare, Menu, X } from 'lucide-react';
 import { MatchingFAB } from '../../features/matching/components/MatchingFAB';
@@ -7,14 +7,16 @@ import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 
 const NAV_LINKS = [
-  { key: 'nav.home',       to: '/discover' },
+  { key: 'nav.home',       to: '/home' },
+  { key: 'nav.discover',   to: '/discover' },
   { key: 'nav.feed',       to: '/feed' },
   { key: 'nav.venues',     to: '/venues' },
-  { key: 'nav.bookings',   to: '/bookings' },
-  { key: 'nav.messages',   to: '/messages' },
-  { key: 'nav.feedback',   to: '/feedback' },
+  { key: 'nav.bookings',   to: '/bookings', requiresAuth: true },
+  { key: 'nav.messages',   to: '/messages', requiresAuth: true },
+  { key: 'nav.feedback',   to: '/feedback', requiresAuth: true },
 ];
 
 const ROLE_BADGE = {
@@ -29,11 +31,13 @@ export default function AppLayout() {
   const navigate     = useNavigate();
   const dispatch     = useAppDispatch();
   const user         = useAppSelector(state => state.auth.user);
+  const { requireAuth } = useAuthGuard();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const isActive = (to: string) => {
-    if (to === '/discover') return pathname === '/discover' || pathname === '/';
+    if (to === '/home') return pathname === '/' || pathname === '/home';
+    if (to === '/discover') return pathname === '/discover';
     if (to === '/venues')   return pathname.startsWith('/venues');
     return pathname.startsWith(to);
   };
@@ -43,6 +47,12 @@ export default function AppLayout() {
     toast.success(t('layout.logoutSuccess'));
     navigate('/login');
     setUserMenuOpen(false);
+  };
+
+  const handleAuthNavigation = (event: MouseEvent<HTMLAnchorElement>, requiresAuth?: boolean) => {
+    if (requiresAuth && !requireAuth()) {
+      event.preventDefault();
+    }
   };
 
   return (
@@ -63,13 +73,14 @@ export default function AppLayout() {
             >
               <Menu size={20} />
             </button>
-            <Link to="/discover" className="font-heading text-md font-extrabold text-brand-orange no-underline">
+            <Link to="/home" className="font-heading text-md font-extrabold text-brand-orange no-underline">
               <img src="/logo.png" alt="Logo" className="w-14 h-14 inline-block object-contain" />
               <span className="hidden sm:inline">Matchill</span>
             </Link>
             <nav className="hidden xl:flex items-center gap-7">
               {NAV_LINKS.map(link => (
                 <Link key={link.to} to={link.to}
+                  onClick={(event) => handleAuthNavigation(event, link.requiresAuth)}
                   className={`relative pb-1.5 transition-colors no-underline font-heading text-[15px]
                     ${isActive(link.to) ? 'font-bold text-brand-orange' : 'font-normal text-brand-body'}`}>
                   {t(link.key)}
@@ -84,7 +95,11 @@ export default function AppLayout() {
 
           <div className="flex items-center gap-1">
             <LanguageSwitcher className="hidden sm:flex mr-2" />
-            <button className="p-2 rounded-full hover:bg-brand-surface-orange transition-colors text-brand-body">
+            <button
+              type="button"
+              onClick={() => requireAuth()}
+              className="p-2 rounded-full hover:bg-brand-surface-orange transition-colors text-brand-body"
+            >
               <Bell size={18} />
             </button>
 
@@ -178,7 +193,7 @@ export default function AppLayout() {
           >
             <div className="flex h-[60px] items-center justify-between border-b border-brand-border px-4">
               <Link
-                to="/discover"
+                to="/home"
                 onClick={() => setMobileNavOpen(false)}
                 className="flex items-center font-heading text-md font-extrabold text-brand-orange no-underline"
               >
@@ -200,7 +215,10 @@ export default function AppLayout() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  onClick={() => setMobileNavOpen(false)}
+                  onClick={(event) => {
+                    handleAuthNavigation(event, link.requiresAuth);
+                    if (!event.defaultPrevented) setMobileNavOpen(false);
+                  }}
                   className={`rounded-xl px-3 py-3 text-sm no-underline transition-colors
                     ${isActive(link.to) ? 'bg-brand-surface-orange font-bold text-brand-orange' : 'font-medium text-brand-body hover:bg-brand-surface-orange'}`}
                 >

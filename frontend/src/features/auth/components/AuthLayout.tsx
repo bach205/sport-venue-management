@@ -1,6 +1,7 @@
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback';
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
 import React from 'react';
+import { Link } from 'react-router';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -12,9 +13,9 @@ interface AuthLayoutProps {
 
 export function MatchillLogo() {
   return (
-    <div className="flex flex-col items-center gap-1 mb-6">
-      <img src="/logo.png" alt="Matchill Logo" className="w-12 h-12" />
-    </div>
+    <Link to="/home" className="mb-6 flex flex-col items-center gap-1">
+      <img src="/logo.png" alt="Matchill Logo" className="h-16 w-16 object-contain" />
+    </Link>
   );
 }
 

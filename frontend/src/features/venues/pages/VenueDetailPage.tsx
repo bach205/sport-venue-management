@@ -18,6 +18,7 @@ import { BookingModal } from '../components/BookingModal';
 import { ImageWithFallback } from '@/shared/components/ImageWithFallback';
 import type { Venue, VenueSlot, Booking } from '../types/venues.types';
 import { useTranslation } from 'react-i18next';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 
 const SPORT_EMOJI: Record<string, string> = {
   tennis: '🎾',
@@ -82,6 +83,7 @@ export default function VenueDetailPage() {
   const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const { venueId } = useParams<{ venueId: string }>();
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
 
   const [venue, setVenue] = useState<Venue | null>(null);
   const [venueLoading, setVenueLoading] = useState(true);
@@ -101,6 +103,11 @@ export default function VenueDetailPage() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [lastBooking, setLastBooking] = useState<Booking | null>(null);
   const [selectionHint, setSelectionHint] = useState<string | null>(null);
+
+  const handleContinuePayment = () => {
+    if (!requireAuth()) return;
+    setShowBookingModal(true);
+  };
 
   useEffect(() => {
     if (!venueId) return;
@@ -574,7 +581,7 @@ export default function VenueDetailPage() {
               </div>
 
               <button
-                onClick={() => setShowBookingModal(true)}
+                onClick={handleContinuePayment}
                 disabled={selectedSlots.length === 0}
                 className="w-full h-12 rounded-xl flex items-center justify-center transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{

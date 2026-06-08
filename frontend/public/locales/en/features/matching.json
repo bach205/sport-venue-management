@@ -1,6 +1,7 @@
 {
   "nav": {
-    "home": "Discover",
+    "home": "Home",
+    "discover": "Discover",
     "feed": "Feed",
     "venues": "Venues",
     "bookings": "My Bookings",
@@ -721,6 +722,90 @@
       "updateError": "Could not update the profile."
     }
   },
+  "home": {
+    "hero": {
+      "badge": "Matchill Explore",
+      "title": "Find courts, matches, and sports gear near you",
+      "subtitle": "Preview available venues, teammate posts, and the sports marketplace before logging in.",
+      "imageAlt": "Outdoor sports court"
+    },
+    "search": {
+      "placeholder": "Search venues, sports, or areas",
+      "suggestions": {
+        "badminton": "Badminton",
+        "tennis": "Tennis",
+        "pickleball": "Pickleball"
+      }
+    },
+    "stats": {
+      "venuesFallback": "Sports venues near you",
+      "venuesCount": "{{count}}+ venues with open schedules",
+      "matches": "Fresh match posts daily",
+      "login": "Log in when you need to book"
+    },
+    "quickActions": {
+      "venues": "Find venues",
+      "players": "Find players",
+      "marketplace": "Sports marketplace"
+    },
+    "actions": {
+      "viewAll": "View all",
+      "openDiscover": "Open Discover",
+      "openFeed": "Open Feed",
+      "message": "Message",
+      "join": "Join"
+    },
+    "featuredVenues": {
+      "title": "Featured venues today",
+      "subtitle": "Check availability first, then log in when you want to reserve a court.",
+      "empty": "No suitable venues available for preview."
+    },
+    "discover": {
+      "title": "Match posts",
+      "subtitle": "Browse teammate and opponent posts around you.",
+      "empty": "No match posts available for preview."
+    },
+    "marketplace": {
+      "title": "Sports marketplace",
+      "subtitle": "Preview buy and sell posts; log in to message or create a listing.",
+      "negotiable": "Negotiable",
+      "intent": {
+        "sell": "Selling",
+        "buy": "Buying"
+      },
+      "preview": {
+        "racket": {
+          "title": "Yonex Astrox badminton racket",
+          "details": "Restrung and ready for weekend doubles."
+        },
+        "shoes": {
+          "title": "Looking for tennis shoes size 42",
+          "details": "Prefer good-condition hard-court shoes."
+        },
+        "ball": {
+          "title": "New pickleball ball set",
+          "details": "Box of 6 balls for outdoor courts."
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to reserve a court?",
+      "subtitle": "Log in to book venues, message players, and manage your schedule.",
+      "register": "Register"
+    },
+    "footer": {
+      "description": "Matchill helps you find venues, meet players, and trade sports gear in one connected experience.",
+      "explore": "Explore",
+      "support": "Support",
+      "account": "Account",
+      "legal": "Legal",
+      "contact": "Contact",
+      "terms": "Terms of use",
+      "privacy": "Privacy policy",
+      "refundPolicy": "Refund policy",
+      "copyright": "© {{year}} Matchill. All rights reserved."
+    }
+  },
   "feed": {
     "edited": "edited",
     "like": "Like",
@@ -749,12 +834,35 @@
       "prompt": "What would you like to share today?",
       "post": "Post",
       "searchPlaceholder": "Search posts in the feed...",
+      "marketSearchPlaceholder": "Search rackets, balls, shoes...",
+      "search": "Search",
       "resultsFor": "Results for:",
       "emptyTitle": "No posts yet",
       "emptySubtitle": "Be the first to share!",
       "createPost": "Create post",
       "loadMore": "Load more ({{count}} remaining)",
-      "end": "You have viewed all {{count}} posts."
+      "end": "You have viewed all {{count}} posts.",
+      "marketPrompt": "What sports gear are you looking to buy or sell?",
+      "createListing": "Post listing",
+      "createListingNow": "Post a listing",
+      "emptyMarketTitle": "No listings yet",
+      "emptyMarketSubtitle": "Be the first to buy or sell sports gear!",
+      "loadingMore": "Loading...",
+      "loadMoreListings": "View {{count}} more listings",
+      "endListings": "Showing all {{count}} listings",
+      "tabs": {
+        "all": "All",
+        "buy": "Buying",
+        "sell": "Selling"
+      },
+      "filters": {
+        "all": "All"
+      },
+      "sort": {
+        "newest": "Newest",
+        "priceAsc": "Price low to high",
+        "priceDesc": "Price high to low"
+      }
     },
     "create": {
       "imageRequired": "Please select an image file.",

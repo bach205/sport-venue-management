@@ -1,6 +1,7 @@
 {
   "nav": {
-    "home": "Khám phá",
+    "home": "Trang chủ",
+    "discover": "Khám phá",
     "feed": "Chợ",
     "venues": "Sân",
     "bookings": "Lịch đặt của tôi",
@@ -721,6 +722,90 @@
       "updateError": "Cập nhật hồ sơ thất bại."
     }
   },
+  "home": {
+    "hero": {
+      "badge": "Matchill Explore",
+      "title": "Tìm sân, tìm kèo, tìm đồ thể thao quanh bạn",
+      "subtitle": "Xem sân trống hôm nay, lướt bài tìm đồng đội và khám phá chợ đồ thể thao trước khi đăng nhập.",
+      "imageAlt": "Sân thể thao ngoài trời"
+    },
+    "search": {
+      "placeholder": "Tìm sân, môn thể thao hoặc khu vực",
+      "suggestions": {
+        "badminton": "Cầu lông",
+        "tennis": "Tennis",
+        "pickleball": "Pickleball"
+      }
+    },
+    "stats": {
+      "venuesFallback": "Sân thể thao quanh bạn",
+      "venuesCount": "{{count}}+ sân đang mở lịch",
+      "matches": "Kèo chơi mới mỗi ngày",
+      "login": "Đăng nhập khi cần đặt sân"
+    },
+    "quickActions": {
+      "venues": "Tìm sân",
+      "players": "Tìm người chơi",
+      "marketplace": "Mua bán đồ thể thao"
+    },
+    "actions": {
+      "viewAll": "Xem tất cả",
+      "openDiscover": "Mở Discover",
+      "openFeed": "Mở Feed",
+      "message": "Nhắn tin",
+      "join": "Tham gia"
+    },
+    "featuredVenues": {
+      "title": "Sân nổi bật hôm nay",
+      "subtitle": "Xem lịch trống trước, đăng nhập khi bạn muốn giữ sân.",
+      "empty": "Chưa có sân phù hợp để preview."
+    },
+    "discover": {
+      "title": "Kèo tìm người chơi",
+      "subtitle": "Lướt nhanh các bài tìm đồng đội và đối thủ quanh bạn.",
+      "empty": "Chưa có bài tìm người chơi để preview."
+    },
+    "marketplace": {
+      "title": "Chợ đồ thể thao",
+      "subtitle": "Xem mẫu tin mua bán; đăng nhập để nhắn tin hoặc đăng tin mới.",
+      "negotiable": "Thỏa thuận",
+      "intent": {
+        "sell": "Cần bán",
+        "buy": "Cần mua"
+      },
+      "preview": {
+        "racket": {
+          "title": "Vợt cầu lông Yonex Astrox",
+          "details": "Đã căng lưới, hợp đánh đôi cuối tuần."
+        },
+        "shoes": {
+          "title": "Tìm giày tennis size 42",
+          "details": "Ưu tiên giày còn tốt, đế sân cứng."
+        },
+        "ball": {
+          "title": "Set bóng pickleball mới",
+          "details": "Hộp 6 quả, phù hợp sân ngoài trời."
+        }
+      }
+    },
+    "cta": {
+      "title": "Sẵn sàng giữ sân?",
+      "subtitle": "Đăng nhập để đặt sân, nhắn tin với người chơi và quản lý lịch của bạn.",
+      "register": "Đăng ký"
+    },
+    "footer": {
+      "description": "Matchill giúp bạn tìm sân, tìm người chơi và mua bán đồ thể thao trong cùng một trải nghiệm.",
+      "explore": "Khám phá",
+      "support": "Hỗ trợ",
+      "account": "Tài khoản",
+      "legal": "Pháp lý",
+      "contact": "Liên hệ",
+      "terms": "Điều khoản sử dụng",
+      "privacy": "Chính sách bảo mật",
+      "refundPolicy": "Chính sách hoàn tiền",
+      "copyright": "© {{year}} Matchill. All rights reserved."
+    }
+  },
   "feed": {
     "edited": "đã chỉnh sửa",
     "like": "Thích",
@@ -749,12 +834,35 @@
       "prompt": "Bạn muốn chia sẻ gì hôm nay?",
       "post": "Đăng",
       "searchPlaceholder": "Tìm kiếm bài viết trong feed...",
+      "marketSearchPlaceholder": "Tìm vợt, bóng, giày thể thao...",
+      "search": "Tìm",
       "resultsFor": "Kết quả cho:",
       "emptyTitle": "Chưa có bài đăng nào",
       "emptySubtitle": "Hãy là người đầu tiên chia sẻ!",
       "createPost": "Tạo bài đăng",
       "loadMore": "Tải thêm (còn {{count}} bài)",
-      "end": "Bạn đã xem hết {{count}} bài đăng."
+      "end": "Bạn đã xem hết {{count}} bài đăng.",
+      "marketPrompt": "Bạn đang muốn mua bán gì?",
+      "createListing": "Đăng tin",
+      "createListingNow": "Đăng tin ngay",
+      "emptyMarketTitle": "Chưa có tin đăng nào",
+      "emptyMarketSubtitle": "Hãy là người đầu tiên đăng mua bán đồ thể thao!",
+      "loadingMore": "Đang tải...",
+      "loadMoreListings": "Xem thêm {{count}} tin",
+      "endListings": "Đã hiển thị tất cả {{count}} tin",
+      "tabs": {
+        "all": "Tất cả",
+        "buy": "Cần mua",
+        "sell": "Cần bán"
+      },
+      "filters": {
+        "all": "Tất cả"
+      },
+      "sort": {
+        "newest": "Mới nhất",
+        "priceAsc": "Giá tăng",
+        "priceDesc": "Giá giảm"
+      }
     },
     "create": {
       "imageRequired": "Vui lòng chọn file ảnh.",

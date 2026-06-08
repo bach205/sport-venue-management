@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Search, SlidersHorizontal, Loader2, CalendarDays } from 'lucide-react';
 import { fetchVenues } from '../api/venuesApi';
 import { VenueCard } from '../components/VenueCard';
@@ -37,11 +37,12 @@ export default function VenuesPage() {
   const { t, i18n } = useTranslation('matching');
   const locale = i18n.resolvedLanguage === 'en' ? 'en-US' : 'vi-VN';
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [sport, setSport] = useState<Sport | 'all'>('all');
   const [district, setDistrict] = useState('all');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const [selectedDate, setSelectedDate] = useState(TODAY);
 
   useEffect(() => {

@@ -12,9 +12,11 @@ export default defineConfig({
   },
   server: {
     allowedHosts: ["matchill.io.vn"],
+    port:9010
   },
 
   preview: {
     allowedHosts: ["matchill.io.vn"],
+    port: 9010,
   },
 });
