@@ -75,12 +75,24 @@ const normalizeBooleanFlag = (value, fallback = false) => {
   return ["1", "true", "yes", "y", "on"].includes(normalized);
 };
 
+const buildVenueLocation = (venueLike = {}) =>
+  [venueLike.address_detail, venueLike.ward, venueLike.province]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(", ");
+
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 class VenueService {
   async createVenue(ownerId, payload) {
+    const location = buildVenueLocation(payload);
     const venue = await Venue.create({
       owner_id: ownerId,
       name: payload.name,
-      location: payload.location,
+      location,
+      province: payload.province,
+      ward: payload.ward,
+      address_detail: payload.address_detail,
       phone_number: payload.phone_number,
       description: payload.description,
       image_url: payload.image_url || "",
@@ -92,14 +104,29 @@ class VenueService {
     return this.formatVenue(venue);
   }
 
-  async listVenues(page = 1, limit = 20, date) {
+  async listVenues(query = {}) {
+    const { page = 1, limit = 20, date, province, ward, search } = query;
     const skip = (page - 1) * limit;
+    const venueFilter = {};
+
+    if (province) {
+      venueFilter.province = province;
+    }
+
+    if (ward) {
+      venueFilter.ward = ward;
+    }
+
+    if (search) {
+      venueFilter.name = { $regex: escapeRegex(search), $options: "i" };
+    }
+
     const [venues, total] = await Promise.all([
-      Venue.find({})
+      Venue.find(venueFilter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Venue.countDocuments({}),
+      Venue.countDocuments(venueFilter),
     ]);
 
     if (!date) {
@@ -708,6 +735,13 @@ class VenueService {
     const venue = await this.getOwnedVenueOrThrow(ownerId, venueId);
 
     Object.assign(venue, payload);
+    if (
+      payload.province !== undefined ||
+      payload.ward !== undefined ||
+      payload.address_detail !== undefined
+    ) {
+      venue.location = buildVenueLocation(venue);
+    }
     await venue.save();
 
     return this.formatVenue(venue);
@@ -1399,11 +1433,16 @@ class VenueService {
       return null;
     }
 
+    const location = buildVenueLocation(venue) || venue.location;
+
     return {
       id: String(venue._id),
       ownerId: String(venue.owner_id),
       name: venue.name,
-      location: venue.location,
+      location,
+      province: venue.province || "",
+      ward: venue.ward || "",
+      addressDetail: venue.address_detail || "",
       phoneNumber: venue.phone_number,
       description: venue.description || "",
       imageUrl: venue.image_url || "",

@@ -20,8 +20,9 @@ const api = createAxiosInstance(API_BASE_URL);
 
 export interface UpsertVenuePayload {
   name: string;
-  shortAddress: string;
-  fullAddress: string;
+  province: string;
+  ward: string;
+  addressDetail: string;
   phoneNumber: string;
   sports: Sport[];
   imageUrl: string;
@@ -29,7 +30,6 @@ export interface UpsertVenuePayload {
   openHours: string;
   description: string;
   courtCount: number;
-  district: string;
 }
 
 export interface FetchVenuesParams {
@@ -37,7 +37,8 @@ export interface FetchVenuesParams {
   limit?: number;
   date?: string;
   sport?: Sport | 'all';
-  district?: string;
+  province?: string;
+  ward?: string;
   search?: string;
 }
 
@@ -123,6 +124,9 @@ type BackendVenue = {
   ownerId?: string;
   name: string;
   location: string;
+  province?: string;
+  ward?: string;
+  addressDetail?: string;
   phoneNumber?: string;
   description: string;
   imageUrl?: string;
@@ -235,14 +239,22 @@ function inferSports(name: string, description: string): Sport[] {
 }
 
 function mapVenue(backendVenue: BackendVenue): Venue {
-  const district = inferDistrict(backendVenue.location);
+  const province = backendVenue.province || '';
+  const ward = backendVenue.ward || '';
+  const addressDetail = backendVenue.addressDetail || '';
+  const district = ward || inferDistrict(backendVenue.location);
+  const shortAddress = [ward, province].filter(Boolean).join(', ') || district;
+  const fullAddress = backendVenue.location || [addressDetail, ward, province].filter(Boolean).join(', ');
 
   return {
     id: backendVenue.id,
     ownerId: backendVenue.ownerId,
     name: backendVenue.name,
-    shortAddress: district,
-    fullAddress: backendVenue.location,
+    shortAddress,
+    fullAddress,
+    province,
+    ward,
+    addressDetail,
     phoneNumber: backendVenue.phoneNumber || '',
     sports: inferSports(backendVenue.name, backendVenue.description),
     rating: 4.8,
@@ -370,12 +382,13 @@ function normalizeSearchText(value?: string) {
   return value?.trim().toLowerCase() || '';
 }
 
-function filterVenueList(venues: Venue[], filters?: Pick<FetchVenuesParams, 'sport' | 'district' | 'search'>) {
+function filterVenueList(venues: Venue[], filters?: Pick<FetchVenuesParams, 'sport' | 'province' | 'ward' | 'search'>) {
   const search = normalizeSearchText(filters?.search);
 
   return venues.filter((venue) => {
     if (filters?.sport && filters.sport !== 'all' && !venue.sports.includes(filters.sport)) return false;
-    if (filters?.district && filters.district !== 'all' && venue.district !== filters.district) return false;
+    if (filters?.province && filters.province !== 'all' && venue.province !== filters.province) return false;
+    if (filters?.ward && filters.ward !== 'all' && venue.ward !== filters.ward) return false;
     if (!search) return true;
 
     return (
@@ -394,6 +407,9 @@ export let MOCK_VENUES: Venue[] = [
     name: 'District 1 Tennis Club',
     shortAddress: 'District 1, HCMC',
     fullAddress: '12 Nguyen Hue Blvd, Ben Nghe Ward, District 1, HCMC',
+    province: 'HCMC',
+    ward: 'Ben Nghe Ward',
+    addressDetail: '12 Nguyen Hue Blvd',
     phoneNumber: '0900000000',
     sports: ['tennis'],
     rating: 4.9,
@@ -462,6 +478,9 @@ export async function fetchVenues(filters?: FetchVenuesParams): Promise<FetchVen
   if (filters?.page) params.page = filters.page;
   if (filters?.limit) params.limit = filters.limit;
   if (filters?.date) params.date = filters.date;
+  if (filters?.province && filters.province !== 'all') params.province = filters.province;
+  if (filters?.ward && filters.ward !== 'all') params.ward = filters.ward;
+  if (filters?.search?.trim()) params.search = filters.search.trim();
 
   const res = await api.get<{ message: string; data: { items: BackendVenue[]; pagination: FetchVenuesResult['pagination'] } }>('/venues', {
     params,
@@ -570,12 +589,18 @@ export async function requestBookingRefund(bookingId: string, payload: RequestBo
 export async function createVenue(payload: UpsertVenuePayload): Promise<{ success: boolean; data: Venue }> {
   if (isMockApi) {
     await delay(250);
-    const districtLabel = payload.district.trim() || 'Unknown district';
+    const provinceLabel = payload.province.trim();
+    const wardLabel = payload.ward.trim();
+    const addressDetail = payload.addressDetail.trim();
+    const fullAddress = [addressDetail, wardLabel, provinceLabel].filter(Boolean).join(', ');
     const venue: Venue = {
       id: `v-${Date.now()}`,
       name: payload.name,
-      shortAddress: `${districtLabel}, HCMC`,
-      fullAddress: payload.fullAddress,
+      shortAddress: [wardLabel, provinceLabel].filter(Boolean).join(', '),
+      fullAddress,
+      province: provinceLabel,
+      ward: wardLabel,
+      addressDetail,
       phoneNumber: payload.phoneNumber,
       sports: payload.sports,
       rating: 4.8,
@@ -585,7 +610,7 @@ export async function createVenue(payload: UpsertVenuePayload): Promise<{ succes
       openHours: payload.openHours,
       description: payload.description,
       courtCount: payload.courtCount,
-      district: districtLabel,
+      district: wardLabel || provinceLabel,
     };
     MOCK_VENUES = [venue, ...MOCK_VENUES];
     emitVenuesChanged();
@@ -606,12 +631,19 @@ export async function updateVenue(venueId: string, payload: UpsertVenuePayload):
     const idx = MOCK_VENUES.findIndex((venue) => venue.id === venueId);
     if (idx === -1) return { success: false, data: null };
 
-    const districtLabel = payload.district.trim() || MOCK_VENUES[idx].district;
+    const provinceLabel = payload.province.trim();
+    const wardLabel = payload.ward.trim();
+    const addressDetail = payload.addressDetail.trim();
+    const fullAddress = [addressDetail, wardLabel, provinceLabel].filter(Boolean).join(', ');
     const updated: Venue = {
       ...MOCK_VENUES[idx],
       ...payload,
-      shortAddress: `${districtLabel}, HCMC`,
-      district: districtLabel,
+      shortAddress: [wardLabel, provinceLabel].filter(Boolean).join(', '),
+      fullAddress,
+      province: provinceLabel,
+      ward: wardLabel,
+      addressDetail,
+      district: wardLabel || provinceLabel,
     };
 
     MOCK_VENUES = [...MOCK_VENUES];

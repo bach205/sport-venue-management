@@ -16,7 +16,8 @@ const SPORT_OPTIONS = [
   { value: 'volleyball', emoji: '🏐' },
 ];
 
-const DISTRICTS = ['all', 'District 1', 'Binh Thanh', 'Go Vap', 'Thu Duc', 'District 7', 'Vung Tau'];
+const PROVINCES = ['all', 'HCMC', 'Ha Noi', 'Da Nang', 'Binh Duong', 'Dong Nai'];
+const WARDS = ['all', 'Ben Nghe Ward', 'Thu Duc', 'Binh Thanh', 'Go Vap', 'District 7'];
 
 function toISODate(date: Date) {
   return date.toISOString().split('T')[0];
@@ -41,15 +42,16 @@ export default function VenuesPage() {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [sport, setSport] = useState<Sport | 'all'>('all');
-  const [district, setDistrict] = useState('all');
-  const [search, setSearch] = useState(searchParams.get('search') ?? '');
+  const [province, setProvince] = useState('all');
+  const [ward, setWard] = useState('all');
+  const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState(TODAY);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetchVenues({ sport, district, search, date: selectedDate });
+        const res = await fetchVenues({ sport, province, ward, search, date: selectedDate });
         setVenues(res.items);
       } finally {
         setLoading(false);
@@ -57,7 +59,7 @@ export default function VenuesPage() {
     };
 
     load();
-  }, [sport, district, search, selectedDate]);
+  }, [sport, province, ward, search, selectedDate]);
 
   const selectStyle: React.CSSProperties = {
     fontFamily: 'Inter, sans-serif',
@@ -127,10 +129,17 @@ export default function VenuesPage() {
                 </option>
               ))}
             </select>
-            <select value={district} onChange={e => setDistrict(e.target.value)} style={selectStyle}>
-              {DISTRICTS.map(d => (
-                <option key={d} value={d}>
-                  {t(`venues.districts.${d}`, d)}
+            <select value={province} onChange={e => setProvince(e.target.value)} style={selectStyle}>
+              {PROVINCES.map(item => (
+                <option key={item} value={item}>
+                  {item === 'all' ? t('venues.page.allProvinces') : item}
+                </option>
+              ))}
+            </select>
+            <select value={ward} onChange={e => setWard(e.target.value)} style={selectStyle}>
+              {WARDS.map(item => (
+                <option key={item} value={item}>
+                  {item === 'all' ? t('venues.page.allWards') : item}
                 </option>
               ))}
             </select>

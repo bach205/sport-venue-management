@@ -41,7 +41,9 @@ function createScheduleRange(): CreateVenuePayload["weekly_schedule"][number] {
 
 const EMPTY_FORM: CreateVenuePayload = {
   name: "",
-  location: "",
+  province: "",
+  ward: "",
+  address_detail: "",
   phone_number: "",
   description: "",
   image_url: "",
@@ -107,6 +109,9 @@ export default function VenueOwnerDashboard() {
       (venue) =>
         venue.name.toLowerCase().includes(keyword) ||
         venue.location.toLowerCase().includes(keyword) ||
+        venue.province.toLowerCase().includes(keyword) ||
+        venue.ward.toLowerCase().includes(keyword) ||
+        venue.addressDetail.toLowerCase().includes(keyword) ||
         venue.description.toLowerCase().includes(keyword)
     );
   }, [search, venues]);
@@ -125,7 +130,13 @@ export default function VenueOwnerDashboard() {
   }, [locale, t, venues]);
 
   const handleCreateVenue = async () => {
-    if (!form.name.trim() || !form.location.trim() || !form.phone_number.trim()) {
+    if (
+      !form.name.trim() ||
+      !form.province.trim() ||
+      !form.ward.trim() ||
+      !form.address_detail.trim() ||
+      !form.phone_number.trim()
+    ) {
       toast.error(t("owner.dashboard.requiredFields"));
       return;
     }
@@ -289,8 +300,16 @@ export default function VenueOwnerDashboard() {
                 <Input value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
               </div>
               <div className="space-y-1.5">
-                <Label>{t("owner.dashboard.fields.location")}</Label>
-                <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+                <Label>{t("owner.dashboard.fields.province")}</Label>
+                <Input value={form.province} onChange={(e) => setForm((prev) => ({ ...prev, province: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>{t("owner.dashboard.fields.ward")}</Label>
+                <Input value={form.ward} onChange={(e) => setForm((prev) => ({ ...prev, ward: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+              </div>
+              <div className="space-y-1.5 lg:col-span-2">
+                <Label>{t("owner.dashboard.fields.addressDetail")}</Label>
+                <Input value={form.address_detail} onChange={(e) => setForm((prev) => ({ ...prev, address_detail: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
               </div>
               <div className="space-y-1.5">
                 <Label>{t("owner.dashboard.fields.phone")}</Label>

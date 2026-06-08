@@ -57,7 +57,7 @@ class VenueController {
     }
 
     try {
-      const data = await venueService.listVenues(value.page, value.limit, value.date);
+      const data = await venueService.listVenues(value);
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Venues fetched successfully.",

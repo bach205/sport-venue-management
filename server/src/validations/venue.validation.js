@@ -13,6 +13,16 @@ const normalizeOptionalString = (value) =>
 
 const isPositiveInteger = (value) => Number.isInteger(value) && value > 0;
 
+const getRequiredTrimmedString = (value, fieldLabel, errors) => {
+  const normalized = normalizeOptionalString(value);
+  if (!normalized) {
+    errors.push(`${fieldLabel} is required.`);
+    return "";
+  }
+
+  return normalized;
+};
+
 const validateObjectIdParam = (value, fieldLabel = "Resource") => {
   const errors = [];
 
@@ -58,9 +68,16 @@ const validatePaginationQuery = (query = {}) => {
 const validateVenueListQuery = (query = {}) => {
   const pagination = validatePaginationQuery(query);
   const errors = [...pagination.errors];
+  const province = normalizeOptionalString(query.province);
+  const ward = normalizeOptionalString(query.ward);
+  const search = normalizeOptionalString(query.search);
 
   if (query.date !== undefined) {
     validateDate(query.date, "Date", errors);
+  }
+
+  if (search && search.length > 120) {
+    errors.push("Search must not exceed 120 characters.");
   }
 
   return {
@@ -69,6 +86,9 @@ const validateVenueListQuery = (query = {}) => {
     value: {
       ...pagination.value,
       date: query.date ? String(query.date) : undefined,
+      province: province || undefined,
+      ward: ward || undefined,
+      search: search || undefined,
     },
   };
 };
@@ -354,13 +374,24 @@ const validateVenueUpdatePayload = (payload = {}) => {
     }
   }
 
+  if (payload.province !== undefined) {
+    value.province = getRequiredTrimmedString(payload.province, "Province", errors);
+  }
+
+  if (payload.ward !== undefined) {
+    value.ward = getRequiredTrimmedString(payload.ward, "Ward", errors);
+  }
+
+  if (payload.address_detail !== undefined) {
+    value.address_detail = getRequiredTrimmedString(
+      payload.address_detail,
+      "Address detail",
+      errors
+    );
+  }
+
   if (payload.location !== undefined) {
-    const location = String(payload.location).trim();
-    if (!location) {
-      errors.push("Location is required.");
-    } else {
-      value.location = location;
-    }
+    value.location = getRequiredTrimmedString(payload.location, "Location", errors);
   }
 
   if (payload.phone_number !== undefined) {
@@ -389,7 +420,13 @@ const validateVenueUpdatePayload = (payload = {}) => {
 const validateCreateVenuePayload = (payload = {}) => {
   const errors = [];
   const name = normalizeOptionalString(payload.name);
-  const location = normalizeOptionalString(payload.location);
+  const province = getRequiredTrimmedString(payload.province, "Province", errors);
+  const ward = getRequiredTrimmedString(payload.ward, "Ward", errors);
+  const addressDetail = getRequiredTrimmedString(
+    payload.address_detail,
+    "Address detail",
+    errors
+  );
   const phoneNumber = validatePhoneNumber(payload.phone_number, errors);
   const description = normalizeOptionalString(payload.description) || "";
   const imageUrl = validateOptionalImageUrl(payload.image_url, errors) || "";
@@ -401,10 +438,6 @@ const validateCreateVenuePayload = (payload = {}) => {
 
   if (!name) {
     errors.push("Name is required.");
-  }
-
-  if (!location) {
-    errors.push("Location is required.");
   }
 
   if (!Number.isFinite(slotPrice) || slotPrice < 0) {
@@ -420,7 +453,9 @@ const validateCreateVenuePayload = (payload = {}) => {
     errors,
     value: {
       name,
-      location,
+      province,
+      ward,
+      address_detail: addressDetail,
       phone_number: phoneNumber,
       description,
       image_url: imageUrl,

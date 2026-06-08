@@ -48,7 +48,10 @@ const createVenue = async (ownerId) =>
   Venue.create({
     owner_id: ownerId,
     name: "Central Court",
-    location: "District 1",
+    location: "123 Nguyen Hue, Ben Nghe Ward, HCMC",
+    province: "HCMC",
+    ward: "Ben Nghe Ward",
+    address_detail: "123 Nguyen Hue",
     phone_number: "0900000000",
     description: "Indoor court",
     slot_price: 250000,
@@ -138,7 +141,9 @@ describe("Venue booking module", () => {
       .set(authHeader(owner.token))
       .send({
         name: "Fresh Arena",
-        location: "Thu Duc",
+        province: "HCMC",
+        ward: "Thu Duc",
+        address_detail: "22 Sports Street",
         phone_number: "0911222333",
         description: "Newly opened venue",
         slot_price: 300000,
@@ -154,8 +159,73 @@ describe("Venue booking module", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.name).toBe("Fresh Arena");
+    expect(response.body.data.location).toBe("22 Sports Street, Thu Duc, HCMC");
+    expect(response.body.data.province).toBe("HCMC");
+    expect(response.body.data.ward).toBe("Thu Duc");
+    expect(response.body.data.addressDetail).toBe("22 Sports Street");
     expect(response.body.data.slotPrice).toBe(300000);
     expect(response.body.data.slotDurationMinutes).toBe(90);
+  });
+
+  test("filters venue browsing by province and ward", async () => {
+    const owner = await createUser("owner", "owner-filter@example.com");
+    await createVenue(owner.user._id);
+    await Venue.create({
+      owner_id: owner.user._id,
+      name: "North Court",
+      location: "55 Lake Road, Tay Ho Ward, Ha Noi",
+      province: "Ha Noi",
+      ward: "Tay Ho Ward",
+      address_detail: "55 Lake Road",
+      phone_number: "0911222444",
+      description: "Outdoor court",
+      slot_price: 200000,
+      slot_duration_minutes: 60,
+      weekly_schedule: [
+        { day_of_week: TEST_DAY_OF_WEEK, start_time: "08:00", end_time: "12:00" },
+      ],
+    });
+
+    const response = await request(app).get("/api/v1/venues?province=HCMC&ward=Ben%20Nghe%20Ward");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.items).toHaveLength(1);
+    expect(response.body.data.items[0]).toEqual(
+      expect.objectContaining({
+        name: "Central Court",
+        province: "HCMC",
+        ward: "Ben Nghe Ward",
+        addressDetail: "123 Nguyen Hue",
+      })
+    );
+    expect(response.body.data.pagination.total).toBe(1);
+  });
+
+  test("searches venue browsing by venue name only", async () => {
+    const owner = await createUser("owner", "owner-search@example.com");
+    await createVenue(owner.user._id);
+    await Venue.create({
+      owner_id: owner.user._id,
+      name: "Riverside Arena",
+      location: "Central Court Street, Tay Ho Ward, Ha Noi",
+      province: "Ha Noi",
+      ward: "Tay Ho Ward",
+      address_detail: "Central Court Street",
+      phone_number: "0911222555",
+      description: "Outdoor court",
+      slot_price: 200000,
+      slot_duration_minutes: 60,
+      weekly_schedule: [
+        { day_of_week: TEST_DAY_OF_WEEK, start_time: "08:00", end_time: "12:00" },
+      ],
+    });
+
+    const response = await request(app).get("/api/v1/venues?search=Central");
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.items).toHaveLength(1);
+    expect(response.body.data.items[0].name).toBe("Central Court");
+    expect(response.body.data.pagination.total).toBe(1);
   });
 
   test("returns slot statuses for available and unavailable schedule entries", async () => {

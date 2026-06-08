@@ -58,7 +58,9 @@ type RefundAction = "approve" | "reject";
 
 type SettingsForm = {
   name: string;
-  location: string;
+  province: string;
+  ward: string;
+  addressDetail: string;
   phoneNumber: string;
   description: string;
   imageUrl: string;
@@ -110,7 +112,9 @@ function toISO(d: Date) {
 function toSettingsForm(venue: OwnerVenue): SettingsForm {
   return {
     name: venue.name,
-    location: venue.location,
+    province: venue.province,
+    ward: venue.ward,
+    addressDetail: venue.addressDetail,
     phoneNumber: venue.phoneNumber,
     description: venue.description,
     imageUrl: venue.imageUrl || "",
@@ -480,8 +484,16 @@ function SettingsTab({
             <Input value={form.name} onChange={(e) => onChange((prev) => ({ ...prev, name: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
           </div>
           <div className="space-y-1.5">
-            <Label>{t("owner.manage.fields.location")}</Label>
-            <Input value={form.location} onChange={(e) => onChange((prev) => ({ ...prev, location: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+            <Label>{t("owner.manage.fields.province")}</Label>
+            <Input value={form.province} onChange={(e) => onChange((prev) => ({ ...prev, province: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("owner.manage.fields.ward")}</Label>
+            <Input value={form.ward} onChange={(e) => onChange((prev) => ({ ...prev, ward: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t("owner.manage.fields.addressDetail")}</Label>
+            <Input value={form.addressDetail} onChange={(e) => onChange((prev) => ({ ...prev, addressDetail: e.target.value }))} className="h-11 border-[#dfc0b3] focus-visible:border-[#006a65] focus-visible:ring-[#006a65]/20" />
           </div>
           <div className="space-y-1.5">
             <Label>{t("owner.manage.fields.phone")}</Label>
@@ -767,7 +779,9 @@ export default function VenueManagePage() {
 
       const payload: UpdateVenuePayload = {
         name: settingsForm.name,
-        location: settingsForm.location,
+        province: settingsForm.province,
+        ward: settingsForm.ward,
+        address_detail: settingsForm.addressDetail,
         phone_number: settingsForm.phoneNumber,
         description: settingsForm.description,
         image_url: imageUrl,

@@ -8,6 +8,9 @@ export type OwnerVenue = {
   ownerId: string;
   name: string;
   location: string;
+  province: string;
+  ward: string;
+  addressDetail: string;
   phoneNumber: string;
   description: string;
   imageUrl: string;
@@ -100,7 +103,9 @@ export type OwnerSlot = {
 
 export type CreateVenuePayload = {
   name: string;
-  location: string;
+  province: string;
+  ward: string;
+  address_detail: string;
   phone_number: string;
   description: string;
   image_url?: string;
@@ -113,7 +118,7 @@ export type CreateVenuePayload = {
   }>;
 };
 
-export type UpdateVenuePayload = Partial<Pick<CreateVenuePayload, "name" | "location" | "phone_number" | "description" | "image_url">>;
+export type UpdateVenuePayload = Partial<Pick<CreateVenuePayload, "name" | "province" | "ward" | "address_detail" | "phone_number" | "description" | "image_url">>;
 
 export async function fetchOwnerVenues() {
   const res = await api.get<{ message: string; data: { items: OwnerVenue[] } }>("/my-venues");

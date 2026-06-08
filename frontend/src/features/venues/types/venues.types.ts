@@ -43,6 +43,9 @@ export interface Venue {
   name: string;
   shortAddress: string;
   fullAddress: string;
+  province: string;
+  ward: string;
+  addressDetail: string;
   phoneNumber: string;
   sports: Sport[];
   rating: number;
