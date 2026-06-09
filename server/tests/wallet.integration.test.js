@@ -270,6 +270,44 @@ describe("Wallet module", () => {
     expect(reviewResponse.body.data.withdrawRequest.status).toBe("rejected");
   });
 
+  test("creates payout profile even when legacy profiles are missing required bank fields", async () => {
+    const user = await createUser("user", "wallet-legacy-payout-user@example.com");
+    const wallet = await walletService.getOrCreateWallet(user.user._id);
+
+    await Wallet.collection.updateOne(
+      { _id: wallet._id },
+      {
+        $push: {
+          payout_profiles: {
+            $each: [
+              { _id: new mongoose.Types.ObjectId(), note: "legacy empty profile 1" },
+              { _id: new mongoose.Types.ObjectId(), note: "legacy empty profile 2" },
+            ],
+          },
+        },
+      }
+    );
+
+    const response = await request(app)
+      .post("/api/v1/wallet/payout-profiles")
+      .set(authHeader(user.token))
+      .send({
+        bank_code: "a",
+        bank_name: "a",
+        account_number: "a",
+        account_name: "a",
+        note: "",
+        is_default: false,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.payoutProfile.bankCode).toBe("a");
+    expect(response.body.data.payoutProfile.bankName).toBe("a");
+    expect(response.body.data.payoutProfile.accountNumber).toBe("a");
+    expect(response.body.data.payoutProfile.accountName).toBe("a");
+    expect(response.body.data.wallet.payoutProfiles).toHaveLength(3);
+  });
+
   test("credits wallet exactly once when topup webhook is delivered repeatedly", async () => {
     const user = await createUser("user", "wallet-topup@example.com");
 

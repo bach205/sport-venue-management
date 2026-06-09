@@ -149,21 +149,37 @@ class WalletService {
 
   async createPayoutProfile(userId, payload) {
     const wallet = await this.getOrCreateWallet(userId);
-    this.normalizeDefaultFlag(wallet, payload.is_default);
-
-    wallet.payout_profiles.push({
+    const profile = {
+      _id: new mongoose.Types.ObjectId(),
       bank_code: payload.bank_code,
       bank_name: payload.bank_name,
       account_number: payload.account_number,
       account_name: payload.account_name,
       is_default: payload.is_default || wallet.payout_profiles.length === 0,
       note: payload.note || "",
-    });
-    await wallet.save();
+    };
+
+    if (profile.is_default) {
+      await Wallet.updateOne(
+        { _id: wallet._id },
+        { $set: { "payout_profiles.$[].is_default": false } },
+        { runValidators: false }
+      );
+    }
+
+    const updatedWallet = await Wallet.findByIdAndUpdate(
+      wallet._id,
+      { $push: { payout_profiles: profile } },
+      { new: true, runValidators: false }
+    );
+
+    if (!updatedWallet) {
+      throw createHttpError(HTTP_STATUS.NOT_FOUND, "Wallet not found.");
+    }
 
     return {
-      wallet: this.formatWallet(wallet),
-      payoutProfile: this.formatPayoutProfile(wallet.payout_profiles[wallet.payout_profiles.length - 1]),
+      wallet: this.formatWallet(updatedWallet),
+      payoutProfile: this.formatPayoutProfile(updatedWallet.payout_profiles.id(profile._id)),
     };
   }
 
