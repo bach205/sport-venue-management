@@ -82,7 +82,7 @@ export default function LoginPage() {
           {t("login.heading")}
         </h1>
         <p className="text-sm text-brand-body leading-relaxed">
-          Log in to book courts, find matches, and message other players.
+          {t("login.subtitle")}
         </p>
       </div>
 

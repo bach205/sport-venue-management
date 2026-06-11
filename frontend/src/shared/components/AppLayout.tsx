@@ -6,6 +6,7 @@ import { logout } from '../../features/auth/store/authSlice';
 import { toast } from 'sonner';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { TotalViewCounter } from './TotalViewCounter';
 import { useTranslation } from 'react-i18next';
 import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 
@@ -58,7 +59,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-brand-surface">
       <header className="sticky top-0 z-20 bg-brand-surface border-b border-brand-border shadow-sm">
-        <div className="max-w-screen-xl mx-auto px-3 sm:px-6 h-[60px] flex items-center justify-between">
+        <div className="max-w-screen-xl mx-auto px-3 h-[60px] flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-1 sm:gap-3 xl:gap-10">
             <button
               type="button"
@@ -107,12 +108,12 @@ export default function AppLayout() {
               <div className="relative ml-1">
                 <button
                   onClick={() => setUserMenuOpen(o => !o)}
-                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-brand-surface-orange transition-colors border-[1.5px] border-brand-border"
+                  className="flex items-center gap-2 px-1 py-1.5 rounded-xl hover:bg-brand-surface-orange transition-colors border-[1.5px] border-brand-border"
                 >
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold text-white gradient-orange-diag font-heading">
                     { user.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-lg" /> : user.name[0]}
                   </div>
-                  <p className="hidden sm:block text-[13px] font-bold text-brand-dark font-heading leading-tight">
+                  <p className="hidden overflow-hidden whitespace-nowrap text-ellipsis w-[50px] sm:block text-[13px] font-bold text-brand-dark font-heading leading-tight">
                     {user.name.split(' ')[0]}
                   </p>
                   <ChevronDown size={13} className="text-brand-muted" />
@@ -179,6 +180,7 @@ export default function AppLayout() {
                 <LogIn size={14} /> {t('layout.login')}
               </Link>
             )}
+            <TotalViewCounter className="ml-1 shrink-0 px-2 sm:px-3" />
           </div>
         </div>
       </header>

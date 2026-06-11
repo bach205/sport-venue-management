@@ -28,6 +28,10 @@
     "vi": "Vietnamese",
     "en": "English"
   },
+  "views": {
+    "totalTitle": "Total views",
+    "label": "views"
+  },
   "matchingMock": {
     "today": "Today",
     "venues": {

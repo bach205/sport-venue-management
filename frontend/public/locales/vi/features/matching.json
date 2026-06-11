@@ -28,6 +28,10 @@
     "vi": "Tiếng Việt",
     "en": "Tiếng Anh"
   },
+  "views": {
+    "totalTitle": "Tổng lượt xem",
+    "label": "lượt xem"
+  },
   "matchingMock": {
     "today": "Hôm nay",
     "venues": {
