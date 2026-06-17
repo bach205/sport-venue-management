@@ -35,9 +35,7 @@ export default function ResetPasswordPage() {
     .object({
       newPassword: z
         .string()
-        .min(8, t("validation.passwordMin8"))
-        .regex(/[A-Z]/, t("validation.passwordUppercase"))
-        .regex(/[0-9]/, t("validation.passwordNumber")),
+        .min(8, t("validation.passwordMin8")),
       confirmPassword: z.string().min(1, t("validation.confirmPasswordRequired")),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
@@ -141,13 +139,7 @@ export default function ResetPasswordPage() {
           transform: "translate(-30%, -30%)",
         }}
       />
-      <div
-        className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-20 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, #6ef4ea 0%, transparent 70%)",
-          transform: "translate(30%, 30%)",
-        }}
-      />
+
 
       <div
         className="relative bg-white rounded-2xl shadow-2xl p-8 md:p-10 w-full max-w-md"

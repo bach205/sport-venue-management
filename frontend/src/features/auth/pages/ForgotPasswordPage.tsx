@@ -52,13 +52,7 @@ export default function ForgotPasswordPage() {
           transform: "translate(-30%, -30%)",
         }}
       />
-      <div
-        className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-20 pointer-events-none"
-        style={{
-          background: "radial-gradient(circle, #6ef4ea 0%, transparent 70%)",
-          transform: "translate(30%, 30%)",
-        }}
-      />
+ 
 
       <div
         className="relative bg-white rounded-2xl shadow-2xl p-8 md:p-10 w-full max-w-md"

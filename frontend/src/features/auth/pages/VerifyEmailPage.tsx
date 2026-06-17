@@ -25,13 +25,7 @@ const Card = ({ children }: { children: React.ReactNode }) => (
         transform: "translate(-30%, -30%)",
       }}
     />
-    <div
-      className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-20 pointer-events-none"
-      style={{
-        background: "radial-gradient(circle, #6ef4ea 0%, transparent 70%)",
-        transform: "translate(30%, 30%)",
-      }}
-    />
+  
     <div
       className="relative bg-white rounded-2xl p-10 w-full max-w-md text-center"
       style={{ boxShadow: "0 8px 40px rgba(36,25,20,0.15)" }}

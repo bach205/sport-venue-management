@@ -4,7 +4,7 @@ const { HTTP_STATUS } = require("../../constants");
 const createHttpError = require("../../utils/createHttpError");
 const { signToken } = require("../../utils/jwt");
 const { sendMail } = require("../../utils/mailer");
-const { EmailVerificationToken } = require("./model");
+const { EmailVerificationToken, PasswordResetToken } = require("./model");
 const { User } = require("../user/model");
 const userService = require("../user/service");
 
@@ -19,7 +19,7 @@ const buildVerificationUrl = (token) => {
     const frontendUrl = process.env.FRONTEND_URL;
 
     if (!frontendUrl) {
-        throw new Error("Missing required environment variable: FRONTEND_URL");
+        throw new Error("Thiếu biến môi trường bắt buộc: FRONTEND_URL");
     }
 
     const verificationUrl = new URL("/verify-email", frontendUrl);
@@ -28,15 +28,27 @@ const buildVerificationUrl = (token) => {
     return verificationUrl.toString();
 };
 
+const buildResetPasswordUrl = (token) => {
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    if (!frontendUrl) {
+        throw new Error("Thiếu biến môi trường bắt buộc: FRONTEND_URL");
+    }
+
+    const resetUrl = new URL("/reset-password", frontendUrl);
+    resetUrl.searchParams.set("token", token);
+
+    return resetUrl.toString();
+};
+
 class AuthService {
     async register(email, password) {
         const normalizedEmail = normalizeEmail(email);
 
-        // Check if user already exists
         const userExists = await User.findOne({ email: normalizedEmail });
         if (userExists) {
             if (userExists.is_verified) {
-                throw createHttpError(HTTP_STATUS.BAD_REQUEST, "User already exists.");
+                throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Người dùng đã tồn tại.");
             }
 
             const activeVerificationToken = await this.getLatestUnusedVerificationToken(
@@ -49,7 +61,7 @@ class AuthService {
             ) {
                 throw createHttpError(
                     HTTP_STATUS.BAD_REQUEST,
-                    "This email is already registered. Please check your inbox to verify your account."
+                    "Email này đã được đăng ký. Vui lòng kiểm tra hộp thư đến để xác thực tài khoản của bạn."
                 );
             }
 
@@ -57,7 +69,7 @@ class AuthService {
             await this.sendVerificationEmail(userExists.email, verificationToken.rawToken);
 
             return {
-                message: "Your verification email had expired. A new verification email has been sent.",
+                message: "Email xác thực của bạn đã hết hạn. Một email xác thực mới đã được gửi.",
                 data: {
                     user: userExists.toJSON(),
                 },
@@ -85,12 +97,12 @@ class AuthService {
 
             throw createHttpError(
                 HTTP_STATUS.INTERNAL_SERVER_ERROR,
-                "Could not complete registration."
+                "Không thể hoàn tất đăng ký."
             );
         }
 
         return {
-            message: "Registration successful. Please verify your email before logging in.",
+            message: "Đăng ký thành công. Vui lòng xác thực email trước khi đăng nhập.",
             data: {
                 user: user.toJSON(),
             },
@@ -100,38 +112,35 @@ class AuthService {
     async login(email, password) {
         const normalizedEmail = normalizeEmail(email);
 
-        // Find user by email and include password_hash field
         const user = await User.findOne({ email: normalizedEmail }).select("+password_hash");
         if (!user) {
             throw createHttpError(
                 HTTP_STATUS.BAD_REQUEST,
-                "Invalid email or password."
+                "Email hoặc mật khẩu không hợp lệ."
             );
         }
 
-        // Compare passwords
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
             throw createHttpError(
                 HTTP_STATUS.BAD_REQUEST,
-                "Invalid email or password."
+                "Email hoặc mật khẩu không hợp lệ."
             );
         }
 
         if (!user.is_verified) {
             throw createHttpError(
                 HTTP_STATUS.FORBIDDEN,
-                "Please verify your email before logging in."
+                "Vui lòng xác thực email trước khi đăng nhập."
             );
         }
 
         if (user.status === "banned") {
             throw createHttpError(
                 HTTP_STATUS.FORBIDDEN,
-                "This account has been banned."
+                "Tài khoản này đã bị khóa."
             );
         }
-        console.log(user)
         const profile = await userService.getUserProfile(user._id);
         const role = await userService.getUserRole(user._id);
         const token = signToken({ email: user.email, id: user._id, role: role });
@@ -155,28 +164,28 @@ class AuthService {
         if (!verificationToken) {
             throw createHttpError(
                 HTTP_STATUS.BAD_REQUEST,
-                "Verification token is invalid."
+                "Mã xác thực không hợp lệ."
             );
         }
 
         if (verificationToken.used_at) {
             throw createHttpError(
                 HTTP_STATUS.BAD_REQUEST,
-                "Verification token has already been used."
+                "Mã xác thực đã được sử dụng."
             );
         }
 
         if (verificationToken.expires_at.getTime() < Date.now()) {
             throw createHttpError(
                 HTTP_STATUS.BAD_REQUEST,
-                "Verification token has expired."
+                "Mã xác thực đã hết hạn."
             );
         }
 
         const user = await User.findById(verificationToken.user_id);
 
         if (!user) {
-            throw createHttpError(HTTP_STATUS.NOT_FOUND, "User not found.");
+            throw createHttpError(HTTP_STATUS.NOT_FOUND, "Không tìm thấy người dùng.");
         }
 
         user.is_verified = true;
@@ -186,7 +195,7 @@ class AuthService {
         await verificationToken.save();
 
         return {
-            message: "Email verified successfully.",
+            message: "Xác thực email thành công.",
             data: {
                 user: user.toJSON(),
             },
@@ -223,14 +232,99 @@ class AuthService {
 
         await sendMail({
             to: email,
-            subject: "Verify your Matchill account",
-            text: `Verify your email by opening this link: ${verificationUrl}`,
+            subject: "Xác thực tài khoản Matchill của bạn",
+            text: `Xác thực email của bạn bằng cách mở liên kết này: ${verificationUrl}`,
             html: `
-                <p>Welcome to Matchill.</p>
-                <p>Please verify your email to activate your account.</p>
-                <p><a href="${verificationUrl}">Verify email</a></p>
-                <p>If the button does not work, copy this link into your browser:</p>
+                <p>Chào mừng bạn đến với Matchill.</p>
+                <p>Vui lòng xác thực email để kích hoạt tài khoản của bạn.</p>
+                <p><a href="${verificationUrl}">Xác thực email</a></p>
+                <p>Nếu nút không hoạt động, hãy sao chép liên kết này vào trình duyệt của bạn:</p>
                 <p>${verificationUrl}</p>
+            `,
+        });
+    }
+
+    async forgotPassword(email) {
+        const normalizedEmail = normalizeEmail(email);
+        const user = await User.findOne({ email: normalizedEmail });
+
+        if (!user) {
+            return { message: "Nếu email của bạn đã được đăng ký, một liên kết đặt lại mật khẩu đã được gửi đi." };
+        }
+
+        const resetToken = await this.createPasswordResetToken(user._id);
+        await this.sendPasswordResetEmail(user.email, resetToken.rawToken);
+
+        return { message: "Nếu email của bạn đã được đăng ký, một liên kết đặt lại mật khẩu đã được gửi đi." };
+    }
+
+    async resetPassword(token, newPassword) {
+        const tokenHash = hashToken(token);
+        const resetTokenDoc = await PasswordResetToken.findOne({
+            token_hash: tokenHash,
+        });
+
+        if (!resetTokenDoc) {
+            throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Mã đặt lại mật khẩu không hợp lệ.");
+        }
+
+        if (resetTokenDoc.used_at) {
+            throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Mã đặt lại mật khẩu đã được sử dụng.");
+        }
+
+        if (resetTokenDoc.expires_at.getTime() < Date.now()) {
+            throw createHttpError(HTTP_STATUS.BAD_REQUEST, "Mã đặt lại mật khẩu đã hết hạn.");
+        }
+
+        const user = await User.findById(resetTokenDoc.user_id);
+
+        if (!user) {
+            throw createHttpError(HTTP_STATUS.NOT_FOUND, "Không tìm thấy người dùng.");
+        }
+
+        user.password_hash = newPassword;
+        await user.save();
+
+        resetTokenDoc.used_at = new Date();
+        await resetTokenDoc.save();
+
+        return {
+            message: "Mật khẩu đã được đặt lại thành công.",
+        };
+    }
+
+    async createPasswordResetToken(userId) {
+        const rawToken = crypto.randomBytes(32).toString("hex");
+        const tokenHash = hashToken(rawToken);
+
+        await PasswordResetToken.deleteMany({ user_id: userId, used_at: null });
+
+        const resetToken = await PasswordResetToken.create({
+            user_id: userId,
+            token_hash: tokenHash,
+            expires_at: new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS),
+        });
+
+        return {
+            rawToken,
+            token: resetToken,
+        };
+    }
+
+    async sendPasswordResetEmail(email, token) {
+        const resetUrl = buildResetPasswordUrl(token);
+
+        await sendMail({
+            to: email,
+            subject: "Đặt lại mật khẩu Matchill của bạn",
+            text: `Đặt lại mật khẩu của bạn bằng cách mở liên kết này: ${resetUrl}`,
+            html: `
+                <p>Xin chào từ Matchill.</p>
+                <p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết bên dưới để thiết lập mật khẩu mới.</p>
+                <p><a href="${resetUrl}">Đặt lại mật khẩu</a></p>
+                <p>Nếu bạn không yêu cầu thao tác này, vui lòng bỏ qua email này.</p>
+                <p>Nếu nút không hoạt động, hãy sao chép liên kết này vào trình duyệt của bạn:</p>
+                <p>${resetUrl}</p>
             `,
         });
     }

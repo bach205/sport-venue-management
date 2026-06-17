@@ -3,6 +3,8 @@ const {
     validateRegisterPayload,
     validateLoginPayload,
     validateVerifyEmailPayload,
+    validateForgotPasswordPayload,
+    validateResetPasswordPayload,
 } = require("../../validations/auth.validation");
 const authService = require("./service");
 const { HTTP_STATUS } = require("../../constants");
@@ -75,6 +77,46 @@ class AuthController {
         return res.status(HTTP_STATUS.OK).json({
             message: "Logout successful.",
         });
+    }
+
+    async forgotPassword(req, res) {
+        const { isValid, errors } = validateForgotPasswordPayload(req.body);
+
+        if (!isValid) {
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+        }
+
+        try {
+            const result = await authService.forgotPassword(req.body.email);
+
+            return res.status(HTTP_STATUS.OK).json({
+                message: result.message,
+            });
+        } catch (error) {
+            return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+                message: error.message,
+            });
+        }
+    }
+
+    async resetPassword(req, res) {
+        const { isValid, errors } = validateResetPasswordPayload(req.body);
+
+        if (!isValid) {
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({ errors });
+        }
+
+        try {
+            const result = await authService.resetPassword(req.body.token, req.body.newPassword);
+
+            return res.status(HTTP_STATUS.OK).json({
+                message: result.message,
+            });
+        } catch (error) {
+            return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+                message: error.message,
+            });
+        }
     }
 }
 

@@ -31,6 +31,38 @@ const EmailVerificationToken = mongoose.model(
   EmailVerificationTokenSchema
 );
 
+const PasswordResetTokenSchema = new mongoose.Schema(
+  {
+    user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    token_hash: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    expires_at: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    used_at: {
+      type: Date,
+      default: null,
+    },
+  },
+  { timestamps: true, collection: "password_reset_tokens" }
+);
+
+const PasswordResetToken = mongoose.model(
+  "PasswordResetToken",
+  PasswordResetTokenSchema
+);
+
 module.exports = {
   EmailVerificationToken,
+  PasswordResetToken,
 };
