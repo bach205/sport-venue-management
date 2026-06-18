@@ -16,8 +16,43 @@ const SPORT_OPTIONS = [
   { value: 'volleyball', emoji: '🏐' },
 ];
 
-const PROVINCES = ['all', 'HCMC', 'Ha Noi', 'Da Nang', 'Binh Duong', 'Dong Nai'];
-const WARDS = ['all', 'Ben Nghe Ward', 'Thu Duc', 'Binh Thanh', 'Go Vap', 'District 7'];
+const PROVINCES = [
+  'all',
+  'Hà Nội',
+  'Hải Phòng',
+  'Huế',
+  'Đà Nẵng',
+  'Cần Thơ',
+  'Thành phố Hồ Chí Minh',
+  'An Giang',
+  'Bắc Ninh',
+  'Cà Mau',
+  'Cao Bằng',
+  'Đắk Lắk',
+  'Điện Biên',
+  'Đồng Nai',
+  'Đồng Tháp',
+  'Gia Lai',
+  'Hà Tĩnh',
+  'Hưng Yên',
+  'Khánh Hòa',
+  'Lai Châu',
+  'Lâm Đồng',
+  'Lạng Sơn',
+  'Lào Cai',
+  'Nghệ An',
+  'Ninh Bình',
+  'Phú Thọ',
+  'Quảng Ngãi',
+  'Quảng Ninh',
+  'Quảng Trị',
+  'Sơn La',
+  'Tây Ninh',
+  'Thái Nguyên',
+  'Thanh Hóa',
+  'Tuyên Quang',
+  'Vĩnh Long',
+];
 
 function toISODate(date: Date) {
   return date.toISOString().split('T')[0];
@@ -43,7 +78,6 @@ export default function VenuesPage() {
   const [loading, setLoading] = useState(true);
   const [sport, setSport] = useState<Sport | 'all'>('all');
   const [province, setProvince] = useState('all');
-  const [ward, setWard] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState(TODAY);
 
@@ -51,7 +85,7 @@ export default function VenuesPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetchVenues({ sport, province, ward, search, date: selectedDate });
+        const res = await fetchVenues({ sport, province, search, date: selectedDate });
         setVenues(res.items);
       } finally {
         setLoading(false);
@@ -59,7 +93,7 @@ export default function VenuesPage() {
     };
 
     load();
-  }, [sport, province, ward, search, selectedDate]);
+  }, [sport, province, search, selectedDate]);
 
   const selectStyle: React.CSSProperties = {
     fontFamily: 'Inter, sans-serif',
@@ -133,13 +167,6 @@ export default function VenuesPage() {
               {PROVINCES.map(item => (
                 <option key={item} value={item}>
                   {item === 'all' ? t('venues.page.allProvinces') : item}
-                </option>
-              ))}
-            </select>
-            <select value={ward} onChange={e => setWard(e.target.value)} style={selectStyle}>
-              {WARDS.map(item => (
-                <option key={item} value={item}>
-                  {item === 'all' ? t('venues.page.allWards') : item}
                 </option>
               ))}
             </select>
