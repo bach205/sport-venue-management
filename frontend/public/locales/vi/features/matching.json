@@ -32,6 +32,24 @@
     "totalTitle": "Tổng lượt xem",
     "label": "lượt xem"
   },
+  "survey": {
+    "title": "Giúp Matchill tốt hơn!",
+    "description": "Dành 2 phút hoàn thành khảo sát để chia sẻ ý kiến của bạn.",
+    "nav": "Khảo sát",
+    "cta": "Tham gia khảo sát",
+    "dismiss": "Đóng thông báo khảo sát",
+    "card": {
+      "eyebrow": "Khảo sát người dùng",
+      "title": "Bạn đang dùng Matchill thế nào?",
+      "description": "Dành 2 phút chia sẻ trải nghiệm để chúng mình cải thiện việc tìm sân, tìm người chơi và đặt lịch."
+    },
+    "modal": {
+      "eyebrow": "Khảo sát 2 phút",
+      "title": "Chia sẻ ý kiến của bạn",
+      "description": "Câu trả lời của bạn giúp Matchill xây dựng trải nghiệm phù hợp hơn cho người chơi.",
+      "later": "Để sau"
+    }
+  },
   "matchingMock": {
     "today": "Hôm nay",
     "venues": {

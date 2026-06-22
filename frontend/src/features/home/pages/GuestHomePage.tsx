@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   CalendarDays,
+  ClipboardList,
   FileText,
   Facebook,
   Loader2,
@@ -24,9 +25,9 @@ import type { ApiPost } from "@/features/feed/types/feed.types";
 import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { SURVEY_URL } from "@/shared/constants/survey";
 
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1600&q=85";
+const HERO_IMAGE = "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1600&q=85";
 
 const FACEBOOK_URL = "https://www.facebook.com/share/1BH6pEeLth/?mibextid=wwXIfr";
 
@@ -142,7 +143,9 @@ function MarketplacePreviewCard({ post, onContact }: { post: ApiPost; onContact:
         </span>
         <span className="text-[12px] font-semibold text-[#8b7266]">{post.sport}</span>
       </div>
-      <h3 className="font-heading text-[15px] font-bold leading-snug text-[#241914]">{post.title}</h3>
+      <h3 className="font-heading text-[15px] font-bold leading-snug text-[#241914]">
+        {post.title}
+      </h3>
       <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[#584238]">{post.details}</p>
       <div className="mt-auto flex items-center justify-between gap-3 pt-4">
         <span className="font-heading text-[16px] font-extrabold text-[#a04100]">
@@ -174,8 +177,12 @@ function DiscoverPreviewCard({ post, onContact }: { post: DiscoverPost; onContac
         <div>
           <p className="font-heading text-[15px] font-bold text-[#241914]">{post.author.name}</p>
           <p className="mt-1 text-[12px] text-[#8b7266]">
-            {eventDate.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" })} ·{" "}
-            {eventDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
+            {eventDate.toLocaleDateString(locale, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            })}{" "}
+            · {eventDate.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
         <span className="rounded-full bg-[#e7f8f7] px-2.5 py-1 text-[12px] font-bold text-[#006a65]">
@@ -310,9 +317,15 @@ export default function GuestHomePage() {
               </div>
             </form>
             <div className="mt-5 flex flex-wrap gap-2 text-[12px] font-semibold text-white/90">
-              <span className="rounded-full bg-white/12 px-3 py-1.5 backdrop-blur">{venueCountLabel}</span>
-              <span className="rounded-full bg-white/12 px-3 py-1.5 backdrop-blur">{t("home.stats.matches")}</span>
-              <span className="rounded-full bg-white/12 px-3 py-1.5 backdrop-blur">{t("home.stats.login")}</span>
+              <span className="rounded-full bg-white/12 px-3 py-1.5 backdrop-blur">
+                {venueCountLabel}
+              </span>
+              <span className="rounded-full bg-white/12 px-3 py-1.5 backdrop-blur">
+                {t("home.stats.matches")}
+              </span>
+              <span className="rounded-full bg-white/12 px-3 py-1.5 backdrop-blur">
+                {t("home.stats.login")}
+              </span>
             </div>
           </div>
         </div>
@@ -326,7 +339,9 @@ export default function GuestHomePage() {
             className="flex h-20 items-center gap-3 rounded-lg border border-[#e8d2c8] bg-[#fff8f6] px-4 text-left transition-colors hover:border-[#a04100]"
           >
             <MapPin size={20} className="text-[#a04100]" />
-            <span className="font-heading text-[14px] font-bold text-[#241914]">{t("home.quickActions.venues")}</span>
+            <span className="font-heading text-[14px] font-bold text-[#241914]">
+              {t("home.quickActions.venues")}
+            </span>
           </button>
           <button
             type="button"
@@ -334,7 +349,9 @@ export default function GuestHomePage() {
             className="flex h-20 items-center gap-3 rounded-lg border border-[#d7ece8] bg-[#f4fbfa] px-4 text-left transition-colors hover:border-[#006a65]"
           >
             <Users size={20} className="text-[#006a65]" />
-            <span className="font-heading text-[14px] font-bold text-[#241914]">{t("home.quickActions.players")}</span>
+            <span className="font-heading text-[14px] font-bold text-[#241914]">
+              {t("home.quickActions.players")}
+            </span>
           </button>
           <button
             type="button"
@@ -342,8 +359,39 @@ export default function GuestHomePage() {
             className="flex h-20 items-center gap-3 rounded-lg border border-[#e8d2c8] bg-[#fff8f6] px-4 text-left transition-colors hover:border-[#a04100]"
           >
             <ShoppingBag size={20} className="text-[#a04100]" />
-            <span className="font-heading text-[14px] font-bold text-[#241914]">{t("home.quickActions.marketplace")}</span>
+            <span className="font-heading text-[14px] font-bold text-[#241914]">
+              {t("home.quickActions.marketplace")}
+            </span>
           </button>
+        </div>
+      </section>
+
+      <section className="border-b border-[#f0cfab] bg-[#fff4e8]">
+        <div className="mx-auto flex max-w-screen-xl flex-col items-start justify-between gap-5 px-6 py-7 sm:flex-row sm:items-center">
+          <div className="flex items-start gap-4">
+            <div className="rounded-xl bg-white p-3 text-[#a04100] shadow-sm">
+              <ClipboardList size={24} />
+            </div>
+            <div>
+              <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#a04100]">
+                {t("survey.card.eyebrow")}
+              </p>
+              <h2 className="mt-1 font-heading text-[22px] font-extrabold text-[#241914]">
+                {t("survey.card.title")}
+              </h2>
+              <p className="mt-1 max-w-2xl text-[14px] leading-6 text-[#584238]">
+                {t("survey.card.description")}
+              </p>
+            </div>
+          </div>
+          <a
+            href={SURVEY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded-lg bg-[#a04100] px-4 py-2.5 text-sm font-bold text-white no-underline transition-opacity hover:opacity-90"
+          >
+            {t("survey.cta")}
+          </a>
         </div>
       </section>
 
@@ -351,7 +399,9 @@ export default function GuestHomePage() {
         <section>
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-heading text-[24px] font-extrabold text-[#241914]">{t("home.featuredVenues.title")}</h2>
+              <h2 className="font-heading text-[24px] font-extrabold text-[#241914]">
+                {t("home.featuredVenues.title")}
+              </h2>
               <p className="mt-1 text-[14px] text-[#584238]">{t("home.featuredVenues.subtitle")}</p>
             </div>
             <Link to="/venues" className="text-[13px] font-bold text-[#a04100] hover:underline">
@@ -365,7 +415,11 @@ export default function GuestHomePage() {
           ) : venues.length > 0 ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {venues.map((venue) => (
-                <VenueCard key={venue.id} venue={venue} onClick={() => navigate(`/venues/${venue.id}`)} />
+                <VenueCard
+                  key={venue.id}
+                  venue={venue}
+                  onClick={() => navigate(`/venues/${venue.id}`)}
+                />
               ))}
             </div>
           ) : (
@@ -378,7 +432,9 @@ export default function GuestHomePage() {
         <section>
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-heading text-[24px] font-extrabold text-[#241914]">{t("home.discover.title")}</h2>
+              <h2 className="font-heading text-[24px] font-extrabold text-[#241914]">
+                {t("home.discover.title")}
+              </h2>
               <p className="mt-1 text-[14px] text-[#584238]">{t("home.discover.subtitle")}</p>
             </div>
             <Link to="/discover" className="text-[13px] font-bold text-[#a04100] hover:underline">
@@ -391,9 +447,11 @@ export default function GuestHomePage() {
                 <DiscoverPreviewCard
                   key={post.id}
                   post={post}
-                  onContact={() => handlePrivateAction(
-                    `/messages?with=${post.author.id}&name=${encodeURIComponent(post.author.name)}`
-                  )}
+                  onContact={() =>
+                    handlePrivateAction(
+                      `/messages?with=${post.author.id}&name=${encodeURIComponent(post.author.name)}`
+                    )
+                  }
                 />
               ))
             ) : (
@@ -407,7 +465,9 @@ export default function GuestHomePage() {
         <section>
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <h2 className="font-heading text-[24px] font-extrabold text-[#241914]">{t("home.marketplace.title")}</h2>
+              <h2 className="font-heading text-[24px] font-extrabold text-[#241914]">
+                {t("home.marketplace.title")}
+              </h2>
               <p className="mt-1 text-[14px] text-[#584238]">{t("home.marketplace.subtitle")}</p>
             </div>
             <Link to="/feed" className="text-[13px] font-bold text-[#a04100] hover:underline">
@@ -419,9 +479,11 @@ export default function GuestHomePage() {
               <MarketplacePreviewCard
                 key={post.id}
                 post={post}
-                onContact={() => handlePrivateAction(
-                  `/messages?with=${post.author.id}&name=${encodeURIComponent(post.author.name)}`
-                )}
+                onContact={() =>
+                  handlePrivateAction(
+                    `/messages?with=${post.author.id}&name=${encodeURIComponent(post.author.name)}`
+                  )
+                }
               />
             ))}
           </div>
@@ -430,7 +492,9 @@ export default function GuestHomePage() {
         {!isAuthenticated && (
           <section className="flex flex-col items-start justify-between gap-4 rounded-lg border border-[#e8d2c8] bg-white px-5 py-5 shadow-[0_8px_24px_rgba(36,25,20,0.06)] sm:flex-row sm:items-center">
             <div>
-              <h2 className="font-heading text-[20px] font-extrabold text-[#241914]">{t("home.cta.title")}</h2>
+              <h2 className="font-heading text-[20px] font-extrabold text-[#241914]">
+                {t("home.cta.title")}
+              </h2>
               <p className="mt-1 text-[14px] text-[#584238]">{t("home.cta.subtitle")}</p>
             </div>
             <div className="flex shrink-0 gap-2">
@@ -456,7 +520,9 @@ export default function GuestHomePage() {
           <div>
             <Link to="/home" className="inline-flex items-center gap-3 no-underline">
               <img src="/logo.png" alt="Matchill Logo" className="h-12 w-12 object-contain" />
-              <span className="font-heading text-[18px] font-extrabold text-[#a04100]">Matchill</span>
+              <span className="font-heading text-[18px] font-extrabold text-[#a04100]">
+                Matchill
+              </span>
             </Link>
             <p className="mt-3 max-w-sm text-[13px] leading-6 text-[#584238]">
               {t("home.footer.description")}
@@ -496,12 +562,7 @@ export default function GuestHomePage() {
                 <Mail className={footerIconClass} />
                 {t("home.footer.contact")}
               </a>
-              <a
-                href={FACEBOOK_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={footerLinkClass}
-              >
+              <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" className={footerLinkClass}>
                 <Facebook className={footerIconClass} />
                 Facebook
               </a>

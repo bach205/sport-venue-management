@@ -1,15 +1,15 @@
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { useAppSelector } from "@/app/hooks";
-
-export const LOGIN_REQUIRED_MESSAGE = "Bạn cần đăng nhập để sử dụng tính năng này.";
 
 export function useAuthGuard() {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const { t } = useTranslation("auth");
 
-  const requireAuth = (message = LOGIN_REQUIRED_MESSAGE) => {
+  const requireAuth = (message?: string) => {
     if (isAuthenticated) return true;
 
-    toast.error(message);
+    toast.error(message ?? t("login.required"));
     return false;
   };
 

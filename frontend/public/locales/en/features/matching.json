@@ -32,6 +32,24 @@
     "totalTitle": "Total views",
     "label": "views"
   },
+  "survey": {
+    "title": "Help make Matchill better!",
+    "description": "Take 2 minutes to complete our survey and share your feedback.",
+    "nav": "Survey",
+    "cta": "Take the survey",
+    "dismiss": "Dismiss survey announcement",
+    "card": {
+      "eyebrow": "User survey",
+      "title": "How are you using Matchill?",
+      "description": "Spend 2 minutes sharing your experience to help us improve finding venues, players, and bookings."
+    },
+    "modal": {
+      "eyebrow": "2-minute survey",
+      "title": "Share your feedback",
+      "description": "Your answers help Matchill create a better experience for players.",
+      "later": "Maybe later"
+    }
+  },
   "matchingMock": {
     "today": "Today",
     "venues": {
