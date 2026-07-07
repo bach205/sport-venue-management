@@ -50,7 +50,7 @@ async function seedWallet() {
     // ─── 1. Tạo ví cho owners ───
     console.log("\n─── Owner Wallets ───");
     for (const ownerRow of ownerRows) {
-      const userId = ownerRow.user_id;
+      const userId = ownerRow._id;
       const user = relevantUsers.find((u) => String(u._id) === String(userId));
       if (!user) continue;
 
