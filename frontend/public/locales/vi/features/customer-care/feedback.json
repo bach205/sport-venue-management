@@ -73,7 +73,7 @@
     "stats": {
       "total": "Tổng phản hồi",
       "new": "{{count}} phản hồi mới",
-      "resolved": "{{count}} đã xử lý",
+      "resolved": "đã xử lý",
       "averageRating": "Điểm trung bình {{rating}}/5"
     },
     "card": {

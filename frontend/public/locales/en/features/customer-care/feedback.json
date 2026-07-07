@@ -73,7 +73,7 @@
     "stats": {
       "total": "Total feedback",
       "new": "{{count}} new submissions",
-      "resolved": "{{count}} resolved",
+      "resolved": "resolved",
       "averageRating": "Average rating {{rating}}/5"
     },
     "card": {
