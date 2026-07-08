@@ -1,5 +1,6 @@
 require("dotenv").config({ path: __dirname + "/../../.env" });
 const connectDb = require("../configs/db");
+const fs = require("fs");
 const { User } = require("../modules/user/model");
 const {
   MatchRequest,
@@ -262,7 +263,9 @@ async function seedMatching() {
     await connectDb();
     console.log("Connected to DB");
 
-    const users = await User.find().limit(201);
+    const seedContent = fs.readFileSync(__dirname + "/seedUsers.js", "utf8");
+    const seedEmails = [...seedContent.matchAll(/\["([^"]+)",\s*"([^"]+)"/g)].map((m) => m[2]).filter((e) => e.includes("@"));
+    const users = await User.find({ email: { $in: seedEmails } }).limit(201);
     if (users.length < 30) {
       console.log("Need at least 30 users. Run seedUsers.js first.");
       process.exit(1);

@@ -1,6 +1,7 @@
 require("dotenv").config({ path: __dirname + "/../../.env" });
 const connectDb = require("../configs/db");
 const mongoose = require("mongoose");
+const fs = require("fs");
 const { User } = require("../modules/user/model");
 const {
   Venue,
@@ -75,8 +76,9 @@ async function seedBookings() {
       `Using venues: ${selectedVenues.map((v) => v.name).join(", ")}`,
     );
 
-    // ─── Lấy users Hà Nội ───
-    const hanoiUsers = await User.find().limit(80);
+    // ─── Lấy users chỉ từ danh sách email trong seedUsers.js ───
+    const seedContent = fs.readFileSync(__dirname + "/seedUsers.js", "utf8");
+    const seedEmails = [...seedContent.matchAll(/\["([^"]+)",\s*"([^"]+)"/g)].map((m) => m[2]).filter((e) => e.includes("@"));    const hanoiUsers = await User.find({ email: { $in: seedEmails } }).limit(80);
     if (hanoiUsers.length < 20) {
       console.log("Need at least 20 users. Run seedUsers.js first.");
       process.exit(1);
