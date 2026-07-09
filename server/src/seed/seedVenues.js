@@ -24,13 +24,13 @@ const venueOwners = [
 const venuesData = [
   // --- Chủ sân 1: Sao Việt ---
   {
-    name: "Sân Pickleball Sao Việt - Cầu Giấy",
+    name: "Sân Pickleball Sao Việt - Hòa Lạc",
     province: "Hà Nội",
-    ward: "Phường Dịch Vọng",
-    address_detail: "123 Nguyễn Văn Huyên, Cầu Giấy",
+    ward: "xã Hòa Lạc",
+    address_detail: "Thôn 4, Hòa Lạc",
     phone_number: "0985342712",
     description:
-      "Sân Pickleball đạt chuẩn quốc tế, mặt sân acrylic cao cấp, lưới chuyên dụng, đèn LED. Khu vực trung tâm Cầu Giấy, giao thông thuận tiện, có nước uống miễn phí, wifi, gửi xe.",
+      "Sân Pickleball đạt chuẩn quốc tế, mặt sân acrylic cao cấp, lưới chuyên dụng, đèn LED. Nằm tại khu vực Hòa Lạc, Thạch Thất, Hà Nội. Có nước uống miễn phí, wifi, chỗ đỗ xe rộng.",
     image_url:
       "https://irace.vn/wp-content/uploads/2025/08/san-vn-pickleball-me-tri-nam-tu-liem.png",
     slot_price: 120000,
@@ -47,13 +47,13 @@ const venuesData = [
   },
   // --- Chủ sân 2: Ánh Dương ---
   {
-    name: "Sân Cầu Lông Ánh Dương - Thanh Xuân",
+    name: "Sân Cầu Lông Ánh Dương - Hòa Lạc",
     province: "Hà Nội",
-    ward: "Phường Thanh Xuân",
-    address_detail: "456 Tố Hữu, Nam Từ Liêm",
+    ward: "xã Hòa Lạc",
+    address_detail: "Thôn 8, Hòa Lạc",
     phone_number: "0986824312",
     description:
-      "Sân cầu lông trong nhà, sàn gỗ chuyên dụng, đèn không chói, có máy lạnh. Nằm trên trục Tố Hữu, khu đô thị Thanh Xuân, dễ đỗ xe.",
+      "Sân cầu lông trong nhà, sàn gỗ chuyên dụng, đèn không chói, có máy lạnh. Tọa lạc tại khu vực Hòa Lạc, Thạch Thất, dễ dàng di chuyển từ trung tâm Hà Nội theo Đại lộ Thăng Long.",
     image_url:
       "https://qvbadminton.com/wp-content/uploads/2024/12/san-cau-long-nha-thi-dau-cau-giay-7dac29ea.webp",
     slot_price: 120000,
