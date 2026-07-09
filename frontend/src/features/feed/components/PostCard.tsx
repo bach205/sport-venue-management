@@ -508,7 +508,7 @@ function SellCard({
           <img
             src={post.imageUrl}
             alt={post.title}
-            className="w-full h-52 object-cover bg-[#f0e8e3]"
+            className="w-full max-h-90 object-cover bg-[#f0e8e3]"
             crossOrigin="anonymous"
           />
         ) : (
