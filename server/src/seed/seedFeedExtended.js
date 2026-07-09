@@ -28,7 +28,8 @@ const SELL_POSTS = [
     priceMin: 145000,
     currency: "VND",
     condition: "new",
-    image_url: "https://cdn.hstatic.net/products/200000293662/27_70d639f5e8a14b20994bf2b127e2c16b.png",
+    image_url:
+      "https://cdn.hstatic.net/products/200000293662/27_70d639f5e8a14b20994bf2b127e2c16b.png",
   },
   {
     intentType: "sell",
@@ -42,7 +43,8 @@ const SELL_POSTS = [
     priceMin: 529000,
     currency: "VND",
     condition: "new",
-    image_url: "https://down-vn.img.susercontent.com/file/vn-11134207-820l4-meryrvggnvnk7d",
+    image_url:
+      "https://down-vn.img.susercontent.com/file/vn-11134207-820l4-meryrvggnvnk7d",
   },
   {
     intentType: "sell",
@@ -56,7 +58,8 @@ const SELL_POSTS = [
     priceMin: 290000,
     currency: "VND",
     condition: "new",
-    image_url: "https://down-vn.img.susercontent.com/file/vn-11134207-820l4-mi4o69ocqpkz15",
+    image_url:
+      "https://down-vn.img.susercontent.com/file/vn-11134207-820l4-mi4o69ocqpkz15",
   },
   {
     intentType: "sell",
@@ -70,7 +73,8 @@ const SELL_POSTS = [
     priceMin: 45000,
     currency: "VND",
     condition: "new",
-    image_url: "https://down-vn.img.susercontent.com/file/sg-11134201-7rd4t-lw48f1iz3pvjc2",
+    image_url:
+      "https://down-vn.img.susercontent.com/file/sg-11134201-7rd4t-lw48f1iz3pvjc2",
   },
 ];
 
@@ -100,11 +104,15 @@ function generateComments(post, users) {
     } while (usedUsers.has(String(user._id)) && usedUsers.size < users.length);
     usedUsers.add(String(user._id));
 
-    const template = pick(post.intentType === "buy" ? BUYER_COMMENTS : SELLER_COMMENTS);
+    const template = pick(
+      post.intentType === "buy" ? BUYER_COMMENTS : SELLER_COMMENTS,
+    );
     comments.push({
       user_id: user._id,
       content: template,
-      createdAt: new Date(Date.now() - Math.floor(Math.random() * 7 * 86400000)),
+      createdAt: new Date(
+        Date.now() - Math.floor(Math.random() * 7 * 86400000),
+      ),
     });
   }
   return comments;
@@ -121,15 +129,16 @@ const BUYER_COMMENTS = [
 ];
 
 const SELLER_COMMENTS = [
-  "Sản phẩm còn không bạn?",
-  "Mình muốn mua, còn hàng không ạ?",
-  "Giá có bớt chút đỉnh được không?",
-  "Cho mình xin thêm ảnh thực tế với ạ.",
-  "Mình quan tâm lắm, inbox mình nhé!",
-  "Đã đặt mua, cảm ơn bạn!",
-  "Bạn có ship ra Hà Nội không?",
-  "Hàng chuẩn không bạn ơi?",
-  "Mình lấy, inbox chốt đơn nhé!",
+  "Sản phẩm còn ko bn?",
+  "Mình muốn mua, còn hàng k ạ?",
+  "Cho mình xin thêm ảnh thực tế với ạ",
+  "Đã đặt mua!",
+  "Bn có ship Hà Nội ko?",
+  "Hàng chuẩn ko bn ơi?",
+  "ib chốt đơn nhé!",
+  "Bạn ở đâu để mình qua xem",
+  "Mk quan tâm ib mk nhé",
+  "Mình ở huyện khác ship được ko b ơi?",
 ];
 
 async function seedFeedExtended() {
@@ -138,7 +147,9 @@ async function seedFeedExtended() {
     console.log("Connected to DB");
 
     const seedContent = fs.readFileSync(__dirname + "/seedUsers.js", "utf8");
-    const seedEmails = [...seedContent.matchAll(/\["([^"]+)",\s*"([^"]+)"/g)].map((m) => m[2]).filter((e) => e.includes("@"));
+    const seedEmails = [...seedContent.matchAll(/\["([^"]+)",\s*"([^"]+)"/g)]
+      .map((m) => m[2])
+      .filter((e) => e.includes("@"));
     const users = await User.find({ email: { $in: seedEmails } }).limit(50);
     if (users.length < 5) {
       console.log("Need at least 5 users. Run seedUsers.js first.");
@@ -163,7 +174,11 @@ async function seedFeedExtended() {
         continue;
       }
 
-      const post = await Post.create({
+      // Bypass Mongoose pre-save hook — dùng raw collection
+      const postAgeDays = 14 + Math.floor(Math.random() * 7);
+      const postTime = new Date(Date.now() - postAgeDays * 86400000);
+
+      const postRaw = await Post.collection.insertOne({
         user_id: user._id,
         content: postData.details,
         image_url: postData.image_url,
@@ -179,38 +194,67 @@ async function seedFeedExtended() {
         currency: postData.currency,
         condition: postData.condition,
         status: "open",
+        createdAt: postTime,
+        updatedAt: postTime,
       });
-      console.log(`  Created sell post: ${postData.title} (${postData.priceMin}đ)`);
+      const post = await Post.findById(postRaw.insertedId);
+
+      console.log(
+        `  Created sell post: ${postData.title} (${postData.priceMin}đ)`,
+      );
       postCount++;
 
-      // Tạo comments (3-4 comments mỗi bài)
-      const commenters = users.filter((u) => String(u._id) !== String(user._id));
+      // Tạo comments (3-4 comments mỗi bài) — sau post 1-3 ngày
+      const commenters = users.filter(
+        (u) => String(u._id) !== String(user._id),
+      );
       const numComments = 3 + Math.floor(Math.random() * 2);
+      const commentDocs = [];
       for (let i = 0; i < numComments && i < commenters.length; i++) {
-        await Comment.create({
+        const commentDate = new Date(
+          postTime.getTime() +
+            (1 + Math.floor(Math.random() * 3)) * 86400000 +
+            Math.floor(Math.random() * 86400000),
+        );
+        commentDocs.push({
           post_id: post._id,
           user_id: commenters[i]._id,
-          content: pick(post.intentType === "sell" ? SELLER_COMMENTS : BUYER_COMMENTS),
+          content: pick(
+            post.intentType === "sell" ? SELLER_COMMENTS : BUYER_COMMENTS,
+          ),
+          createdAt: commentDate,
+          updatedAt: commentDate,
         });
-        commentCount++;
       }
+      if (commentDocs.length) await Comment.collection.insertMany(commentDocs);
+      commentCount += commentDocs.length;
 
-      // Tạo likes (10-15 likes mỗi bài)
+      // Tạo likes (10-15 likes mỗi bài) — rải rác trong vòng 1 tuần sau post
       const pool = users.filter((u) => String(u._id) !== String(user._id));
       const numLikes = 10 + Math.floor(Math.random() * 6);
       const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      const likeDocs = [];
       for (let i = 0; i < numLikes && i < shuffled.length; i++) {
-        try {
-          await Like.create({ post_id: post._id, user_id: shuffled[i]._id });
-          likeCount++;
-        } catch (e) {
-          // unique constraint
-        }
+        likeDocs.push({
+          post_id: post._id,
+          user_id: shuffled[i]._id,
+          createdAt: new Date(
+            postTime.getTime() + Math.floor(Math.random() * 7 * 86400000),
+          ),
+        });
+      }
+      try {
+        if (likeDocs.length)
+          await Like.collection.insertMany(likeDocs, { ordered: false });
+        likeCount += likeDocs.length;
+      } catch (e) {
+        // unique constraint — vẫn count được các doc đã insert
+        likeCount += likeDocs.length;
       }
     }
 
     console.log(
-      `\nDone! Posts: ${postCount}, Comments: ${commentCount}, Likes: ${likeCount}`
+      `\nDone! Posts: ${postCount}, Comments: ${commentCount}, Likes: ${likeCount}`,
     );
     process.exit(0);
   } catch (err) {
