@@ -40,8 +40,8 @@ interface PostCardProps {
 export function PostCard({ post, onContactNow }: PostCardProps) {
   const { t, i18n } = useTranslation("matching");
   const locale = i18n.resolvedLanguage === "en" ? "en-US" : "vi-VN";
-  const skill = SKILL_CONFIG[post.skillLevel];
-  const type = TYPE_CONFIG[post.type];
+  const skill = SKILL_CONFIG[post.skillLevel] ?? { bg: "#f5f0ed", color: "#666" };
+  const type = TYPE_CONFIG[post.type] ?? { bg: "#f5f0ed", color: "#666" };
   const spotsLeft = post.playersNeeded - (post.currentPlayers - 1);
 
   return (
