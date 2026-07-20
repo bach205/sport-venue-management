@@ -90,16 +90,6 @@ export function PostCard({ post, onContactNow }: PostCardProps) {
               >
                 {post.author.name}
               </p>
-              {post.author.rating > 0 || post.author.postsCount > 0 ? (
-                <div className="flex items-center gap-1">
-                  <Star size={11} fill="#f5a623" color="#f5a623" />
-                  <span
-                    style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}
-                  >
-                    {[post.author.rating > 0 ? post.author.rating : null, post.author.postsCount > 0 ? t("postCard.posts", { count: post.author.postsCount }) : null].filter(Boolean).join(" · ")}
-                  </span>
-                </div>
-              ) : null}
             </div>
           </div>
           <span style={{ fontFamily: "Inter, sans-serif", fontSize: "12px", color: "#8b7266" }}>
