@@ -614,7 +614,8 @@
     "posts": "{{count}} posts",
     "players": "players",
     "spotsLeft": "{{count}} spots left",
-    "contactNow": "Contact Now"
+    "contactNow": "Contact Now",
+    "alreadyMatched": "already matched"
   },
   "timeAgo": {
     "now": "Just now",

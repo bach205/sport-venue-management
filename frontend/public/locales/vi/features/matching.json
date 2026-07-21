@@ -614,7 +614,8 @@
     "posts": "{{count}} bài",
     "players": "người chơi",
     "spotsLeft": "còn {{count}} chỗ",
-    "contactNow": "Liên hệ ngay"
+    "contactNow": "Liên hệ ngay",
+    "alreadyMatched": "đã được match"
   },
   "timeAgo": {
     "now": "Vừa xong",

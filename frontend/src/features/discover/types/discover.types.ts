@@ -23,6 +23,7 @@ export interface DiscoverPost {
   currentPlayers: number;
   type: PostType;
   description: string;
+  isMatch?: boolean;
   createdAt: string;
 }
 

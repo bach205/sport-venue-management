@@ -328,6 +328,7 @@ class MatchingService {
       time_type: payload.time_type,
       skill_level: payload.skill_level,
       number_of_players: Number(payload.number_of_players),
+      current_players: payload.current_players ? Number(payload.current_players) : 1,
       match_type: payload.match_type,
       content: String(payload.content).trim(),
       status: "open",
@@ -358,7 +359,7 @@ class MatchingService {
     const skip = (page - 1) * limit;
     const [posts, total] = await Promise.all([
       DiscoverPost.find(filter)
-        .sort({ createdAt: -1 })
+        .sort({ is_match: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit),
       DiscoverPost.countDocuments(filter),
@@ -404,6 +405,10 @@ class MatchingService {
 
     if (payload.number_of_players !== undefined) {
       post.number_of_players = Number(payload.number_of_players);
+    }
+
+    if (payload.current_players !== undefined) {
+      post.current_players = Number(payload.current_players);
     }
 
     if (payload.content !== undefined) {
@@ -574,9 +579,11 @@ class MatchingService {
       timeType: post.time_type,
       skillLevel: post.skill_level,
       numberOfPlayers: post.number_of_players,
+      currentPlayers: post.current_players,
       matchType: post.match_type,
       content: post.content,
       status: post.status,
+      isMatch: !!post.is_match,
       isOwner: String(post.user_id) === String(viewerUserId),
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,

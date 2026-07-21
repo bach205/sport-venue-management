@@ -120,6 +120,7 @@ const DiscoverPostSchema = new mongoose.Schema(
     time_type: { type: String, enum: ["fixed", "flexible"], required: true },
     skill_level: { type: String, required: true },
     number_of_players: { type: Number, required: true },
+    current_players: { type: Number, default: 1 },
     match_type: { type: String, enum: ["teammate", "opponent"], required: true },
     content: { type: String, required: true },
     status: {
@@ -128,6 +129,7 @@ const DiscoverPostSchema = new mongoose.Schema(
       default: "open",
       required: true,
     },
+    is_match: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },

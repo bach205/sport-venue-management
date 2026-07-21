@@ -162,37 +162,82 @@ const mapPostFromApi = (post: any): DiscoverPost => {
       id: post.author?.id || 'unknown',
       name: authorName,
       avatar: buildAvatarUrl(authorName),
-      rating: 4.5,
-      postsCount: 0,
+      rating: post.author?.rating ?? 4.5,
+      postsCount: post.author?.matchCount ?? 0,
     },
     sport: post.sport,
     location: post.location,
     time: post.time,
     skillLevel: post.skillLevel,
     playersNeeded: post.numberOfPlayers,
-    currentPlayers: 1,
+    currentPlayers: post.currentPlayers ?? 1,
     type: post.matchType,
     description: post.content,
+    isMatch: post.isMatch ?? false,
     createdAt: post.createdAt,
   };
 };
 
-export async function fetchPosts(): Promise<{ success: boolean; data: DiscoverPost[] }> {
+export interface FetchPostsParams {
+  page?: number;
+  limit?: number;
+  sport?: string;
+  skill_level?: string;
+  match_type?: string;
+  search?: string;
+}
+
+export interface FetchPostsResult {
+  success: boolean;
+  data: DiscoverPost[];
+  pagination?: { page: number; limit: number; total: number; pages: number };
+}
+
+export async function fetchPosts(
+  params: FetchPostsParams = {}
+): Promise<FetchPostsResult> {
+  const { page = 1, limit = 50, sport, skill_level, match_type } = params;
+
   if (isMockApi) {
     await delay(400);
-    return { success: true, data: [..._posts] };
+    const filtered = _posts.filter((p) => {
+      if (sport && p.sport !== sport) return false;
+      if (skill_level && p.skillLevel !== skill_level) return false;
+      if (match_type && p.type !== match_type) return false;
+      return true;
+    });
+    const start = (page - 1) * limit;
+    const items = filtered.slice(start, start + limit);
+    items.sort((a, b) => {
+      if (a.isMatch === b.isMatch) return 0;
+      return a.isMatch ? 1 : -1;
+    });
+    return {
+      success: true,
+      data: items,
+      pagination: { page, limit, total: filtered.length, pages: Math.ceil(filtered.length / limit) },
+    };
   }
+
   try {
+    const queryParams: Record<string, string | number> = { page, limit };
+    if (sport) queryParams.sport = sport;
+    if (skill_level) queryParams.skill_level = skill_level;
+    if (match_type) queryParams.match_type = match_type;
+
     const res = await axios.get(`${API_BASE_URL}/matching/discover-posts`, {
+      params: queryParams,
       headers: buildAuthHeader(),
     });
     const items = Array.isArray(res.data?.data?.items) ? res.data.data.items : [];
-    return { success: true, data: items.map(mapPostFromApi) };
-  } catch (err: any) {
+    const mapped = items.map(mapPostFromApi);
     return {
-      success: false,
-      data: [],
+      success: true,
+      data: mapped,
+      pagination: res.data?.data?.pagination,
     };
+  } catch (err: any) {
+    return { success: false, data: [] };
   }
 }
 
