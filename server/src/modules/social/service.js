@@ -161,9 +161,13 @@ class SocialService {
     };
   }
 
-  async updatePost(postId, userId, payload) {
+  async updatePost(postId, reqUser, payload) {
     const post = await this.getPostOrThrow(postId);
-    this.assertOwnership(post.user_id, userId, "You can only update your own posts.");
+    const userId = reqUser.id || reqUser;
+    const isAdmin = reqUser.roles && reqUser.roles.includes("admin");
+    if (!isAdmin) {
+      this.assertOwnership(post.user_id, userId, "You can only update your own posts.");
+    }
 
     if (payload.content !== undefined) post.content = String(payload.content).trim();
     if (payload.image_url !== undefined) post.image_url = payload.image_url ? String(payload.image_url).trim() : undefined;
@@ -182,9 +186,13 @@ class SocialService {
     return this.getFeedItemByPost(post._id, userId);
   }
 
-  async deletePost(postId, userId) {
+  async deletePost(postId, reqUser) {
     const post = await this.getPostOrThrow(postId);
-    this.assertOwnership(post.user_id, userId, "You can only delete your own posts.");
+    const userId = reqUser.id || reqUser;
+    const isAdmin = reqUser.roles && reqUser.roles.includes("admin");
+    if (!isAdmin) {
+      this.assertOwnership(post.user_id, userId, "You can only delete your own posts.");
+    }
 
     await Promise.all([
       Comment.deleteMany({ post_id: post._id }),

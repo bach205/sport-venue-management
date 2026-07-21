@@ -626,52 +626,55 @@ function SellCard({
             <span>{timeAgo(post.createdAt, t)}</span>
           </div>
         </div>
-        {/* Owner actions or Contact CTA */}
-        {post.isOwner ? (
-          <div className="relative">
+        <div className="flex items-center gap-2">
+          {!post.isOwner && (
             <button
-              onClick={() => {
-                setMenuOpen((o) => !o);
-                setConfirmDelete(false);
-              }}
-              className="w-8 h-8 rounded-full border border-[#e8e0dc] flex items-center justify-center hover:bg-[#f5f0ed] transition-colors text-brand-muted"
+              onClick={handleContact}
+              className="flex items-center gap-2 h-9 px-4 rounded-xl bg-brand-orange text-[12px] font-bold text-white font-heading hover:opacity-90 transition-opacity flex-shrink-0"
             >
-              <MoreHorizontal size={15} />
+              <MessageSquare size={13} /> Nhắn tin
             </button>
-            {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 bottom-9 z-30 rounded-2xl overflow-hidden bg-white border border-[#e8e0dc] w-40 shadow-[0_8px_32px_rgba(36,25,20,0.14)]">
-                  <button
-                    onClick={() => {
-                      setEditing(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#f5f0ed] text-left text-[13px] text-brand-dark"
-                  >
-                    <Edit3 size={13} className="text-brand-orange" /> Chỉnh sửa
-                  </button>
-                  <button
-                    onClick={() => {
-                      setConfirmDelete(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#fff5f5] text-left text-[13px] text-brand-red"
-                  >
-                    <Trash2 size={13} /> Xoá tin
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ) : (
-          <button
-            onClick={handleContact}
-            className="flex items-center gap-2 h-9 px-4 rounded-xl bg-brand-orange text-[12px] font-bold text-white font-heading hover:opacity-90 transition-opacity flex-shrink-0"
-          >
-            <MessageSquare size={13} /> Nhắn tin
-          </button>
-        )}
+          )}
+
+          {(post.isOwner || user?.role === "admin") && (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setMenuOpen((o) => !o);
+                  setConfirmDelete(false);
+                }}
+                className="w-8 h-8 rounded-full border border-[#e8e0dc] flex items-center justify-center hover:bg-[#f5f0ed] transition-colors text-brand-muted"
+              >
+                <MoreHorizontal size={15} />
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 bottom-9 z-30 rounded-2xl overflow-hidden bg-white border border-[#e8e0dc] w-40 shadow-[0_8px_32px_rgba(36,25,20,0.14)]">
+                    <button
+                      onClick={() => {
+                        setEditing(true);
+                        setMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#f5f0ed] text-left text-[13px] text-brand-dark"
+                    >
+                      <Edit3 size={13} className="text-brand-orange" /> Chỉnh sửa
+                    </button>
+                    <button
+                      onClick={() => {
+                        setConfirmDelete(true);
+                        setMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#fff5f5] text-left text-[13px] text-brand-red"
+                    >
+                      <Trash2 size={13} /> Xoá tin
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       {/* View detail */}
       <div className="px-4 py-1.5 border-t border-[#f0ebe7]">

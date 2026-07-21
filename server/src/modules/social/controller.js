@@ -75,7 +75,7 @@ class SocialController {
     }
 
     try {
-      const data = await socialService.updatePost(req.params.postId, req.user.id, req.body);
+      const data = await socialService.updatePost(req.params.postId, req.user, req.body);
 
       return res.status(HTTP_STATUS.OK).json({
         message: "Post updated successfully.",
@@ -138,7 +138,7 @@ class SocialController {
     }
 
     try {
-      const result = await socialService.deletePost(req.params.postId, req.user.id);
+      const result = await socialService.deletePost(req.params.postId, req.user);
 
       return res.status(HTTP_STATUS.OK).json({
         message: result.message,
