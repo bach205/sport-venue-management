@@ -19,7 +19,7 @@ type AdminPlatformStats = {
     totalPosts: number;
   };
   matching: {
-    teammatePosts: number;
+    discoverPosts: number;
     matchRequests: number;
     matches: number;
   };
@@ -145,9 +145,9 @@ export default function AdminStatisticsPage() {
               accent="#ba1a1a"
             />
             <MetricCard
-              title="Lượt đăng bài tìm đồng đội"
-              value={data?.matching.teammatePosts || 0}
-              detail="Tổng số bài discover có nhu cầu tìm teammate."
+              title="Lượt đăng bài Discover"
+              value={data?.matching.discoverPosts || 0}
+              detail="Tổng số bài discover tìm đồng đội và đối thủ."
               icon={<Users size={21} />}
               accent="#006a65"
             />

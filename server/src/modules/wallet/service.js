@@ -410,14 +410,14 @@ class WalletService {
     const [
       communityFeedPosts,
       marketplacePosts,
-      teammatePosts,
+      discoverPosts,
       matchRequests,
       matches,
       registeredUsers,
     ] = await Promise.all([
       Post.countDocuments({ intentType: { $exists: false } }),
       Post.countDocuments({ intentType: { $in: ["buy", "sell"] } }),
-      DiscoverPost.countDocuments({ match_type: "teammate" }),
+      DiscoverPost.countDocuments({}),
       MatchRequest.countDocuments({}),
       Match.countDocuments({}),
       User.countDocuments({}),
@@ -430,7 +430,7 @@ class WalletService {
         totalPosts: communityFeedPosts + marketplacePosts,
       },
       matching: {
-        teammatePosts,
+        discoverPosts,
         matchRequests,
         matches,
       },
