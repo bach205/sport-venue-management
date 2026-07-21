@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
+  BarChart3,
   Wallet,
   MessageSquare,
   LogOut,
@@ -19,6 +20,7 @@ import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
 
 const NAV = [
   { to: "/admin", exact: true, icon: <LayoutDashboard size={18} />, key: "admin.nav.overview" },
+  { to: "/admin/statistics", exact: false, icon: <BarChart3 size={18} />, key: "admin.nav.statistics" },
   { to: "/admin/wallet", exact: false, icon: <Wallet size={18} />, key: "admin.nav.wallet" },
   { to: "/admin/feedback", exact: false, icon: <MessageSquare size={18} />, key: "admin.nav.feedback" },
 ];

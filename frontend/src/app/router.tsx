@@ -19,6 +19,7 @@ import VenueManagePage from "../features/owner/pages/VenueManagePage";
 
 import ProfilePage from "../features/profile/pages/ProfilePage";
 import AdminDashboard from "../features/admin/pages/AdminDashboard";
+import AdminStatisticsPage from "../features/admin/pages/AdminStatisticsPage";
 import FeedPage from "../features/feed/pages/FeedPage";
 import FeedPostDetailPage from "../features/feed/pages/FeedPostDetailPage";
 import FeedbackPage from "../features/feedback/pages/FeedbackPage";
@@ -88,6 +89,7 @@ export const router = createBrowserRouter([
             element: <AdminLayout />,
             children: [
               { index: true, element: <AdminDashboard /> },
+              { path: "statistics", element: <AdminStatisticsPage /> },
               { path: "wallet", element: <AdminWalletPage /> },
               { path: "feedback", element: <AdminFeedbackPage /> },
             ],

@@ -66,6 +66,12 @@ router.get(
   asyncHandler((req, res) => walletController.getAdminSettlementDashboard(req, res))
 );
 router.get(
+  "/admin/stats",
+  authMiddleware,
+  requireRole("admin"),
+  asyncHandler((req, res) => walletController.getAdminPlatformStats(req, res))
+);
+router.get(
   "/admin/wallet/owner-settlements",
   authMiddleware,
   requireRole("admin"),

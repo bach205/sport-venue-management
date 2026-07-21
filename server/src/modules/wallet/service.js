@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const { HTTP_STATUS } = require("../../constants");
 const createHttpError = require("../../utils/createHttpError");
 const { User, Profile } = require("../user/model");
+const { Post } = require("../social/model");
+const { DiscoverPost, Match, MatchRequest } = require("../matching/model");
 const { Venue, Booking, Payment, Refund } = require("../venue/model");
 const {
   Wallet,
@@ -401,6 +403,40 @@ class WalletService {
         }))
         .sort((a, b) => b.netAmount - a.netAmount),
       recentSettlements: recentSettlements.items,
+    };
+  }
+
+  async getAdminPlatformStats() {
+    const [
+      communityFeedPosts,
+      marketplacePosts,
+      teammatePosts,
+      matchRequests,
+      matches,
+      registeredUsers,
+    ] = await Promise.all([
+      Post.countDocuments({ intentType: { $exists: false } }),
+      Post.countDocuments({ intentType: { $in: ["buy", "sell"] } }),
+      DiscoverPost.countDocuments({ match_type: "teammate" }),
+      MatchRequest.countDocuments({}),
+      Match.countDocuments({}),
+      User.countDocuments({}),
+    ]);
+
+    return {
+      feed: {
+        communityPosts: communityFeedPosts,
+        marketplacePosts,
+        totalPosts: communityFeedPosts + marketplacePosts,
+      },
+      matching: {
+        teammatePosts,
+        matchRequests,
+        matches,
+      },
+      users: {
+        registered: registeredUsers,
+      },
     };
   }
 

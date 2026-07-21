@@ -237,6 +237,20 @@ class WalletController {
     }
   }
 
+  async getAdminPlatformStats(req, res) {
+    try {
+      const data = await walletService.getAdminPlatformStats();
+      return res.status(HTTP_STATUS.OK).json({
+        message: "Admin platform statistics fetched successfully.",
+        data,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || HTTP_STATUS.BAD_REQUEST).json({
+        message: error.message,
+      });
+    }
+  }
+
   async listAdminOwnerSettlements(req, res) {
     const { isValid, errors, value } = validateWithdrawRequestsQuery(req.query);
 
