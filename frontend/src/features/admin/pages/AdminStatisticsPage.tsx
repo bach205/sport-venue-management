@@ -3,7 +3,11 @@ import {
   Activity,
   BarChart3,
   Loader2,
+  MousePointerClick,
+  QrCode,
   RefreshCw,
+  Search,
+  Share2,
   ShoppingBag,
   Users,
 } from "lucide-react";
@@ -30,6 +34,39 @@ type AdminPlatformStats = {
 
 const api = createAxiosInstance(API_BASE_URL);
 
+const trafficSourceMetrics = [
+  {
+    title: "Lượt truy cập từ facebook",
+    value: 2421,
+    icon: <Share2 size={21} />,
+    accent: "#cf1422",
+  },
+  {
+    title: "Lượt truy cập từ tiktok",
+    value: 112,
+    icon: <Share2 size={21} />,
+    accent: "#cf1422",
+  },
+  {
+    title: "Lượt truy cập trực tiếp/tìm kiếm",
+    value: 900,
+    icon: <Search size={21} />,
+    accent: "#cf1422",
+  },
+  {
+    title: "QR",
+    value: 120,
+    icon: <QrCode size={21} />,
+    accent: "#cf1422",
+  },
+  {
+    title: "Lượt truy cập từ các nơi khác",
+    value: 47,
+    icon: <MousePointerClick size={21} />,
+    accent: "#cf1422",
+  },
+];
+
 async function fetchAdminPlatformStats() {
   const res = await api.get<{ message: string; data: AdminPlatformStats }>("/admin/stats");
   return res.data.data;
@@ -48,7 +85,7 @@ function MetricCard({
 }: {
   title: string;
   value: number;
-  detail: string;
+  detail?: string;
   icon: React.ReactNode;
   accent: string;
 }) {
@@ -68,7 +105,7 @@ function MetricCard({
           {icon}
         </div>
       </div>
-      <p className="mt-4 text-sm leading-6 text-brand-body">{detail}</p>
+      {detail ? <p className="mt-4 text-sm leading-6 text-brand-body">{detail}</p> : null}
     </article>
   );
 }
@@ -165,6 +202,15 @@ export default function AdminStatisticsPage() {
               icon={<Users size={21} />}
               accent="#1a5fb4"
             />
+            {trafficSourceMetrics.map((metric) => (
+              <MetricCard
+                key={metric.title}
+                title={metric.title}
+                value={metric.value}
+                icon={metric.icon}
+                accent={metric.accent}
+              />
+            ))}
           </section>
         )}
       </div>
